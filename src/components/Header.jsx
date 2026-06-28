@@ -167,7 +167,6 @@ const Header = ({ cartCount, onCartClick, products, currentUser, onLogout }) => 
             .logo-text {
               font-size: 1.35rem;
             }
-          }
           .nav-link:hover {
             opacity: 0.6 !important;
           }
@@ -175,100 +174,100 @@ const Header = ({ cartCount, onCartClick, products, currentUser, onLogout }) => 
             opacity: 0.6 !important;
           }
         `}} />
-      </header>
 
-      {/* Search Overlay */}
-      {searchOpen && (
-        <div className="fade-in" style={{
-          position: 'fixed',
-          top: '54px',
-          left: 0,
-          right: 0,
-          background: 'rgba(255, 255, 255, 0.98)',
-          backdropFilter: 'blur(12px)',
-          borderBottom: '1px solid var(--border-color)',
-          zIndex: 49,
-          padding: '1.25rem 0'
-        }}>
-          <div className="container" style={{ position: 'relative' }}>
-            <div style={{ display: 'flex', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>
-              <Search size={18} strokeWidth={1.5} style={{ color: 'var(--text-muted)', marginRight: '0.75rem' }} />
-              <input 
-                type="text" 
-                placeholder="Search for products..."
-                value={searchQuery}
-                onChange={handleSearch}
-                autoFocus
-                style={{
-                  width: '100%',
-                  background: 'none',
-                  border: 'none',
-                  color: 'var(--text-primary)',
-                  fontSize: '0.9rem',
-                  fontFamily: 'var(--font-sans)',
-                  fontWeight: 400,
-                  outline: 'none'
-                }}
-              />
-              <button 
-                onClick={() => { setSearchOpen(false); setSearchQuery(''); setSearchResults([]); }}
-                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }}
-              >
-                <X size={18} strokeWidth={1.5} />
-              </button>
-            </div>
+        {/* Search Overlay */}
+        {searchOpen && (
+          <div className="fade-in" style={{
+            position: 'absolute',
+            top: '100%',
+            left: 0,
+            right: 0,
+            background: 'rgba(255, 255, 255, 0.98)',
+            backdropFilter: 'blur(12px)',
+            borderBottom: '1px solid var(--border-color)',
+            zIndex: 49,
+            padding: '1.25rem 0'
+          }}>
+            <div className="container" style={{ position: 'relative' }}>
+              <div style={{ display: 'flex', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>
+                <Search size={18} strokeWidth={1.5} style={{ color: 'var(--text-muted)', marginRight: '0.75rem' }} />
+                <input 
+                  type="text" 
+                  placeholder="Search for products..."
+                  value={searchQuery}
+                  onChange={handleSearch}
+                  autoFocus
+                  style={{
+                    width: '100%',
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--text-primary)',
+                    fontSize: '0.9rem',
+                    fontFamily: 'var(--font-sans)',
+                    fontWeight: 400,
+                    outline: 'none'
+                  }}
+                />
+                <button 
+                  onClick={() => { setSearchOpen(false); setSearchQuery(''); setSearchResults([]); }}
+                  style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }}
+                >
+                  <X size={18} strokeWidth={1.5} />
+                </button>
+              </div>
 
-            {searchResults.length > 0 && (
-              <div style={{
-                position: 'absolute',
-                top: '100%',
-                left: '1.25rem',
-                right: '1.25rem',
-                background: 'var(--bg-primary)',
-                border: '1px solid var(--border-color)',
-                marginTop: '4px',
-                maxHeight: '320px',
-                overflowY: 'auto',
-                zIndex: 100,
-                boxShadow: 'var(--shadow-lg)'
-              }}>
-                {searchResults.map(p => (
-                  <div 
-                    key={p.id}
-                    onClick={() => selectSearchResult(p.id)}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      padding: '0.875rem 1rem',
-                      borderBottom: '1px solid var(--border-color)',
-                      cursor: 'pointer',
-                      transition: 'background 0.15s'
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-secondary)'}
-                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                  >
-                    <img 
-                      src={p.images?.[0] || 'https://via.placeholder.com/60'} 
-                      alt={p.title} 
-                      style={{ width: '44px', height: '56px', objectFit: 'cover', marginRight: '1rem' }} 
-                    />
-                    <div>
-                      <h4 style={{ fontSize: '0.8rem', fontWeight: 500, margin: 0, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>{p.title}</h4>
-                      <p style={{ margin: '3px 0 0 0', color: 'var(--text-primary)', fontSize: '0.75rem', fontWeight: 400 }}>RS.{(p.salePrice || p.price).toLocaleString()}</p>
+              {searchResults.length > 0 && (
+                <div style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: '1.25rem',
+                  right: '1.25rem',
+                  background: 'var(--bg-primary)',
+                  border: '1px solid var(--border-color)',
+                  marginTop: '4px',
+                  maxHeight: '320px',
+                  overflowY: 'auto',
+                  zIndex: 100,
+                  boxShadow: 'var(--shadow-lg)'
+                }}>
+                  {searchResults.map(p => (
+                    <div 
+                      key={p.id}
+                      onClick={() => selectSearchResult(p.id)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        padding: '0.875rem 1rem',
+                        borderBottom: '1px solid var(--border-color)',
+                        cursor: 'pointer',
+                        transition: 'background 0.15s'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-secondary)'}
+                      onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                    >
+                      <img 
+                        src={p.images?.[0] || 'https://via.placeholder.com/60'} 
+                        alt={p.title} 
+                        style={{ width: '44px', height: '56px', objectFit: 'cover', marginRight: '1rem' }} 
+                      />
+                      <div>
+                        <h4 style={{ fontSize: '0.8rem', fontWeight: 500, margin: 0, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>{p.title}</h4>
+                        <p style={{ margin: '3px 0 0 0', color: 'var(--text-primary)', fontSize: '0.75rem', fontWeight: 400 }}>RS.{(p.salePrice || p.price).toLocaleString()}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-            
-            {searchQuery.trim().length > 1 && searchResults.length === 0 && (
-              <div style={{ padding: '1.25rem 0', color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center' }}>
-                No products found for "{searchQuery}"
-              </div>
-            )}
+                  ))}
+                </div>
+              )}
+              
+              {searchQuery.trim().length > 1 && searchResults.length === 0 && (
+                <div style={{ padding: '1.25rem 0', color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center' }}>
+                  No products found for "{searchQuery}"
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </header>
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (

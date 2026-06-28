@@ -114,7 +114,7 @@ const Home = ({ products, onQuickAdd }) => {
           pointerEvents: 'none',
           zIndex: 2
         }} />
-        <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: '800px', margin: '0 auto 0 8%' }}>
+        <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: '800px', margin: '0 auto', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <span style={{
             color: '#fff',
             fontSize: '0.65rem',
@@ -144,7 +144,7 @@ const Home = ({ products, onQuickAdd }) => {
             color: 'rgba(255,255,255,0.55)',
             lineHeight: 1.6,
             maxWidth: '480px',
-            marginBottom: '2rem',
+            margin: '0 auto 2rem auto',
             fontWeight: 400
           }}>
             Experience apparel in its most extreme form. Heavyweight fabrics, acid wash textures and detailed puff-print embellishments.
@@ -239,7 +239,7 @@ const Home = ({ products, onQuickAdd }) => {
           pointerEvents: 'none',
           zIndex: 2
         }} />
-        <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: '800px', margin: '0 auto 0 8%' }}>
+        <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: '800px', margin: '0 auto', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <span style={{
             color: '#fff',
             fontSize: '0.65rem',
@@ -269,7 +269,7 @@ const Home = ({ products, onQuickAdd }) => {
             color: 'rgba(255,255,255,0.55)',
             lineHeight: 1.6,
             maxWidth: '480px',
-            marginBottom: '2rem',
+            margin: '0 auto 2rem auto',
             fontWeight: 400
           }}>
             A raw collision of contrasting forces. Merging absolute dark and stark white silhouettes through Distressed Coal, Ash, and Greyish smoke aesthetics.
