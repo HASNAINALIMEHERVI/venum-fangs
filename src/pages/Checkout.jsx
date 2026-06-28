@@ -225,54 +225,19 @@ const Checkout = ({ cartItems, onClearCart, onPlaceOrder }) => {
                 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                   {/* COD */}
-                  <label style={{
+                  <div style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: '1rem',
                     padding: '1.25rem',
                     background: 'var(--bg-secondary)',
-                    border: `1px solid ${shippingMethod === 'cod' ? 'var(--accent)' : 'var(--border-color)'}`,
-                    cursor: 'pointer',
-                    transition: 'border-color 0.2s'
+                    border: '1px solid var(--accent)'
                   }}>
-                    <input 
-                      type="radio" 
-                      name="shippingMethod" 
-                      checked={shippingMethod === 'cod'} 
-                      onChange={() => setShippingMethod('cod')} 
-                      style={{ accentColor: 'var(--accent)' }}
-                    />
                     <div>
-                      <strong style={{ display: 'block', fontSize: '0.85rem', letterSpacing: '0.05em', textTransform: 'uppercase' }}>CASH ON DELIVERY (COD)</strong>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>PAY WITH CASH UPON COURIER DELIVERY (FREE SHIPPING)</span>
+                      <strong style={{ display: 'block', fontSize: '0.85rem', letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--accent)' }}>CASH ON DELIVERY (COD)</strong>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>PAY WITH CASH UPON COURIER DELIVERY (FREE SHIPPING NATIONWIDE)</span>
                     </div>
-                  </label>
-
-                  {/* Card payment */}
-                  <label style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '1rem',
-                    padding: '1.25rem',
-                    background: 'var(--bg-secondary)',
-                    border: `1px solid ${shippingMethod === 'card' ? 'var(--accent)' : 'var(--border-color)'}`,
-                    cursor: 'pointer',
-                    transition: 'border-color 0.2s'
-                  }}>
-                    <input 
-                      type="radio" 
-                      name="shippingMethod" 
-                      checked={shippingMethod === 'card'} 
-                      onChange={() => setShippingMethod('card')} 
-                      style={{ accentColor: 'var(--accent)' }}
-                    />
-                    <div style={{ flexGrow: 1 }}>
-                      <strong style={{ display: 'block', fontSize: '0.85rem', letterSpacing: '0.05em', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        CREDIT / DEBIT CARD <CreditCard size={14} style={{ color: 'var(--accent)' }} />
-                      </strong>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>PAY SECURELY WITH VISA, MASTERCARD OR UNIONPAY</span>
-                    </div>
-                  </label>
+                  </div>
                 </div>
               </div>
 

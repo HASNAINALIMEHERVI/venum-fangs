@@ -43,7 +43,7 @@ const Header = ({ cartCount, onCartClick, products, currentUser, onLogout }) => 
         }}>
           
           {/* Left: Logo */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', minWidth: '120px' }}>
+          <div className="header-left" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <button 
               className="md-hidden"
               onClick={() => setMobileMenuOpen(true)}
@@ -53,10 +53,9 @@ const Header = ({ cartCount, onCartClick, products, currentUser, onLogout }) => 
             </button>
             
             <Link to="/" style={{ textDecoration: 'none', color: 'var(--text-primary)' }}>
-              <span style={{ 
+              <span className="logo-text" style={{ 
                 fontFamily: '"Didot", "Bodoni MT", "Georgia", serif', 
                 fontWeight: 900, 
-                fontSize: '1.35rem', 
                 letterSpacing: '0.01em', 
                 textTransform: 'uppercase'
               }}>
@@ -76,7 +75,7 @@ const Header = ({ cartCount, onCartClick, products, currentUser, onLogout }) => 
           </nav>
 
           {/* Right: Icons */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.1rem', minWidth: '120px', justifyContent: 'flex-end' }}>
+          <div className="header-right" style={{ display: 'flex', alignItems: 'center', gap: '1rem', justifyContent: 'flex-end' }}>
             <button 
               onClick={() => setSearchOpen(!searchOpen)} 
               style={{ background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center', transition: 'opacity 0.2s' }}
@@ -117,15 +116,6 @@ const Header = ({ cartCount, onCartClick, products, currentUser, onLogout }) => 
               </div>
             )}
 
-            <Link 
-              to="/admin" 
-              style={{ color: 'var(--text-primary)', display: 'flex', alignItems: 'center', textDecoration: 'none', padding: '2px', transition: 'opacity 0.2s' }}
-              className="icon-btn"
-              title="Admin Panel"
-            >
-              <User size={18} strokeWidth={1.5} />
-            </Link>
-
             <button 
               onClick={onCartClick} 
               style={{ background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', position: 'relative', display: 'flex', alignItems: 'center', padding: '2px', transition: 'opacity 0.2s' }}
@@ -156,9 +146,27 @@ const Header = ({ cartCount, onCartClick, products, currentUser, onLogout }) => 
         </div>
 
         <style dangerouslySetInnerHTML={{__html: `
+          .header-left {
+            min-width: auto;
+          }
+          .header-right {
+            min-width: auto;
+          }
+          .logo-text {
+            font-size: 1.1rem;
+          }
           @media (min-width: 768px) {
             .desktop-nav { display: flex !important; }
             .md-hidden { display: none !important; }
+            .header-left {
+              min-width: 120px;
+            }
+            .header-right {
+              min-width: 120px;
+            }
+            .logo-text {
+              font-size: 1.35rem;
+            }
           }
           .nav-link:hover {
             opacity: 0.6 !important;
