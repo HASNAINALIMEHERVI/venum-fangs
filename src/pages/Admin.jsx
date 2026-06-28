@@ -23,7 +23,7 @@ const Admin = ({
     salePrice: '',
     description: '',
     sizes: ['S', 'M', 'L', 'XL', 'XXL'],
-    images: ['', '']
+    images: ['', '', '', '']
   });
 
   const handleTextChange = (e) => {
@@ -66,28 +66,30 @@ const Admin = ({
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!formData.title || !formData.price || !formData.images[0]) {
-      alert('PLEASE FILL TITLE, PRICE AND FIRST IMAGE.');
+    const activeImages = formData.images.filter(img => img.trim() !== '');
+    if (!formData.title || !formData.price || activeImages.length === 0) {
+      alert('PLEASE FILL TITLE, PRICE AND PROVIDE AT LEAST ONE IMAGE.');
       return;
     }
 
     const itemPrice = Number(formData.price);
     const itemSalePrice = formData.salePrice ? Number(formData.salePrice) : null;
 
+    const productPayload = {
+      ...formData,
+      price: itemPrice,
+      salePrice: itemSalePrice,
+      images: activeImages
+    };
+
     if (editingId) {
       onUpdateProduct({
-        ...formData,
-        id: editingId,
-        price: itemPrice,
-        salePrice: itemSalePrice
+        ...productPayload,
+        id: editingId
       });
       setEditingId(null);
     } else {
-      onAddProduct({
-        ...formData,
-        price: itemPrice,
-        salePrice: itemSalePrice
-      });
+      onAddProduct(productPayload);
     }
 
     // Reset Form
@@ -98,7 +100,7 @@ const Admin = ({
       salePrice: '',
       description: '',
       sizes: ['S', 'M', 'L', 'XL', 'XXL'],
-      images: ['', '']
+      images: ['', '', '', '']
     });
   };
 
@@ -111,7 +113,12 @@ const Admin = ({
       salePrice: product.salePrice ? product.salePrice.toString() : '',
       description: product.description,
       sizes: product.sizes || ['S', 'M', 'L', 'XL', 'XXL'],
-      images: [product.images[0] || '', product.images[1] || '']
+      images: [
+        product.images[0] || '',
+        product.images[1] || '',
+        product.images[2] || '',
+        product.images[3] || ''
+      ]
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -402,75 +409,42 @@ const Admin = ({
 
                 {/* Product Images Upload Row */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginTop: '0.5rem' }}>
-                  
-                  {/* Image 1 */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <label style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.1em', color: 'var(--text-secondary)' }}>FRONT VIEW IMAGE *</label>
-                    {formData.images[0] && (
-                      <img src={formData.images[0]} style={{ width: '100px', height: '125px', objectFit: 'cover', border: '1px solid var(--accent)' }} alt="Preview Front" />
-                    )}
-                    <div style={{ position: 'relative', overflow: 'hidden', border: '1px dashed var(--border-color)', padding: '1rem', textAlign: 'center', cursor: 'pointer' }}>
-                      <Upload size={20} style={{ color: 'var(--text-secondary)', marginBottom: '0.25rem' }} />
-                      <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>UPLOAD IMAGE FILE</p>
+                  {[0, 1, 2, 3].map(index => (
+                    <div key={index} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <label style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.15em', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
+                        {index === 0 ? 'IMAGE 1 (FRONT VIEW) *' : `IMAGE ${index + 1}`}
+                      </label>
+                      {formData.images[index] && (
+                        <img src={formData.images[index]} style={{ width: '100px', height: '125px', objectFit: 'cover', border: '1px solid var(--accent)' }} alt={`Preview ${index + 1}`} />
+                      )}
+                      <div style={{ position: 'relative', overflow: 'hidden', border: '1px dashed var(--border-color)', padding: '1.25rem', textAlign: 'center', cursor: 'pointer' }}>
+                        <Upload size={20} style={{ color: 'var(--text-secondary)', marginBottom: '0.25rem' }} />
+                        <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>UPLOAD IMAGE FILE</p>
+                        <input 
+                          type="file" 
+                          accept="image/*" 
+                          onChange={(e) => handleFileChange(e, index)}
+                          style={{ position: 'absolute', top: 0, left: 0, opacity: 0, width: '100%', height: '100%', cursor: 'pointer' }}
+                        />
+                      </div>
                       <input 
-                        type="file" 
-                        accept="image/*" 
-                        onChange={(e) => handleFileChange(e, 0)}
-                        style={{ position: 'absolute', top: 0, left: 0, opacity: 0, width: '100%', height: '100%', cursor: 'pointer' }}
+                        type="text" 
+                        placeholder="OR ENTER IMAGE URL"
+                        value={formData.images[index]}
+                        onChange={(e) => handleUrlChange(e, index)}
+                        style={{
+                          width: '100%',
+                          background: 'var(--bg-primary)',
+                          border: '1px solid var(--border-color)',
+                          color: 'var(--text-primary)',
+                          padding: '0.5rem',
+                          fontSize: '0.75rem',
+                          fontFamily: 'var(--font-sans)',
+                          outline: 'none'
+                        }}
                       />
                     </div>
-                    <input 
-                      type="text" 
-                      placeholder="OR ENTER IMAGE URL"
-                      value={formData.images[0]}
-                      onChange={(e) => handleUrlChange(e, 0)}
-                      style={{
-                        width: '100%',
-                        background: 'var(--bg-primary)',
-                        border: '1px solid var(--border-color)',
-                        color: 'var(--text-primary)',
-                        padding: '0.5rem',
-                        fontSize: '0.75rem',
-                        fontFamily: 'var(--font-sans)',
-                        outline: 'none'
-                      }}
-                    />
-                  </div>
-
-                  {/* Image 2 */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <label style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.1em', color: 'var(--text-secondary)' }}>BACK/ALTERNATE VIEW IMAGE</label>
-                    {formData.images[1] && (
-                      <img src={formData.images[1]} style={{ width: '100px', height: '125px', objectFit: 'cover', border: '1px solid var(--accent)' }} alt="Preview Back" />
-                    )}
-                    <div style={{ position: 'relative', overflow: 'hidden', border: '1px dashed var(--border-color)', padding: '1rem', textAlign: 'center', cursor: 'pointer' }}>
-                      <Upload size={20} style={{ color: 'var(--text-secondary)', marginBottom: '0.25rem' }} />
-                      <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>UPLOAD IMAGE FILE</p>
-                      <input 
-                        type="file" 
-                        accept="image/*" 
-                        onChange={(e) => handleFileChange(e, 1)}
-                        style={{ position: 'absolute', top: 0, left: 0, opacity: 0, width: '100%', height: '100%', cursor: 'pointer' }}
-                      />
-                    </div>
-                    <input 
-                      type="text" 
-                      placeholder="OR ENTER IMAGE URL"
-                      value={formData.images[1]}
-                      onChange={(e) => handleUrlChange(e, 1)}
-                      style={{
-                        width: '100%',
-                        background: 'var(--bg-primary)',
-                        border: '1px solid var(--border-color)',
-                        color: 'var(--text-primary)',
-                        padding: '0.5rem',
-                        fontSize: '0.75rem',
-                        fontFamily: 'var(--font-sans)',
-                        outline: 'none'
-                      }}
-                    />
-                  </div>
-                  
+                  ))}
                 </div>
 
                 {/* Action Buttons */}
@@ -491,7 +465,7 @@ const Admin = ({
                           salePrice: '',
                           description: '',
                           sizes: ['S', 'M', 'L', 'XL', 'XXL'],
-                          images: ['', '']
+                          images: ['', '', '', '']
                         });
                       }}
                     >

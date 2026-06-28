@@ -95,7 +95,11 @@ const Home = ({ products, onQuickAdd }) => {
       }}>
         <video 
           src="/videos/banner.mp4"
-          autoPlay loop muted playsInline
+          autoPlay={true}
+          loop={true}
+          muted={true}
+          playsInline={true}
+          defaultMuted={true}
           style={{
             position: 'absolute',
             top: 0, left: 0, width: '100%', height: '100%',
@@ -220,7 +224,11 @@ const Home = ({ products, onQuickAdd }) => {
       }}>
         <video 
           src="/videos/smoke.mp4"
-          autoPlay loop muted playsInline
+          autoPlay={true}
+          loop={true}
+          muted={true}
+          playsInline={true}
+          defaultMuted={true}
           style={{
             position: 'absolute',
             top: 0, left: 0, width: '100%', height: '100%',
