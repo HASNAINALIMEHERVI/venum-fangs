@@ -254,10 +254,10 @@ function App() {
     const addressText = `${order.customer.address}, ${order.customer.city}, ${order.customer.province}, ${order.customer.country}`;
 
     // Get config from localStorage
-    const serviceId = localStorage.getItem('emailjs_service_id') || 'YOUR_SERVICE_ID';
-    const templateId = localStorage.getItem('emailjs_template_id') || 'YOUR_TEMPLATE_ID';
-    const publicKey = localStorage.getItem('emailjs_public_key') || 'YOUR_PUBLIC_KEY';
-    const adminEmail = localStorage.getItem('admin_notify_email') || 'your-store-email@gmail.com';
+    const serviceId = localStorage.getItem('emailjs_service_id') || 'service_ogwr908';
+    const templateId = localStorage.getItem('emailjs_template_id') || 'template_1olu24i';
+    const publicKey = localStorage.getItem('emailjs_public_key') || 'd3g91DuUMjmyg7_dQ';
+    const adminEmail = localStorage.getItem('admin_notify_email') || 'zain8pie@gmail.com';
 
     if (serviceId === 'YOUR_SERVICE_ID' || templateId === 'YOUR_TEMPLATE_ID' || publicKey === 'YOUR_PUBLIC_KEY') {
       console.log('--- SIMULATED EMAIL NOTIFICATION TO ADMIN ---');

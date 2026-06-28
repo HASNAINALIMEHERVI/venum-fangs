@@ -831,7 +831,7 @@ const Admin = ({
                   type="email" 
                   name="admin_notify_email"
                   placeholder="your-store-email@gmail.com"
-                  defaultValue={localStorage.getItem('admin_notify_email') || ''}
+                  defaultValue={localStorage.getItem('admin_notify_email') || 'zain8pie@gmail.com'}
                   style={inputStyle}
                   required
                 />
@@ -843,7 +843,7 @@ const Admin = ({
                   type="text" 
                   name="emailjs_service_id"
                   placeholder="E.G. service_xxxxxxx"
-                  defaultValue={localStorage.getItem('emailjs_service_id') !== 'YOUR_SERVICE_ID' ? localStorage.getItem('emailjs_service_id') || '' : ''}
+                  defaultValue={localStorage.getItem('emailjs_service_id') !== 'YOUR_SERVICE_ID' ? localStorage.getItem('emailjs_service_id') || 'service_ogwr908' : 'service_ogwr908'}
                   style={inputStyle}
                 />
               </div>
@@ -854,7 +854,7 @@ const Admin = ({
                   type="text" 
                   name="emailjs_template_id"
                   placeholder="E.G. template_xxxxxxx"
-                  defaultValue={localStorage.getItem('emailjs_template_id') !== 'YOUR_TEMPLATE_ID' ? localStorage.getItem('emailjs_template_id') || '' : ''}
+                  defaultValue={localStorage.getItem('emailjs_template_id') !== 'YOUR_TEMPLATE_ID' ? localStorage.getItem('emailjs_template_id') || 'template_1olu24i' : 'template_1olu24i'}
                   style={inputStyle}
                 />
               </div>
@@ -865,7 +865,7 @@ const Admin = ({
                   type="text" 
                   name="emailjs_public_key"
                   placeholder="E.G. user_xxxxxxxxxxxx / key_xxxxxx"
-                  defaultValue={localStorage.getItem('emailjs_public_key') !== 'YOUR_PUBLIC_KEY' ? localStorage.getItem('emailjs_public_key') || '' : ''}
+                  defaultValue={localStorage.getItem('emailjs_public_key') !== 'YOUR_PUBLIC_KEY' ? localStorage.getItem('emailjs_public_key') || 'd3g91DuUMjmyg7_dQ' : 'd3g91DuUMjmyg7_dQ'}
                   style={inputStyle}
                 />
               </div>
