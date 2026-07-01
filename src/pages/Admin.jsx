@@ -199,7 +199,7 @@ const Admin = ({
             color: 'var(--text-primary)',
             margin: 0
           }}>
-            VENUM FANGS <span style={{ color: 'var(--accent)', textShadow: 'var(--accent-glow)' }}>ADMIN PANEL</span>
+            BLACK LOOM <span style={{ color: 'var(--accent)', textShadow: 'var(--accent-glow)' }}>ADMIN PANEL</span>
           </h1>
 
           {/* Tab buttons */}

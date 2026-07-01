@@ -29,7 +29,7 @@ const Footer = () => {
             marginBottom: '1rem',
             textTransform: 'uppercase'
           }}>
-            VENUM FANGS
+            BLACK LOOM
           </h3>
           <p style={{ lineHeight: 1.6, color: 'var(--text-secondary)', fontSize: '0.78rem' }}>
             PREMIUM STREETWEAR BUILT TO THE HIGHEST SPECIFICATIONS. HEAVYWEIGHT FABRICS, EXTREME SILHOUETTES, AND EMBELLISHED GRAPHICS.
@@ -129,7 +129,7 @@ const Footer = () => {
         alignItems: 'center',
         gap: '1rem'
       }}>
-        <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>© 2026 VENUM FANGS. All rights reserved.</p>
+        <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>© 2026 BLACK LOOM. All rights reserved.</p>
         
         {/* Payment Icons */}
         <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>

@@ -86,7 +86,7 @@ const Checkout = ({ cartItems, onClearCart, onPlaceOrder }) => {
             }}>ORDER CONFIRMED</h1>
             
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.6', marginBottom: '2.5rem' }}>
-              THANK YOU FOR SHOPPING WITH **VENUM FANGS**. WE HAVE RECEIVED YOUR ORDER AND STARTED PREPARING YOUR DROPS. YOU WILL RECEIVE A CONFIRMATION CALL/SMS SOON!
+              THANK YOU FOR SHOPPING WITH **BLACK LOOM**. WE HAVE RECEIVED YOUR ORDER AND STARTED PREPARING YOUR DROPS. YOU WILL RECEIVE A CONFIRMATION CALL/SMS SOON!
             </p>
             
             <button 

@@ -59,7 +59,7 @@ const Header = ({ cartCount, onCartClick, products, currentUser, onLogout }) => 
                 letterSpacing: '0.01em', 
                 textTransform: 'uppercase'
               }}>
-                VENUM FANGS
+                BLACK LOOM
               </span>
             </Link>
           </div>
@@ -315,7 +315,7 @@ const Header = ({ cartCount, onCartClick, products, currentUser, onLogout }) => 
             </nav>
             
             <div style={{ marginTop: 'auto', borderTop: '1px solid var(--border-color)', paddingTop: '1.5rem' }}>
-              <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>© 2026 VENUM FANGS</p>
+              <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>© 2026 BLACK LOOM</p>
             </div>
           </div>
         </>
