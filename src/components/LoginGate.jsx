@@ -17,7 +17,7 @@ const LoginGate = ({ onLogin }) => {
       if (event.data && event.data.type === 'GOOGLE_AUTH_SUCCESS') {
         const user = event.data.user;
         // Save user session in localStorage
-        localStorage.setItem('venum_fangs_user', JSON.stringify(user));
+        localStorage.setItem('black_loom_user', JSON.stringify(user));
         onLogin(user);
       }
     };
@@ -53,7 +53,7 @@ const LoginGate = ({ onLogin }) => {
       avatar: (activeTab === 'signup' ? name : email).charAt(0).toUpperCase()
     };
 
-    localStorage.setItem('venum_fangs_user', JSON.stringify(mockUser));
+    localStorage.setItem('black_loom_user', JSON.stringify(mockUser));
     onLogin(mockUser);
   };
 
@@ -115,7 +115,7 @@ const LoginGate = ({ onLogin }) => {
             display: 'block',
             color: '#fff'
           }}>
-            VENUM FANGS
+            BLACK LOOM
           </span>
           <span style={{
             fontSize: '0.55rem',

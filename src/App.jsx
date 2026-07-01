@@ -11,61 +11,61 @@ import Checkout from './pages/Checkout';
 import TrackOrder from './pages/TrackOrder';
 import LoginGate from './components/LoginGate';
 
-// Default seeded products (Venom & Snake themed streetwear)
+// Default seeded products (Black Loom premium streetwear)
 const DEFAULT_PRODUCTS = [
   {
-    id: "viper-oversized-tee",
-    title: "VIPER OVERSIZED TEE",
+    id: "loom-oversized-tee",
+    title: "LOOM OVERSIZED TEE",
     category: "T-Shirts",
     price: 3980,
     salePrice: 2790,
-    description: "A PREMIUM STREETWEAR PIECE DECORATED WITH OUR SIGNATURE ACID-GREEN VIPER COILED ARTWORK. BULKY DROP-SHOULDER CUT ENHANCES THE SILHOUETTE, OFFERING EXTRA ROOM FOR COMFORT AND DRAPE.",
+    description: "A PREMIUM STREETWEAR PIECE DECORATED WITH OUR SIGNATURE BLACK LOOM COILED GEOMETRIC ARTWORK. BULKY DROP-SHOULDER CUT ENHANCES THE SILHOUETTE, OFFERING EXTRA ROOM FOR COMFORT AND DRAPE.",
     sizes: ["S", "M", "L", "XL", "XXL"],
     images: ["/images/viper_front.png", "/images/viper_back.png"]
   },
   {
-    id: "basilisk-fleece-hoodie",
-    title: "BASILISK FLEECE HOODIE",
+    id: "loom-fleece-hoodie",
+    title: "LOOM FLEECE HOODIE",
     category: "Hoodies",
     price: 5490,
     salePrice: 4290,
-    description: "BUILT FROM 350 GSM HEAVYWEIGHT BRUSHED FLEECE. THE BACK FEATURES THE INDUSTRIAL BASILISK METALLIC SERPENT EMBROIDERED METICULOUSLY FOR A SHARP VISUAL ATTITUDE.",
+    description: "BUILT FROM 350 GSM HEAVYWEIGHT BRUSHED FLEECE. THE BACK FEATURES THE INDUSTRIAL BLACK LOOM METALLIC EMBLEM EMBROIDERED METICULOUSLY FOR A SHARP VISUAL ATTITUDE.",
     sizes: ["S", "M", "L", "XL", "XXL"],
     images: ["/images/basilisk_front.png", "/images/basilisk_back.png"]
   },
   {
-    id: "venom-scale-crewneck",
-    title: "VENOM SCALE CREWNECK",
+    id: "loom-woven-crewneck",
+    title: "LOOM WOVEN CREWNECK",
     category: "Sweatshirts",
     price: 4980,
     salePrice: null,
-    description: "DEEP BLACK ACID WASH SWEATSHIRT FEATURING A TOXIC PURPLE SCALE PATTERN ALONG BOTH SLEEVES AND A COMPACT BRASS-EMBOSSED SERPENT ON THE FRONT CREWNECK COLLAR.",
+    description: "DEEP BLACK ACID WASH SWEATSHIRT FEATURING A TOXIC PURPLE LOOM TEXTURE PATTERN ALONG BOTH SLEEVES AND A COMPACT BRASS-EMBOSSED BLACK LOOM SCRIPT ON THE FRONT CREWNECK COLLAR.",
     sizes: ["M", "L", "XL"],
     images: ["/images/basilisk_front.png", "/images/basilisk_back.png"]
   },
   {
-    id: "cobramania-tee",
-    title: "COBRAMANIA OVERSIZED TEE",
+    id: "loom-signature-tee",
+    title: "LOOM SIGNATURE TEE",
     category: "T-Shirts",
     price: 3980,
     salePrice: 2990,
-    description: "LIMITED DROP PIECE IN CORROSIVE GREY. DESIGN REPRESENTS THE HYPNOTIC COBRA DANCE GRAPHIC METICULOUSLY PUFF SCREEN-PRINTED ON A HEAVYWEIGHT DROP SHOULDER COTTON BLEND.",
+    description: "LIMITED DROP PIECE IN CORROSIVE GREY. DESIGN REPRESENTS THE HYPNOTIC TEXTURE LOGO GRAPHIC METICULOUSLY PUFF SCREEN-PRINTED ON A HEAVYWEIGHT DROP SHOULDER COTTON BLEND.",
     sizes: ["S", "M", "L", "XL"],
     images: ["/images/viper_front.png", "/images/viper_back.png"]
   },
   {
-    id: "black-mamba-heavy-tee",
-    title: "BLACK MAMBA HEAVY TEE",
+    id: "black-loom-heavy-tee",
+    title: "BLACK LOOM HEAVY TEE",
     category: "T-Shirts",
     price: 3980,
     salePrice: null,
-    description: "MATTE BLACK FINISH T-SHIRT DEVELOPED WITH A WIDER COLLAR LINING AND OVERSIZE FITTING. MINIMALIST EMBOSSED VENUM FANGS SCRIPT ON FRONT CHEST.",
+    description: "MATTE BLACK FINISH T-SHIRT DEVELOPED WITH A WIDER COLLAR LINING AND OVERSIZE FITTING. MINIMALIST EMBOSSED BLACK LOOM SCRIPT ON FRONT CHEST.",
     sizes: ["S", "M", "L", "XL", "XXL"],
     images: ["/images/viper_front.png", "/images/viper_back.png"]
   },
   {
-    id: "acid-venom-sweatshirt",
-    title: "ACID VENOM SWEATSHIRT",
+    id: "acid-loom-sweatshirt",
+    title: "ACID LOOM SWEATSHIRT",
     category: "Sweatshirts",
     price: 4500,
     salePrice: 3200,
@@ -130,7 +130,7 @@ const DEFAULT_ORDERS = [
       postalCode: "54000"
     },
     items: [
-      { id: "viper-oversized-tee", title: "VIPER OVERSIZED TEE", selectedSize: "XL", qty: 1, price: 3980, salePrice: 2790, images: ["/images/viper_front.png"] }
+      { id: "loom-oversized-tee", title: "LOOM OVERSIZED TEE", selectedSize: "XL", qty: 1, price: 3980, salePrice: 2790, images: ["/images/viper_front.png"] }
     ],
     total: 2790,
     paymentMethod: "cod",
@@ -147,42 +147,42 @@ function App() {
   const [currentUser, setCurrentUser] = useState(null);
 
   const handleLogout = () => {
-    localStorage.removeItem('venum_fangs_user');
+    localStorage.removeItem('black_loom_user');
     setCurrentUser(null);
   };
 
   // Initialize products, cart and orders databases
   useEffect(() => {
-    const storedUser = localStorage.getItem('venum_fangs_user');
+    const storedUser = localStorage.getItem('black_loom_user');
     if (storedUser) {
       setCurrentUser(JSON.parse(storedUser));
     }
 
-    const storedProds = localStorage.getItem('venum_fangs_products');
+    const storedProds = localStorage.getItem('black_loom_products');
     if (storedProds) {
       const parsed = JSON.parse(storedProds);
       const hasNew = parsed.some(p => p.id === "eclipse-split-tee");
       if (!hasNew) {
-        localStorage.setItem('venum_fangs_products', JSON.stringify(DEFAULT_PRODUCTS));
+        localStorage.setItem('black_loom_products', JSON.stringify(DEFAULT_PRODUCTS));
         setProducts(DEFAULT_PRODUCTS);
       } else {
         setProducts(parsed);
       }
     } else {
-      localStorage.setItem('venum_fangs_products', JSON.stringify(DEFAULT_PRODUCTS));
+      localStorage.setItem('black_loom_products', JSON.stringify(DEFAULT_PRODUCTS));
       setProducts(DEFAULT_PRODUCTS);
     }
 
-    const storedCart = localStorage.getItem('venum_fangs_cart');
+    const storedCart = localStorage.getItem('black_loom_cart');
     if (storedCart) {
       setCartItems(JSON.parse(storedCart));
     }
 
-    const storedOrders = localStorage.getItem('venum_fangs_orders');
+    const storedOrders = localStorage.getItem('black_loom_orders');
     if (storedOrders) {
       setOrders(JSON.parse(storedOrders));
     } else {
-      localStorage.setItem('venum_fangs_orders', JSON.stringify(DEFAULT_ORDERS));
+      localStorage.setItem('black_loom_orders', JSON.stringify(DEFAULT_ORDERS));
       setOrders(DEFAULT_ORDERS);
     }
   }, []);
@@ -190,17 +190,17 @@ function App() {
   // Update storage helpers
   const saveProductsToStorage = (updatedList) => {
     setProducts(updatedList);
-    localStorage.setItem('venum_fangs_products', JSON.stringify(updatedList));
+    localStorage.setItem('black_loom_products', JSON.stringify(updatedList));
   };
 
   const saveCartToStorage = (updatedCart) => {
     setCartItems(updatedCart);
-    localStorage.setItem('venum_fangs_cart', JSON.stringify(updatedCart));
+    localStorage.setItem('black_loom_cart', JSON.stringify(updatedCart));
   };
 
   const saveOrdersToStorage = (updatedOrders) => {
     setOrders(updatedOrders);
-    localStorage.setItem('venum_fangs_orders', JSON.stringify(updatedOrders));
+    localStorage.setItem('black_loom_orders', JSON.stringify(updatedOrders));
   };
 
   // Cart operations
@@ -300,7 +300,7 @@ function App() {
   // Order Operations
   const handlePlaceOrder = (customerDetails, paymentMethod) => {
     const subtotal = cartItems.reduce((acc, item) => acc + (item.salePrice || item.price) * item.qty, 0);
-    const orderId = `VF-${Math.floor(1000 + Math.random() * 9000)}`;
+    const orderId = `BL-${Math.floor(1000 + Math.random() * 9000)}`;
     const newOrder = {
       id: orderId,
       date: new Date().toISOString(),

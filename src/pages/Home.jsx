@@ -129,7 +129,7 @@ const Home = ({ products, onQuickAdd }) => {
             marginBottom: '0.75rem',
             opacity: 0.8
           }}>
-            DROP I: CORROSIVE FANGS
+            DROP I: BLACK LOOM
           </span>
           <h2 style={{
             fontFamily: 'var(--font-sans)',
@@ -141,7 +141,7 @@ const Home = ({ products, onQuickAdd }) => {
             color: '#fff',
             textTransform: 'uppercase'
           }}>
-            VENOMOUS SILHOUETTES
+            PREMIUM WEAVES
           </h2>
           <p style={{
             fontSize: '0.8rem',
