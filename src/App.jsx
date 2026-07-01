@@ -21,7 +21,7 @@ const DEFAULT_PRODUCTS = [
     salePrice: 2790,
     description: "A PREMIUM STREETWEAR PIECE DECORATED WITH OUR SIGNATURE BLACK LOOM COILED GEOMETRIC ARTWORK. BULKY DROP-SHOULDER CUT ENHANCES THE SILHOUETTE, OFFERING EXTRA ROOM FOR COMFORT AND DRAPE.",
     sizes: ["S", "M", "L", "XL", "XXL"],
-    images: ["/images/viper_front.png", "/images/viper_back.png"]
+    images: ["/images/loom_tee_front.png", "/images/loom_tee_back.png"]
   },
   {
     id: "loom-fleece-hoodie",
@@ -31,7 +31,7 @@ const DEFAULT_PRODUCTS = [
     salePrice: 4290,
     description: "BUILT FROM 350 GSM HEAVYWEIGHT BRUSHED FLEECE. THE BACK FEATURES THE INDUSTRIAL BLACK LOOM METALLIC EMBLEM EMBROIDERED METICULOUSLY FOR A SHARP VISUAL ATTITUDE.",
     sizes: ["S", "M", "L", "XL", "XXL"],
-    images: ["/images/basilisk_front.png", "/images/basilisk_back.png"]
+    images: ["/images/loom_hoodie_front.png", "/images/loom_hoodie_back.png"]
   },
   {
     id: "loom-woven-crewneck",
@@ -41,7 +41,7 @@ const DEFAULT_PRODUCTS = [
     salePrice: null,
     description: "DEEP BLACK ACID WASH SWEATSHIRT FEATURING A TOXIC PURPLE LOOM TEXTURE PATTERN ALONG BOTH SLEEVES AND A COMPACT BRASS-EMBOSSED BLACK LOOM SCRIPT ON THE FRONT CREWNECK COLLAR.",
     sizes: ["M", "L", "XL"],
-    images: ["/images/basilisk_front.png", "/images/basilisk_back.png"]
+    images: ["/images/loom_crewneck.png", "/images/loom_crewneck.png"]
   },
   {
     id: "loom-signature-tee",
@@ -51,7 +51,7 @@ const DEFAULT_PRODUCTS = [
     salePrice: 2990,
     description: "LIMITED DROP PIECE IN CORROSIVE GREY. DESIGN REPRESENTS THE HYPNOTIC TEXTURE LOGO GRAPHIC METICULOUSLY PUFF SCREEN-PRINTED ON A HEAVYWEIGHT DROP SHOULDER COTTON BLEND.",
     sizes: ["S", "M", "L", "XL"],
-    images: ["/images/viper_front.png", "/images/viper_back.png"]
+    images: ["/images/loom_tee_front.png", "/images/loom_tee_back.png"]
   },
   {
     id: "black-loom-heavy-tee",
@@ -61,7 +61,7 @@ const DEFAULT_PRODUCTS = [
     salePrice: null,
     description: "MATTE BLACK FINISH T-SHIRT DEVELOPED WITH A WIDER COLLAR LINING AND OVERSIZE FITTING. MINIMALIST EMBOSSED BLACK LOOM SCRIPT ON FRONT CHEST.",
     sizes: ["S", "M", "L", "XL", "XXL"],
-    images: ["/images/viper_front.png", "/images/viper_back.png"]
+    images: ["/images/loom_tee_front.png", "/images/loom_tee_back.png"]
   },
   {
     id: "acid-loom-sweatshirt",
@@ -71,7 +71,7 @@ const DEFAULT_PRODUCTS = [
     salePrice: 3200,
     description: "FEATURING TOXIC GREEN SPLATTERS SCATTERED OVER AN INTENSE BRUSHED CHARCOAL SWEATSHIRT BASE. COMFORTABLE DOUBLE NEEDLE SEAMS AND DURABLE COLLAR RIBS.",
     sizes: ["S", "M", "L", "XL"],
-    images: ["/images/basilisk_front.png", "/images/basilisk_back.png"]
+    images: ["/images/loom_crewneck.png", "/images/loom_crewneck.png"]
   },
   {
     id: "eclipse-split-tee",
@@ -161,8 +161,8 @@ function App() {
     const storedProds = localStorage.getItem('black_loom_products');
     if (storedProds) {
       const parsed = JSON.parse(storedProds);
-      const hasNew = parsed.some(p => p.id === "eclipse-split-tee");
-      if (!hasNew) {
+      const hasNewImages = parsed.some(p => p.images && p.images[0] && p.images[0].includes('loom_tee'));
+      if (!hasNewImages) {
         localStorage.setItem('black_loom_products', JSON.stringify(DEFAULT_PRODUCTS));
         setProducts(DEFAULT_PRODUCTS);
       } else {
