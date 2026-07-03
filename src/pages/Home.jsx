@@ -6,6 +6,7 @@ const Home = ({ products, onQuickAdd }) => {
   const [searchParams] = useSearchParams();
   const categoryFilter = searchParams.get('category');
   const navigate = useNavigate();
+  const [showManifesto, setShowManifesto] = React.useState(false);
 
   const filteredProducts = categoryFilter 
     ? products.filter(p => p.category.toLowerCase() === categoryFilter.toLowerCase())
@@ -365,95 +366,180 @@ const Home = ({ products, onQuickAdd }) => {
       {/* Brand Story SEO Section */}
       <section style={{ 
         borderTop: '1px solid var(--border-color)', 
-        padding: '5rem 1rem',
-        backgroundColor: 'var(--bg-secondary)'
+        padding: '5rem 1.5rem',
+        backgroundColor: 'var(--bg-secondary)',
+        fontFamily: 'var(--font-sans)'
       }} id="about-brand">
         <div className="container" style={{ maxWidth: '800px', margin: '0 auto' }}>
           
-          <span style={{
-            fontSize: '0.625rem',
-            fontWeight: 800,
-            letterSpacing: '0.2em',
-            textTransform: 'uppercase',
-            color: 'var(--text-muted)',
-            display: 'block',
-            marginBottom: '1rem',
-            textAlign: 'center'
-          }}>
-            THE BRAND STORY
-          </span>
-
-          <div className="brand-seo-content" style={{
-            color: 'var(--text-secondary)',
-            fontSize: '0.85rem',
-            lineHeight: '1.8',
-            fontFamily: 'var(--font-sans)',
-            textAlign: 'left'
-          }}>
-            <h2 style={{
+          <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+            <span style={{
+              fontSize: '0.625rem',
+              fontWeight: 800,
+              letterSpacing: '0.3em',
+              textTransform: 'uppercase',
+              color: 'var(--text-muted)',
+              display: 'block',
+              marginBottom: '0.75rem'
+            }}>
+              Brand Manifesto
+            </span>
+            <h1 style={{
               fontFamily: '"Didot", "Bodoni MT", "Georgia", serif',
-              fontSize: '1.75rem',
+              fontSize: '1.8rem',
               fontWeight: 900,
               color: 'var(--text-primary)',
               letterSpacing: '0.05em',
               textTransform: 'uppercase',
-              marginBottom: '1.5rem',
-              textAlign: 'center'
+              margin: '0 0 1rem 0',
+              lineHeight: '1.2'
             }}>
-              BLACK LOOM: PREMIUM STREETWEAR IN PAKISTAN
+              Blackloom: The Apex of Streetwear in Pakistan
+            </h1>
+            <h2 style={{
+              fontSize: '0.95rem',
+              fontWeight: 600,
+              color: 'var(--text-secondary)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              margin: '0 0 2rem 0'
+            }}>
+              Premium Weaves: Apparel in Its Most Extreme Form
             </h2>
+          </div>
 
-            <p style={{ marginBottom: '1.5rem', fontSize: '0.9rem' }}>
-              Blackloom stands as the definitive <strong>premium streetwear brand</strong> in Pakistan, offering discerning gentlemen apparel in its most extreme and refined form. Our collections are a testament to superior craftsmanship, featuring heavyweight fabrics, unique acid wash textures, and detailed puff-print embellishments that set a new standard for <strong>urban clothing pakistan</strong>.
+          <div className="brand-seo-content" style={{
+            color: 'var(--text-secondary)',
+            fontSize: '0.875rem',
+            lineHeight: '1.8',
+            textAlign: 'left'
+          }}>
+            <p style={{ marginBottom: '1.5rem', fontSize: '0.95rem', color: 'var(--text-primary)', fontWeight: 500 }}>
+              Blackloom redefines the fashion landscape as the definitive <strong>premium streetwear brand</strong> in Pakistan. We invite discerning gentlemen to experience apparel that transcends the ordinary.
             </p>
-
-            <h3 style={{
-              fontSize: '1.1rem',
-              fontWeight: 700,
-              color: 'var(--text-primary)',
-              textTransform: 'uppercase',
-              marginTop: '2.5rem',
-              marginBottom: '1rem',
-              letterSpacing: '0.05em'
-            }}>
-              Elevate Your Wardrobe with Our Signature Collections
-            </h3>
-            
-            <p style={{ marginBottom: '1.5rem' }}>
-              As a leading <strong>online clothing brand pakistan</strong>, we provide an exclusive selection of garments designed for the modern man. From iconic <strong>drop shoulder t-shirts</strong> to robust heavyweight hoodies, our apparel merges avant-garde aesthetics with unparalleled comfort and durability. Explore our curated ranges to find pieces that resonate with a powerful and sophisticated style.
-            </p>
-
-            <h3 style={{
-              fontSize: '1.1rem',
-              fontWeight: 700,
-              color: 'var(--text-primary)',
-              textTransform: 'uppercase',
-              marginTop: '2.5rem',
-              marginBottom: '1rem',
-              letterSpacing: '0.05em'
-            }}>
-              The Definitive Source for Men's Streetwear Online
-            </h3>
 
             <p style={{ marginBottom: '1.5rem' }}>
-              Our commitment is to deliver an exceptional online shopping experience for <strong>men's streetwear online</strong>. We specialize in essential pieces that form the cornerstone of any contemporary wardrobe. Discover our highly sought-after <strong>oversized t-shirts pakistan</strong>, meticulously crafted to offer a contemporary silhouette without compromising on quality. Each item reflects our dedication to the art of <strong>designer streetwear</strong>.
+              Our collections are a testament to superior craftsmanship, featuring heavyweight fabrics, unique acid wash textures, and detailed puff-print embellishments. Each piece is meticulously designed to offer an unparalleled statement of style and quality, setting a new standard for high-end urban fashion.
             </p>
 
-            <h3 style={{
-              fontSize: '1.1rem',
-              fontWeight: 700,
-              color: 'var(--text-primary)',
-              textTransform: 'uppercase',
-              marginTop: '2.5rem',
-              marginBottom: '1rem',
-              letterSpacing: '0.05em'
+            {/* Collapsible Content */}
+            <div style={{
+              maxHeight: showManifesto ? '2500px' : '0px',
+              overflow: 'hidden',
+              transition: 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
+              opacity: showManifesto ? 1 : 0
             }}>
-              Unmatched Quality: Heavyweight Hoodies and Fleece
-            </h3>
+              <h2 style={{
+                fontSize: '1.1rem',
+                fontWeight: 700,
+                color: 'var(--text-primary)',
+                textTransform: 'uppercase',
+                marginTop: '2rem',
+                marginBottom: '1rem',
+                letterSpacing: '0.05em',
+                borderBottom: '1px solid var(--border-color)',
+                paddingBottom: '0.3rem'
+              }}>
+                Discover Our Signature Collections
+              </h2>
+              <p style={{ marginBottom: '1.5rem' }}>
+                As a leading destination for <strong>streetwear Pakistan</strong>, we offer an exclusive selection of garments conceived for the modern man. Our commitment to excellence is evident in every thread, from our iconic heavyweight hoodies to our sought-after oversized t-shirts. We offer a curated experience for those who demand the best.
+              </p>
 
-            <p style={{ marginBottom: '1.5rem' }}>
-              Brave the elements in style with our signature <strong>heavyweight hoodies pakistan</strong>. Engineered for both warmth and a formidable presence, these garments are a staple of authentic <strong>streetwear pakistan</strong>. For supreme comfort, explore our range of <strong>fleece hoodies online</strong>, constructed from premium materials to provide superior softness and a luxurious feel.
-            </p>
+              <h3 style={{
+                fontSize: '0.95rem',
+                fontWeight: 700,
+                color: 'var(--text-primary)',
+                textTransform: 'uppercase',
+                marginTop: '1.5rem',
+                marginBottom: '0.75rem',
+                letterSpacing: '0.05em'
+              }}>
+                The Definitive Source for Oversized T-Shirts in Pakistan
+              </h3>
+              <p style={{ marginBottom: '1.5rem' }}>
+                Our collection of <strong>oversized t-shirts pakistan</strong> is crafted for superior comfort and a formidable silhouette. Made from premium, heavyweight cotton, these tees provide a structured yet relaxed fit, making them a cornerstone of any contemporary wardrobe. Explore various designs, from minimalist signature tees to bold, graphic-embellished pieces that capture the essence of modern streetwear.
+              </p>
+
+              <h3 style={{
+                fontSize: '0.95rem',
+                fontWeight: 700,
+                color: 'var(--text-primary)',
+                textTransform: 'uppercase',
+                marginTop: '1.5rem',
+                marginBottom: '0.75rem',
+                letterSpacing: '0.05em'
+              }}>
+                Unrivaled Quality and Design
+              </h3>
+              <p style={{ marginBottom: '1.5rem' }}>
+                Blackloom stands apart as a <strong>premium streetwear brand</strong> committed to innovation and quality. Our design philosophy merges raw, contrasting forces with refined aesthetics. The Eclipse Collection, for example, explores the collision of absolute dark and stark white silhouettes through distressed and smoke-inspired textures, delivering a powerful visual narrative. When you choose Blackloom, you choose a brand that elevates <strong>streetwear Pakistan</strong> to an art form.
+              </p>
+
+              <h2 style={{
+                fontSize: '1.1rem',
+                fontWeight: 700,
+                color: 'var(--text-primary)',
+                textTransform: 'uppercase',
+                marginTop: '2rem',
+                marginBottom: '1rem',
+                letterSpacing: '0.05em',
+                borderBottom: '1px solid var(--border-color)',
+                paddingBottom: '0.3rem'
+              }}>
+                Why Choose Blackloom?
+              </h2>
+              <ul style={{ 
+                listStyle: 'none', 
+                padding: 0, 
+                margin: '0 0 1.5rem 0',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '1rem'
+              }}>
+                <li style={{ paddingLeft: '1.5rem', position: 'relative' }}>
+                  <span style={{ position: 'absolute', left: 0, color: 'var(--text-primary)' }}>•</span>
+                  <strong>Exceptional Fabrics:</strong> We utilize only premium, heavyweight materials for lasting comfort and durability.
+                </li>
+                <li style={{ paddingLeft: '1.5rem', position: 'relative' }}>
+                  <span style={{ position: 'absolute', left: 0, color: 'var(--text-primary)' }}>•</span>
+                  <strong>Exclusive Designs:</strong> Our collections feature unique acid washes, puff-prints, and curated aesthetics you will not find elsewhere.
+                </li>
+                <li style={{ paddingLeft: '1.5rem', position: 'relative' }}>
+                  <span style={{ position: 'absolute', left: 0, color: 'var(--text-primary)' }}>•</span>
+                  <strong>The Ultimate Fit:</strong> From drop shoulder tees to perfectly proportioned hoodies, every garment is designed for a modern, commanding fit.
+                </li>
+                <li style={{ paddingLeft: '1.5rem', position: 'relative' }}>
+                  <span style={{ position: 'absolute', left: 0, color: 'var(--text-primary)' }}>•</span>
+                  <strong>Trusted by Fashion Connoisseurs:</strong> Blackloom is the preferred choice for men seeking the finest <strong>oversized t-shirts pakistan</strong> and premium apparel.
+                </li>
+              </ul>
+            </div>
+
+            {/* Toggle Button */}
+            <div style={{ textAlign: 'center', marginTop: '2rem' }}>
+              <button 
+                onClick={() => setShowManifesto(!showManifesto)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--text-primary)',
+                  fontSize: '0.72rem',
+                  fontWeight: 600,
+                  letterSpacing: '0.15em',
+                  textTransform: 'uppercase',
+                  cursor: 'pointer',
+                  padding: '0.5rem 1rem',
+                  borderBottom: '1px solid var(--text-primary)',
+                  fontFamily: 'var(--font-sans)',
+                  transition: 'opacity 0.2s'
+                }}
+                onMouseOver={(e) => e.target.style.opacity = '0.7'}
+                onMouseOut={(e) => e.target.style.opacity = '1'}
+              >
+                {showManifesto ? 'Collapse Story -' : 'Read Full Manifesto +'}
+              </button>
+            </div>
 
           </div>
         </div>
