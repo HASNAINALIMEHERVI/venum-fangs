@@ -9,6 +9,7 @@ import ProductDetail from './pages/ProductDetail';
 import Admin from './pages/Admin';
 import Checkout from './pages/Checkout';
 import TrackOrder from './pages/TrackOrder';
+import Account from './pages/Account';
 import LoginGate from './components/LoginGate';
 
 // Firebase imports
@@ -150,6 +151,7 @@ function App() {
   const [cartNotes, setCartNotes] = useState('');
   const [cartOpen, setCartOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  const [showLogin, setShowLogin] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -410,8 +412,16 @@ function App() {
     <Router>
       <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', position: 'relative' }}>
         
-        {/* Enforce Login Gate if not authenticated */}
-        {!currentUser && <LoginGate onLogin={setCurrentUser} />}
+        {/* Login Modal (only shown when triggered) */}
+        {showLogin && !currentUser && (
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9998 }}>
+            <div 
+              onClick={() => setShowLogin(false)} 
+              style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
+            />
+            <LoginGate onLogin={(user) => { setCurrentUser(user); setShowLogin(false); }} />
+          </div>
+        )}
 
         {/* Banner ticker top */}
         <AnnouncementBar />
@@ -467,6 +477,17 @@ function App() {
             <Route 
               path="/track" 
               element={<TrackOrder orders={orders} />} 
+            />
+
+            <Route 
+              path="/account" 
+              element={
+                <Account 
+                  currentUser={currentUser} 
+                  onLogout={handleLogout}
+                  onLoginClick={() => setShowLogin(true)}
+                />
+              } 
             />
           </Routes>
         </main>

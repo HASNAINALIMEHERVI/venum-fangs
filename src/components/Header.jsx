@@ -84,37 +84,13 @@ const Header = ({ cartCount, onCartClick, products, currentUser, onLogout }) => 
               <Search size={18} strokeWidth={1.5} />
             </button>
 
-            {currentUser && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginRight: '0.2rem' }}>
-                <span style={{ 
-                  fontSize: '0.625rem', 
-                  fontWeight: 600, 
-                  letterSpacing: '0.08em', 
-                  textTransform: 'uppercase',
-                  color: 'var(--text-secondary)'
-                }}>
-                  HI, {currentUser.name.split(' ')[0]}
-                </span>
-                <button 
-                  onClick={onLogout}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: 'var(--text-muted)',
-                    cursor: 'pointer',
-                    fontSize: '0.6rem',
-                    fontWeight: 700,
-                    letterSpacing: '0.08em',
-                    textTransform: 'uppercase',
-                    padding: 0,
-                    transition: 'color 0.2s'
-                  }}
-                  className="icon-btn"
-                >
-                  LOGOUT
-                </button>
-              </div>
-            )}
+            <Link
+              to="/account"
+              style={{ background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center', transition: 'opacity 0.2s', textDecoration: 'none' }}
+              className="icon-btn"
+            >
+              <User size={18} strokeWidth={1.5} />
+            </Link>
 
             <button 
               onClick={onCartClick} 
@@ -312,6 +288,7 @@ const Header = ({ cartCount, onCartClick, products, currentUser, onLogout }) => 
               <Link to="/?category=Sweatshirts" onClick={() => setMobileMenuOpen(false)} style={{ color: 'var(--text-primary)', textDecoration: 'none', fontSize: '0.8rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase' }}>SWEATSHIRTS</Link>
               <Link to="/track" onClick={() => setMobileMenuOpen(false)} style={{ color: 'var(--text-primary)', textDecoration: 'none', fontSize: '0.8rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase' }}>TRACK ORDER</Link>
               <a href="#contact" onClick={() => setMobileMenuOpen(false)} style={{ color: 'var(--text-primary)', textDecoration: 'none', fontSize: '0.8rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase' }}>CONTACT</a>
+              <Link to="/account" onClick={() => setMobileMenuOpen(false)} style={{ color: 'var(--text-primary)', textDecoration: 'none', fontSize: '0.8rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase' }}>MY ACCOUNT</Link>
             </nav>
             
             <div style={{ marginTop: 'auto', borderTop: '1px solid var(--border-color)', paddingTop: '1.5rem' }}>
