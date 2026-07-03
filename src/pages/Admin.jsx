@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
-import { Upload, Trash2, Edit2, Plus, Check, ShoppingBag, User, MapPin, Phone, Mail, Clock, ShieldCheck } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Upload, Trash2, Edit2, Plus, Check, ShoppingBag, User, MapPin, Phone, Mail, Clock, ShieldCheck, Send } from 'lucide-react';
+import { collection, getDocs, orderBy, query } from "firebase/firestore";
+import { db } from "../firebase";
 
 const Admin = ({ 
   products, 
@@ -14,7 +16,7 @@ const Admin = ({
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     return sessionStorage.getItem('admin_authenticated') === 'true';
   });
-  const [activeTab, setActiveTab] = useState('products'); // 'products' or 'orders'
+  const [activeTab, setActiveTab] = useState('products'); // 'products', 'orders', 'settings', 'newsletter'
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({
     title: '',
@@ -132,6 +134,96 @@ const Admin = ({
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  // --- NEWSLETTER LOGIC ---
+  const [subscribers, setSubscribers] = useState([]);
+  const [loadingSubscribers, setLoadingSubscribers] = useState(false);
+  const [newsletterSubject, setNewsletterSubject] = useState('');
+  const [newsletterBody, setNewsletterBody] = useState('');
+  const [sendingNewsletter, setSendingNewsletter] = useState(false);
+  const [newsletterStatus, setNewsletterStatus] = useState('');
+
+  useEffect(() => {
+    if (activeTab === 'newsletter') {
+      const fetchSubscribers = async () => {
+        setLoadingSubscribers(true);
+        try {
+          const q = query(collection(db, "newsletter_subscribers"), orderBy("subscribedAt", "desc"));
+          const querySnapshot = await getDocs(q);
+          const subs = [];
+          querySnapshot.forEach((doc) => {
+            subs.push({ id: doc.id, ...doc.data() });
+          });
+          // Remove duplicates based on email
+          const uniqueSubs = Array.from(new Map(subs.map(item => [item.email, item])).values());
+          setSubscribers(uniqueSubs);
+        } catch (error) {
+          console.error("Error fetching subscribers:", error);
+        }
+        setLoadingSubscribers(false);
+      };
+      fetchSubscribers();
+    }
+  }, [activeTab]);
+
+  const handleSendNewsletter = async (e) => {
+    e.preventDefault();
+    if (subscribers.length === 0) {
+      alert("No subscribers found!");
+      return;
+    }
+    if (!newsletterSubject || !newsletterBody) {
+      alert("Please enter subject and message.");
+      return;
+    }
+
+    const serviceId = localStorage.getItem('emailjs_service_id');
+    const templateId = localStorage.getItem('emailjs_template_id'); // Ensure this template exists in EmailJS for general emails
+    const publicKey = localStorage.getItem('emailjs_public_key');
+
+    if (!serviceId || serviceId === 'YOUR_SERVICE_ID') {
+      alert("Please configure EmailJS in Store Settings first.");
+      return;
+    }
+
+    const confirmed = window.confirm(`Are you sure you want to send this email to ${subscribers.length} subscribers?`);
+    if (!confirmed) return;
+
+    setSendingNewsletter(true);
+    setNewsletterStatus('Sending...');
+
+    let successCount = 0;
+    
+    // In a real production app, you'd want a backend to send bulk emails.
+    // Doing it frontend like this has rate limits, but it works for small lists.
+    for (const sub of subscribers) {
+      try {
+        const res = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            service_id: serviceId,
+            template_id: templateId, // Using the same template or ideally a specific one for newsletters
+            user_id: publicKey,
+            template_params: {
+              to_email: sub.email,
+              subject: newsletterSubject,
+              message: newsletterBody, // Need to make sure the EmailJS template has {{message}} tag
+              customer_email: sub.email // Just in case it's required by the existing template
+            }
+          })
+        });
+        if (res.ok) successCount++;
+      } catch (err) {
+        console.error("Error sending to " + sub.email, err);
+      }
+    }
+
+    setSendingNewsletter(false);
+    setNewsletterStatus(`Successfully sent to ${successCount} out of ${subscribers.length} subscribers.`);
+    setNewsletterSubject('');
+    setNewsletterBody('');
   };
 
   if (!isAuthenticated) {
@@ -254,6 +346,23 @@ const Admin = ({
               }}
             >
               STORE SETTINGS
+            </button>
+            <button 
+              onClick={() => setActiveTab('newsletter')} 
+              style={{
+                background: activeTab === 'newsletter' ? 'var(--bg-primary)' : 'transparent',
+                color: activeTab === 'newsletter' ? 'var(--accent)' : 'var(--text-secondary)',
+                border: 'none',
+                padding: '0.6rem 1.25rem',
+                fontSize: '0.75rem',
+                fontWeight: 800,
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+            >
+              NEWSLETTER ({subscribers.length > 0 ? subscribers.length : '...'})
             </button>
           </div>
         </div>
@@ -879,6 +988,138 @@ const Admin = ({
                 <li>Go to <strong>"Account"</strong> (or <strong>"API Keys"</strong>) and copy the <strong>Public Key</strong>.</li>
                 <li>Paste these keys here, click <strong>Save</strong>, and you're good to go! New orders will now alert you instantly by email.</li>
               </ol>
+            </div>
+          </div>
+        )}
+
+        {/* Tab 4: Newsletter */}
+        {activeTab === 'newsletter' && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '3rem' }} className="admin-grid">
+            
+            {/* Left: Compose Email */}
+            <div style={{
+              background: 'var(--bg-secondary)',
+              border: '1px solid var(--border-color)',
+              padding: '2rem'
+            }}>
+              <h2 style={{
+                fontFamily: 'Outfit',
+                fontSize: '1.25rem',
+                fontWeight: 800,
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                marginBottom: '1.5rem',
+                color: 'var(--text-primary)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}>
+                <Send size={20} style={{ color: 'var(--accent)' }} />
+                COMPOSE NEWSLETTER
+              </h2>
+
+              <form onSubmit={handleSendNewsletter} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.1em', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>EMAIL SUBJECT *</label>
+                  <input 
+                    type="text" 
+                    placeholder="E.G. NEW WINTER COLLECTION DROPPING SOON!"
+                    value={newsletterSubject}
+                    onChange={e => setNewsletterSubject(e.target.value)}
+                    required
+                    style={inputStyle}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.1em', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>EMAIL MESSAGE *</label>
+                  <textarea 
+                    placeholder="Write your promotional message here..."
+                    value={newsletterBody}
+                    onChange={e => setNewsletterBody(e.target.value)}
+                    required
+                    style={{ ...inputStyle, minHeight: '200px', resize: 'vertical' }}
+                  />
+                  <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
+                    <strong>Note:</strong> Ensure your EmailJS template uses the <code>&#123;&#123;message&#125;&#125;</code> and <code>&#123;&#123;subject&#125;&#125;</code> tags to display this content.
+                  </p>
+                </div>
+
+                <button 
+                  type="submit" 
+                  className="btn-primary" 
+                  style={{ width: '100%', padding: '1rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }}
+                  disabled={sendingNewsletter || subscribers.length === 0}
+                >
+                  {sendingNewsletter ? 'SENDING TO SUBSCRIBERS...' : 'SEND TO ALL SUBSCRIBERS'}
+                </button>
+                {newsletterStatus && (
+                  <div style={{ textAlign: 'center', fontSize: '0.8rem', color: 'var(--accent)', marginTop: '0.5rem' }}>
+                    {newsletterStatus}
+                  </div>
+                )}
+              </form>
+            </div>
+
+            {/* Right: Subscribers List */}
+            <div>
+              <h2 style={{
+                fontFamily: 'Outfit',
+                fontSize: '1.25rem',
+                fontWeight: 800,
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                marginBottom: '1.5rem',
+                color: 'var(--text-primary)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}>
+                <User size={20} style={{ color: 'var(--text-secondary)' }} />
+                SUBSCRIBERS ({subscribers.length})
+              </h2>
+
+              {loadingSubscribers ? (
+                <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>LOADING SUBSCRIBERS...</div>
+              ) : subscribers.length === 0 ? (
+                <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem', border: '1px dashed var(--border-color)' }}>
+                  NO SUBSCRIBERS YET
+                </div>
+              ) : (
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.5rem',
+                  maxHeight: '600px',
+                  overflowY: 'auto'
+                }}>
+                  {subscribers.map((sub, index) => (
+                    <div key={sub.id || index} style={{
+                      padding: '1rem',
+                      background: 'var(--bg-secondary)',
+                      border: '1px solid var(--border-color)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '1rem'
+                    }}>
+                      <div style={{
+                        width: '32px', height: '32px', borderRadius: '50%',
+                        background: 'var(--bg-primary)', border: '1px solid var(--border-color)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        color: 'var(--text-secondary)'
+                      }}>
+                        <Mail size={14} />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>{sub.email}</div>
+                        <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+                          SUBSCRIBED: {sub.subscribedAt?.toDate ? sub.subscribedAt.toDate().toLocaleDateString() : 'Recently'}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}

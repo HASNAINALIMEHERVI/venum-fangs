@@ -1,7 +1,35 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { db } from "../firebase";
 
 const Footer = () => {
+  const [email, setEmail] = useState('');
+  const [status, setStatus] = useState('idle'); // idle, loading, success, error
+
+  const handleSubscribe = async (e) => {
+    e.preventDefault();
+    if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+      alert("Please enter a valid email address.");
+      return;
+    }
+
+    setStatus('loading');
+    try {
+      await addDoc(collection(db, "newsletter_subscribers"), {
+        email: email,
+        subscribedAt: serverTimestamp()
+      });
+      setStatus('success');
+      setEmail('');
+      setTimeout(() => setStatus('idle'), 3000);
+    } catch (err) {
+      console.error("Error subscribing:", err);
+      setStatus('error');
+      setTimeout(() => setStatus('idle'), 3000);
+    }
+  };
+
   return (
     <footer style={{
       backgroundColor: '#ffffff',
@@ -88,10 +116,13 @@ const Footer = () => {
             textTransform: 'uppercase'
           }}>Newsletter</h4>
           <p style={{ marginBottom: '1rem', lineHeight: 1.6, fontSize: '0.78rem', color: 'var(--text-secondary)' }}>SUBSCRIBE FOR UPDATES ON NEW RELEASES AND EXCLUSIVE OFFERS.</p>
-          <div style={{ display: 'flex', gap: '0px' }}>
+          <form onSubmit={handleSubscribe} style={{ display: 'flex', gap: '0px' }}>
             <input 
               type="email" 
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               placeholder="ENTER YOUR EMAIL" 
+              disabled={status === 'loading' || status === 'success'}
               style={{
                 flex: 1,
                 background: '#fff',
@@ -105,11 +136,15 @@ const Footer = () => {
                 borderRight: 'none'
               }}
             />
-            <button style={{
-              background: '#121212',
-              border: '1px solid #121212',
+            <button 
+              type="submit"
+              disabled={status === 'loading' || status === 'success'}
+              style={{
+              background: status === 'success' ? '#16a34a' : '#121212',
+              border: '1px solid',
+              borderColor: status === 'success' ? '#16a34a' : '#121212',
               color: '#fff',
-              cursor: 'pointer',
+              cursor: status === 'success' || status === 'loading' ? 'default' : 'pointer',
               fontWeight: 500,
               fontSize: '0.68rem',
               borderRadius: '0px',
@@ -118,8 +153,11 @@ const Footer = () => {
               letterSpacing: '0.08em',
               textTransform: 'uppercase',
               transition: 'all 0.2s'
-            }} className="newsletter-btn">Join</button>
-          </div>
+            }} className={status === 'success' ? '' : 'newsletter-btn'}>
+              {status === 'loading' ? '...' : status === 'success' ? '✓' : 'Join'}
+            </button>
+          </form>
+          {status === 'error' && <p style={{ color: 'red', fontSize: '0.7rem', marginTop: '0.5rem' }}>Failed to subscribe. Please try again.</p>}
         </div>
       </div>
 
