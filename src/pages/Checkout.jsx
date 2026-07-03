@@ -1,8 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle, ShoppingBag, ArrowLeft, CreditCard, ShieldCheck } from 'lucide-react';
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "../firebase";
 
-const Checkout = ({ cartItems, onClearCart, onPlaceOrder }) => {
+const PROVINCES = ['Punjab', 'Sindh', 'KPK', 'Balochistan', 'Islamabad', 'AJK', 'Gilgit-Baltistan'];
+
+const Checkout = ({ cartItems, onClearCart, onPlaceOrder, currentUser }) => {
   const navigate = useNavigate();
   const [shippingMethod, setShippingMethod] = useState('cod'); // cod or card
   const [completed, setCompleted] = useState(false);
@@ -14,10 +18,47 @@ const Checkout = ({ cartItems, onClearCart, onPlaceOrder }) => {
     address: '',
     apartment: '',
     city: '',
-    province: '',
+    province: 'Punjab',
     postalCode: '',
     country: 'Pakistan'
   });
+
+  // Auto-fill from saved Firestore profile
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const loadProfile = async () => {
+      try {
+        const profileRef = doc(db, "profiles", currentUser.uid);
+        const profileSnap = await getDoc(profileRef);
+        if (profileSnap.exists()) {
+          const p = profileSnap.data();
+          setFormData(prev => ({
+            ...prev,
+            email: currentUser.email || prev.email,
+            firstName: p.firstName || prev.firstName,
+            lastName: p.lastName || prev.lastName,
+            phone: p.phone || prev.phone,
+            address: p.address || prev.address,
+            city: p.city || prev.city,
+            province: p.province || prev.province,
+            postalCode: p.postalCode || prev.postalCode,
+            country: p.country || prev.country
+          }));
+        } else {
+          // At least fill email from auth
+          setFormData(prev => ({
+            ...prev,
+            email: currentUser.email || prev.email
+          }));
+        }
+      } catch (err) {
+        console.error("Error loading profile for checkout:", err);
+      }
+    };
+
+    loadProfile();
+  }, [currentUser]);
 
   const subtotal = cartItems.reduce((acc, item) => {
     const price = item.salePrice || item.price;
@@ -185,15 +226,17 @@ const Checkout = ({ cartItems, onClearCart, onPlaceOrder }) => {
                       required
                       style={inputStyle}
                     />
-                    <input 
-                      type="text" 
+                    <select
                       name="province"
-                      placeholder="PROVINCE / STATE" 
                       value={formData.province}
                       onChange={handleInputChange}
                       required
-                      style={inputStyle}
-                    />
+                      style={{ ...inputStyle, cursor: 'pointer' }}
+                    >
+                      {PROVINCES.map(p => (
+                        <option key={p} value={p}>{p.toUpperCase()}</option>
+                      ))}
+                    </select>
                   </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
@@ -212,7 +255,8 @@ const Checkout = ({ cartItems, onClearCart, onPlaceOrder }) => {
                       value={formData.country}
                       onChange={handleInputChange}
                       required
-                      style={inputStyle}
+                      style={{ ...inputStyle, color: 'var(--text-muted)' }}
+                      disabled
                     />
                   </div>
                 </div>

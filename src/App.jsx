@@ -470,7 +470,8 @@ function App() {
                 <Checkout 
                   cartItems={cartItems} 
                   onClearCart={handleClearCart} 
-                  onPlaceOrder={handlePlaceOrder} 
+                  onPlaceOrder={handlePlaceOrder}
+                  currentUser={currentUser}
                 />
               } 
             />
@@ -507,6 +508,37 @@ function App() {
           cartNotes={cartNotes}
           onNotesChange={setCartNotes}
         />
+
+        {/* Floating WhatsApp Button */}
+        <a
+          href="https://wa.me/923709539945?text=Hi%20Black%20Loom!%20I%20have%20a%20question."
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            position: 'fixed',
+            bottom: '24px',
+            right: '24px',
+            width: '54px',
+            height: '54px',
+            borderRadius: '50%',
+            backgroundColor: '#25D366',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 4px 12px rgba(37, 211, 102, 0.4)',
+            zIndex: 9000,
+            transition: 'transform 0.2s, box-shadow 0.2s',
+            textDecoration: 'none'
+          }}
+          onMouseOver={(e) => { e.currentTarget.style.transform = 'scale(1.1)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(37, 211, 102, 0.5)'; }}
+          onMouseOut={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(37, 211, 102, 0.4)'; }}
+          aria-label="Chat on WhatsApp"
+        >
+          <svg viewBox="0 0 32 32" width="28" height="28" fill="#fff">
+            <path d="M16.004 0h-.008C7.174 0 0 7.176 0 16.004c0 3.5 1.128 6.744 3.046 9.378L1.054 31.29l6.118-1.958a15.9 15.9 0 008.832 2.672C24.824 32 32 24.824 32 16.004 32 7.176 24.824 0 16.004 0zm9.342 22.622c-.39 1.1-1.932 2.014-3.156 2.28-.838.18-1.932.322-5.618-1.208-4.714-1.956-7.752-6.74-7.988-7.054-.228-.314-1.904-2.536-1.904-4.838s1.2-3.432 1.632-3.904c.39-.428 1.022-.624 1.624-.624.196 0 .372.01.53.018.468.02.702.048.98.762.352.888 1.208 2.94 1.312 3.156.106.218.212.51.066.798-.136.296-.254.428-.468.682-.218.254-.424.448-.638.722-.196.244-.418.506-.174.974.244.468 1.086 1.792 2.332 2.904 1.604 1.43 2.904 1.892 3.372 2.094.354.152.778.116 1.028-.146.318-.332.712-.882 1.112-1.424.286-.39.646-.44 1.028-.284.39.15 2.434 1.148 2.852 1.358.418.21.694.314.796.49.1.174.1 1.016-.29 2.116z"/>
+          </svg>
+        </a>
+
 
       </div>
     </Router>
