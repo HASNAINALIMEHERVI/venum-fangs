@@ -10,6 +10,7 @@ import Admin from './pages/Admin';
 import Checkout from './pages/Checkout';
 import TrackOrder from './pages/TrackOrder';
 import Account from './pages/Account';
+import PrivacyPolicy from './pages/PrivacyPolicy';
 import LoginGate from './components/LoginGate';
 
 // Firebase imports
@@ -489,6 +490,7 @@ function App() {
                 />
               } 
             />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           </Routes>
         </main>
 
