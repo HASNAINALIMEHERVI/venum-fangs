@@ -11,6 +11,11 @@ import Checkout from './pages/Checkout';
 import TrackOrder from './pages/TrackOrder';
 import LoginGate from './components/LoginGate';
 
+// Firebase imports
+import { onAuthStateChanged, signOut } from "firebase/auth";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { auth, db } from "./firebase";
+
 // Default seeded products (Black Loom premium streetwear)
 const DEFAULT_PRODUCTS = [
   {
@@ -146,18 +151,20 @@ function App() {
   const [cartOpen, setCartOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+    } catch (err) {
+      console.error("Sign out error:", err);
+    }
     localStorage.removeItem('black_loom_user');
+    localStorage.removeItem('black_loom_cart');
+    setCartItems([]);
     setCurrentUser(null);
   };
 
-  // Initialize products, cart and orders databases
+  // Initialize products and orders databases
   useEffect(() => {
-    const storedUser = localStorage.getItem('black_loom_user');
-    if (storedUser) {
-      setCurrentUser(JSON.parse(storedUser));
-    }
-
     const storedProds = localStorage.getItem('black_loom_products');
     if (storedProds) {
       const parsed = JSON.parse(storedProds);
@@ -173,11 +180,6 @@ function App() {
       setProducts(DEFAULT_PRODUCTS);
     }
 
-    const storedCart = localStorage.getItem('black_loom_cart');
-    if (storedCart) {
-      setCartItems(JSON.parse(storedCart));
-    }
-
     const storedOrders = localStorage.getItem('black_loom_orders');
     if (storedOrders) {
       setOrders(JSON.parse(storedOrders));
@@ -187,15 +189,68 @@ function App() {
     }
   }, []);
 
+  // Listen to Firebase Auth state change and sync cloud cart
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        const userData = {
+          uid: user.uid,
+          name: user.displayName || user.email.split('@')[0],
+          email: user.email,
+          avatar: (user.displayName || user.email).charAt(0).toUpperCase()
+        };
+        setCurrentUser(userData);
+        localStorage.setItem('black_loom_user', JSON.stringify(userData));
+
+        // Load cart from Firestore
+        try {
+          const cartRef = doc(db, "carts", user.uid);
+          const cartSnap = await getDoc(cartRef);
+          if (cartSnap.exists()) {
+            const cloudCart = cartSnap.data().items || [];
+            setCartItems(cloudCart);
+            localStorage.setItem('black_loom_cart', JSON.stringify(cloudCart));
+          } else {
+            // If user has local items in cart, push them to cloud
+            const storedCart = localStorage.getItem('black_loom_cart');
+            if (storedCart) {
+              const parsed = JSON.parse(storedCart);
+              if (parsed.length > 0) {
+                await setDoc(cartRef, { items: parsed });
+              }
+            }
+          }
+        } catch (err) {
+          console.error("Firestore cart sync failed:", err);
+        }
+      } else {
+        setCurrentUser(null);
+        localStorage.removeItem('black_loom_user');
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
   // Update storage helpers
   const saveProductsToStorage = (updatedList) => {
     setProducts(updatedList);
     localStorage.setItem('black_loom_products', JSON.stringify(updatedList));
   };
 
-  const saveCartToStorage = (updatedCart) => {
+  const saveCartToStorage = async (updatedCart) => {
     setCartItems(updatedCart);
     localStorage.setItem('black_loom_cart', JSON.stringify(updatedCart));
+
+    // Save to Firestore if user is logged in
+    if (auth.currentUser) {
+      try {
+        const cartRef = doc(db, "carts", auth.currentUser.uid);
+        await setDoc(cartRef, { items: updatedCart });
+      } catch (err) {
+        console.error("Error saving cart to cloud:", err);
+      }
+    }
   };
 
   const saveOrdersToStorage = (updatedOrders) => {

@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { ShieldAlert, Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
+import { signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { auth, googleProvider } from "../firebase";
 
 const LoginGate = ({ onLogin }) => {
   const [activeTab, setActiveTab] = useState('signin'); // 'signin' or 'signup'
@@ -8,53 +10,57 @@ const LoginGate = ({ onLogin }) => {
   const [name, setName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  // Listen to Google Auth popup messages
-  useEffect(() => {
-    const handleAuthMessage = (event) => {
-      // Validate origin to match current app origin
-      if (event.origin !== window.location.origin) return;
-      
-      if (event.data && event.data.type === 'GOOGLE_AUTH_SUCCESS') {
-        const user = event.data.user;
-        // Save user session in localStorage
-        localStorage.setItem('black_loom_user', JSON.stringify(user));
-        onLogin(user);
-      }
-    };
-
-    window.addEventListener('message', handleAuthMessage);
-    return () => window.removeEventListener('message', handleAuthMessage);
-  }, [onLogin]);
-
-  const handleGoogleSignIn = () => {
-    // Open the mock Google OAuth popup window
-    const width = 450;
-    const height = 600;
-    const left = window.screen.width / 2 - width / 2;
-    const top = window.screen.height / 2 - height / 2;
-    
-    window.open(
-      '/google-mock-auth.html',
-      'Google Sign In',
-      `width=${width},height=${height},top=${top},left=${left},scrollbars=no,resizable=no`
-    );
+  const handleGoogleSignIn = async () => {
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const user = result.user;
+      const userData = {
+        uid: user.uid,
+        name: user.displayName || user.email.split('@')[0],
+        email: user.email,
+        avatar: (user.displayName || user.email).charAt(0).toUpperCase()
+      };
+      onLogin(userData);
+    } catch (error) {
+      console.error("Google login failed:", error);
+      alert("Google Login Failed: " + error.message);
+    }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!email || !password || (activeTab === 'signup' && !name)) {
       alert('PLEASE FILL ALL REQUIRED FIELDS');
       return;
     }
 
-    const mockUser = {
-      name: activeTab === 'signup' ? name : email.split('@')[0],
-      email: email,
-      avatar: (activeTab === 'signup' ? name : email).charAt(0).toUpperCase()
-    };
-
-    localStorage.setItem('black_loom_user', JSON.stringify(mockUser));
-    onLogin(mockUser);
+    try {
+      if (activeTab === 'signup') {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+        await updateProfile(user, { displayName: name });
+        const userData = {
+          uid: user.uid,
+          name: name,
+          email: email,
+          avatar: name.charAt(0).toUpperCase()
+        };
+        onLogin(userData);
+      } else {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+        const userData = {
+          uid: user.uid,
+          name: user.displayName || email.split('@')[0],
+          email: email,
+          avatar: (user.displayName || email).charAt(0).toUpperCase()
+        };
+        onLogin(userData);
+      }
+    } catch (error) {
+      console.error("Auth failed:", error);
+      alert("Authentication Failed: " + error.message);
+    }
   };
 
   return (
