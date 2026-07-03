@@ -362,6 +362,103 @@ const Home = ({ products, onQuickAdd }) => {
         </button>
       </section>
 
+      {/* Brand Story SEO Section */}
+      <section style={{ 
+        borderTop: '1px solid var(--border-color)', 
+        padding: '5rem 1rem',
+        backgroundColor: 'var(--bg-secondary)'
+      }} id="about-brand">
+        <div className="container" style={{ maxWidth: '800px', margin: '0 auto' }}>
+          
+          <span style={{
+            fontSize: '0.625rem',
+            fontWeight: 800,
+            letterSpacing: '0.2em',
+            textTransform: 'uppercase',
+            color: 'var(--text-muted)',
+            display: 'block',
+            marginBottom: '1rem',
+            textAlign: 'center'
+          }}>
+            THE BRAND STORY
+          </span>
+
+          <div className="brand-seo-content" style={{
+            color: 'var(--text-secondary)',
+            fontSize: '0.85rem',
+            lineHeight: '1.8',
+            fontFamily: 'var(--font-sans)',
+            textAlign: 'left'
+          }}>
+            <h2 style={{
+              fontFamily: '"Didot", "Bodoni MT", "Georgia", serif',
+              fontSize: '1.75rem',
+              fontWeight: 900,
+              color: 'var(--text-primary)',
+              letterSpacing: '0.05em',
+              textTransform: 'uppercase',
+              marginBottom: '1.5rem',
+              textAlign: 'center'
+            }}>
+              BLACK LOOM: PREMIUM STREETWEAR IN PAKISTAN
+            </h2>
+
+            <p style={{ marginBottom: '1.5rem', fontSize: '0.9rem' }}>
+              Blackloom stands as the definitive <strong>premium streetwear brand</strong> in Pakistan, offering discerning gentlemen apparel in its most extreme and refined form. Our collections are a testament to superior craftsmanship, featuring heavyweight fabrics, unique acid wash textures, and detailed puff-print embellishments that set a new standard for <strong>urban clothing pakistan</strong>.
+            </p>
+
+            <h3 style={{
+              fontSize: '1.1rem',
+              fontWeight: 700,
+              color: 'var(--text-primary)',
+              textTransform: 'uppercase',
+              marginTop: '2.5rem',
+              marginBottom: '1rem',
+              letterSpacing: '0.05em'
+            }}>
+              Elevate Your Wardrobe with Our Signature Collections
+            </h3>
+            
+            <p style={{ marginBottom: '1.5rem' }}>
+              As a leading <strong>online clothing brand pakistan</strong>, we provide an exclusive selection of garments designed for the modern man. From iconic <strong>drop shoulder t-shirts</strong> to robust heavyweight hoodies, our apparel merges avant-garde aesthetics with unparalleled comfort and durability. Explore our curated ranges to find pieces that resonate with a powerful and sophisticated style.
+            </p>
+
+            <h3 style={{
+              fontSize: '1.1rem',
+              fontWeight: 700,
+              color: 'var(--text-primary)',
+              textTransform: 'uppercase',
+              marginTop: '2.5rem',
+              marginBottom: '1rem',
+              letterSpacing: '0.05em'
+            }}>
+              The Definitive Source for Men's Streetwear Online
+            </h3>
+
+            <p style={{ marginBottom: '1.5rem' }}>
+              Our commitment is to deliver an exceptional online shopping experience for <strong>men's streetwear online</strong>. We specialize in essential pieces that form the cornerstone of any contemporary wardrobe. Discover our highly sought-after <strong>oversized t-shirts pakistan</strong>, meticulously crafted to offer a contemporary silhouette without compromising on quality. Each item reflects our dedication to the art of <strong>designer streetwear</strong>.
+            </p>
+
+            <h3 style={{
+              fontSize: '1.1rem',
+              fontWeight: 700,
+              color: 'var(--text-primary)',
+              textTransform: 'uppercase',
+              marginTop: '2.5rem',
+              marginBottom: '1rem',
+              letterSpacing: '0.05em'
+            }}>
+              Unmatched Quality: Heavyweight Hoodies and Fleece
+            </h3>
+
+            <p style={{ marginBottom: '1.5rem' }}>
+              Brave the elements in style with our signature <strong>heavyweight hoodies pakistan</strong>. Engineered for both warmth and a formidable presence, these garments are a staple of authentic <strong>streetwear pakistan</strong>. For supreme comfort, explore our range of <strong>fleece hoodies online</strong>, constructed from premium materials to provide superior softness and a luxurious feel.
+            </p>
+
+          </div>
+        </div>
+      </section>
+
       <style dangerouslySetInnerHTML={{__html: `
         .product-grid-tight {
           display: grid;
