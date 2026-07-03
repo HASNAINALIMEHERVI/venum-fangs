@@ -3,13 +3,13 @@ import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAFaHu6r78VaTdc3AZc7H7DfMEer-dnuko",
+  apiKey: "AIzaSyAFaHu6r78VaTdc3AZc7H7DfmEEr-dnuko",
   authDomain: "black-loom.firebaseapp.com",
   projectId: "black-loom",
   storageBucket: "black-loom.firebasestorage.app",
-  messagingSenderId: "364585141019",
-  appId: "1:364585141019:web:96e83f053e1be11eb49c89",
-  measurementId: "G-9Q2R4N4W8M"
+  messagingSenderId: "722939342039",
+  appId: "1:722939342039:web:8b1be51f002690768e9492",
+  measurementId: "G-8SHT9G16RN"
 };
 
 // Initialize Firebase
