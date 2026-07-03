@@ -179,11 +179,11 @@ const Admin = ({
     }
 
     const serviceId = localStorage.getItem('emailjs_service_id');
-    const templateId = localStorage.getItem('emailjs_template_id'); // Ensure this template exists in EmailJS for general emails
+    const templateId = localStorage.getItem('emailjs_newsletter_template_id'); 
     const publicKey = localStorage.getItem('emailjs_public_key');
 
-    if (!serviceId || serviceId === 'YOUR_SERVICE_ID') {
-      alert("Please configure EmailJS in Store Settings first.");
+    if (!serviceId || serviceId === 'YOUR_SERVICE_ID' || !templateId) {
+      alert("Please configure EmailJS and Newsletter Template ID in Store Settings first.");
       return;
     }
 
@@ -898,11 +898,13 @@ const Admin = ({
               const notifyEmail = e.target.admin_notify_email.value.trim();
               const serviceId = e.target.emailjs_service_id.value.trim();
               const templateId = e.target.emailjs_template_id.value.trim();
+              const newsletterTemplateId = e.target.emailjs_newsletter_template_id.value.trim();
               const publicKey = e.target.emailjs_public_key.value.trim();
 
               localStorage.setItem('admin_notify_email', notifyEmail);
               localStorage.setItem('emailjs_service_id', serviceId || 'YOUR_SERVICE_ID');
               localStorage.setItem('emailjs_template_id', templateId || 'YOUR_TEMPLATE_ID');
+              localStorage.setItem('emailjs_newsletter_template_id', newsletterTemplateId || '');
               localStorage.setItem('emailjs_public_key', publicKey || 'YOUR_PUBLIC_KEY');
 
               alert('STORE SETTINGS UPDATED SUCCESSFULLY!');
@@ -932,12 +934,23 @@ const Admin = ({
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.15em', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>EMAILJS TEMPLATE ID</label>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.15em', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>ORDER EMAIL TEMPLATE ID</label>
                 <input 
                   type="text" 
                   name="emailjs_template_id"
-                  placeholder="E.G. template_xxxxxxx"
+                  placeholder="E.G. template_xxxxxxx (For new orders)"
                   defaultValue={localStorage.getItem('emailjs_template_id') !== 'YOUR_TEMPLATE_ID' ? localStorage.getItem('emailjs_template_id') || 'template_1olu24i' : 'template_1olu24i'}
+                  style={inputStyle}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.15em', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>NEWSLETTER TEMPLATE ID</label>
+                <input 
+                  type="text" 
+                  name="emailjs_newsletter_template_id"
+                  placeholder="E.G. template_xxxxxxx (For newsletters)"
+                  defaultValue={localStorage.getItem('emailjs_newsletter_template_id') || ''}
                   style={inputStyle}
                 />
               </div>
