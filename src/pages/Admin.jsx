@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Upload, Trash2, Edit2, Plus, Check, ShoppingBag, User, MapPin, Phone, Mail, Clock, ShieldCheck, Send } from 'lucide-react';
 import { collection, getDocs, orderBy, query } from "firebase/firestore";
-import { db } from "../firebase";
+import { db, storage } from "../firebase";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 const Admin = ({ 
   products, 
@@ -18,6 +19,7 @@ const Admin = ({
   });
   const [activeTab, setActiveTab] = useState('products'); // 'products', 'orders', 'settings', 'newsletter'
   const [editingId, setEditingId] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     category: 'T-Shirts',
@@ -27,6 +29,8 @@ const Admin = ({
     sizes: ['S', 'M', 'L', 'XL', 'XXL'],
     images: ['', '', '', '']
   });
+  // Track which images are pending file uploads (File objects)
+  const [pendingFiles, setPendingFiles] = useState([null, null, null, null]);
 
   const handleTextChange = (e) => {
     const { name, value } = e.target;
@@ -45,15 +49,18 @@ const Admin = ({
   const handleFileChange = (e, index) => {
     const file = e.target.files[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData(prev => {
-          const images = [...prev.images];
-          images[index] = reader.result; // Base64 string
-          return { ...prev, images };
-        });
-      };
-      reader.readAsDataURL(file);
+      // Store the File object for upload later, and show a local preview
+      const previewUrl = URL.createObjectURL(file);
+      setFormData(prev => {
+        const images = [...prev.images];
+        images[index] = previewUrl;
+        return { ...prev, images };
+      });
+      setPendingFiles(prev => {
+        const files = [...prev];
+        files[index] = file;
+        return files;
+      });
     }
   };
 
@@ -64,14 +71,52 @@ const Admin = ({
       images[index] = url;
       return { ...prev, images };
     });
+    // Clear any pending file for this slot since user typed a URL
+    setPendingFiles(prev => {
+      const files = [...prev];
+      files[index] = null;
+      return files;
+    });
   };
 
-  const handleSubmit = (e) => {
+  // Upload any pending file images to Firebase Storage and return final URLs
+  const uploadPendingImages = async (finalImages) => {
+    const uploadedUrls = [...finalImages];
+    for (let i = 0; i < uploadedUrls.length; i++) {
+      if (pendingFiles[i]) {
+        try {
+          const file = pendingFiles[i];
+          const timestamp = Date.now();
+          const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+          const storageRef = ref(storage, `products/${timestamp}_${safeName}`);
+          await uploadBytes(storageRef, file);
+          const downloadUrl = await getDownloadURL(storageRef);
+          uploadedUrls[i] = downloadUrl;
+        } catch (err) {
+          console.error(`Error uploading image ${i}:`, err);
+          alert(`Failed to upload image ${i + 1}. Please try again.`);
+          return null; // Signal failure
+        }
+      }
+    }
+    return uploadedUrls;
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const activeImages = formData.images.filter(img => img.trim() !== '');
     if (!formData.title || !formData.price || activeImages.length === 0) {
       alert('PLEASE FILL TITLE, PRICE AND PROVIDE AT LEAST ONE IMAGE.');
       return;
+    }
+
+    setIsUploading(true);
+
+    // Upload any file-based images to Firebase Storage
+    const finalImages = await uploadPendingImages(formData.images.filter(img => img.trim() !== ''));
+    if (!finalImages) {
+      setIsUploading(false);
+      return; // Upload failed
     }
 
     const itemPrice = Number(formData.price);
@@ -81,7 +126,7 @@ const Admin = ({
       ...formData,
       price: itemPrice,
       salePrice: itemSalePrice,
-      images: activeImages
+      images: finalImages.filter(img => img.trim() !== '')
     };
 
     if (editingId) {
@@ -104,6 +149,8 @@ const Admin = ({
       sizes: ['S', 'M', 'L', 'XL', 'XXL'],
       images: ['', '', '', '']
     });
+    setPendingFiles([null, null, null, null]);
+    setIsUploading(false);
   };
 
   const handleEdit = (product) => {
@@ -558,8 +605,13 @@ const Admin = ({
 
                 {/* Action Buttons */}
                 <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
-                  <button type="submit" className="btn-primary" style={{ flexGrow: 1, padding: '1rem' }}>
-                    {editingId ? 'UPDATE PRODUCT' : 'ADD TO CATALOG'}
+                  <button 
+                    type="submit" 
+                    className="btn-primary" 
+                    style={{ flexGrow: 1, padding: '1rem', opacity: isUploading ? 0.7 : 1, cursor: isUploading ? 'not-allowed' : 'pointer' }}
+                    disabled={isUploading}
+                  >
+                    {isUploading ? 'UPLOADING IMAGES...' : (editingId ? 'UPDATE PRODUCT' : 'ADD TO CATALOG')}
                   </button>
                   {editingId && (
                     <button 
