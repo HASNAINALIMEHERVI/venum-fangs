@@ -15,7 +15,7 @@ import LoginGate from './components/LoginGate';
 
 // Firebase imports
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, collection, getDocs, deleteDoc, addDoc } from "firebase/firestore";
 import { auth, db } from "./firebase";
 
 // Default seeded products (Black Loom premium streetwear)
@@ -166,30 +166,71 @@ function App() {
     setCurrentUser(null);
   };
 
-  // Initialize products and orders databases
+  // Initialize products from Firestore (with localStorage + DEFAULT_PRODUCTS as fallback seed)
   useEffect(() => {
-    const storedProds = localStorage.getItem('black_loom_products');
-    if (storedProds) {
-      const parsed = JSON.parse(storedProds);
-      const hasNewImages = parsed.some(p => p.images && p.images[0] && p.images[0].includes('loom_tee'));
-      if (!hasNewImages) {
-        localStorage.setItem('black_loom_products', JSON.stringify(DEFAULT_PRODUCTS));
-        setProducts(DEFAULT_PRODUCTS);
-      } else {
-        setProducts(parsed);
+    const loadProducts = async () => {
+      try {
+        const productsSnap = await getDocs(collection(db, "products"));
+        if (!productsSnap.empty) {
+          const firestoreProducts = [];
+          productsSnap.forEach(docSnap => {
+            firestoreProducts.push({ id: docSnap.id, ...docSnap.data() });
+          });
+          setProducts(firestoreProducts);
+          localStorage.setItem('black_loom_products', JSON.stringify(firestoreProducts));
+        } else {
+          // Seed Firestore with default products
+          for (const prod of DEFAULT_PRODUCTS) {
+            await setDoc(doc(db, "products", prod.id), prod);
+          }
+          setProducts(DEFAULT_PRODUCTS);
+          localStorage.setItem('black_loom_products', JSON.stringify(DEFAULT_PRODUCTS));
+        }
+      } catch (err) {
+        console.error("Error loading products from Firestore:", err);
+        // Fallback to localStorage
+        const storedProds = localStorage.getItem('black_loom_products');
+        if (storedProds) {
+          setProducts(JSON.parse(storedProds));
+        } else {
+          setProducts(DEFAULT_PRODUCTS);
+        }
       }
-    } else {
-      localStorage.setItem('black_loom_products', JSON.stringify(DEFAULT_PRODUCTS));
-      setProducts(DEFAULT_PRODUCTS);
-    }
+    };
 
-    const storedOrders = localStorage.getItem('black_loom_orders');
-    if (storedOrders) {
-      setOrders(JSON.parse(storedOrders));
-    } else {
-      localStorage.setItem('black_loom_orders', JSON.stringify(DEFAULT_ORDERS));
-      setOrders(DEFAULT_ORDERS);
-    }
+    const loadOrders = async () => {
+      try {
+        const ordersSnap = await getDocs(collection(db, "orders"));
+        if (!ordersSnap.empty) {
+          const firestoreOrders = [];
+          ordersSnap.forEach(docSnap => {
+            firestoreOrders.push({ id: docSnap.id, ...docSnap.data() });
+          });
+          // Sort by date descending
+          firestoreOrders.sort((a, b) => new Date(b.date) - new Date(a.date));
+          setOrders(firestoreOrders);
+          localStorage.setItem('black_loom_orders', JSON.stringify(firestoreOrders));
+        } else {
+          // Seed with default orders
+          for (const order of DEFAULT_ORDERS) {
+            await setDoc(doc(db, "orders", order.id), order);
+          }
+          setOrders(DEFAULT_ORDERS);
+          localStorage.setItem('black_loom_orders', JSON.stringify(DEFAULT_ORDERS));
+        }
+      } catch (err) {
+        console.error("Error loading orders from Firestore:", err);
+        const storedOrders = localStorage.getItem('black_loom_orders');
+        if (storedOrders) {
+          setOrders(JSON.parse(storedOrders));
+        } else {
+          setOrders(DEFAULT_ORDERS);
+        }
+      }
+    };
+
+    loadProducts();
+    loadOrders();
   }, []);
 
   // Listen to Firebase Auth state change and sync cloud cart
@@ -236,7 +277,7 @@ function App() {
   }, []);
 
   // Update storage helpers
-  const saveProductsToStorage = (updatedList) => {
+  const saveProductsToStorage = async (updatedList) => {
     setProducts(updatedList);
     localStorage.setItem('black_loom_products', JSON.stringify(updatedList));
   };
@@ -356,7 +397,7 @@ function App() {
   };
 
   // Order Operations
-  const handlePlaceOrder = (customerDetails, paymentMethod) => {
+  const handlePlaceOrder = async (customerDetails, paymentMethod) => {
     const subtotal = cartItems.reduce((acc, item) => acc + (item.salePrice || item.price) * item.qty, 0);
     const orderId = `BL-${Math.floor(1000 + Math.random() * 9000)}`;
     const newOrder = {
@@ -373,38 +414,82 @@ function App() {
     const updatedOrders = [newOrder, ...orders];
     saveOrdersToStorage(updatedOrders);
     sendOrderEmailNotification(newOrder);
+
+    // Save order to Firestore
+    try {
+      await setDoc(doc(db, "orders", orderId), newOrder);
+    } catch (err) {
+      console.error("Error saving order to Firestore:", err);
+    }
   };
 
   // Admin inventory operations
-  const handleAddProduct = (newProd) => {
+  const handleAddProduct = async (newProd) => {
     const randomId = newProd.title.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + Math.floor(Math.random() * 1000);
-    const updated = [...products, { ...newProd, id: randomId }];
+    const productWithId = { ...newProd, id: randomId };
+    const updated = [...products, productWithId];
     saveProductsToStorage(updated);
+
+    // Save to Firestore
+    try {
+      await setDoc(doc(db, "products", randomId), productWithId);
+    } catch (err) {
+      console.error("Error saving product to Firestore:", err);
+    }
   };
 
-  const handleDeleteProduct = (id) => {
+  const handleDeleteProduct = async (id) => {
     const updated = products.filter(p => p.id !== id);
     saveProductsToStorage(updated);
+
+    // Delete from Firestore
+    try {
+      await deleteDoc(doc(db, "products", id));
+    } catch (err) {
+      console.error("Error deleting product from Firestore:", err);
+    }
   };
 
-  const handleUpdateProduct = (updatedProd) => {
+  const handleUpdateProduct = async (updatedProd) => {
     const updated = products.map(p => p.id === updatedProd.id ? updatedProd : p);
     saveProductsToStorage(updated);
+
+    // Update in Firestore
+    try {
+      await setDoc(doc(db, "products", updatedProd.id), updatedProd);
+    } catch (err) {
+      console.error("Error updating product in Firestore:", err);
+    }
   };
 
   // Admin order operations
-  const handleUpdateOrderStatus = (orderId, newStatus, trackingNum = '', courierName = '') => {
+  const handleUpdateOrderStatus = async (orderId, newStatus, trackingNum = '', courierName = '') => {
     const updated = orders.map(o => 
       o.id === orderId 
         ? { ...o, status: newStatus, trackingNum, courierName } 
         : o
     );
     saveOrdersToStorage(updated);
+
+    // Update in Firestore
+    try {
+      const orderData = updated.find(o => o.id === orderId);
+      if (orderData) await setDoc(doc(db, "orders", orderId), orderData);
+    } catch (err) {
+      console.error("Error updating order in Firestore:", err);
+    }
   };
 
-  const handleDeleteOrder = (orderId) => {
+  const handleDeleteOrder = async (orderId) => {
     const updated = orders.filter(o => o.id !== orderId);
     saveOrdersToStorage(updated);
+
+    // Delete from Firestore
+    try {
+      await deleteDoc(doc(db, "orders", orderId));
+    } catch (err) {
+      console.error("Error deleting order from Firestore:", err);
+    }
   };
 
   const cartTotalItems = cartItems.reduce((acc, item) => acc + item.qty, 0);
