@@ -118,6 +118,25 @@ const Admin = ({
     setIsUploading(false);
   };
 
+  const handleBulkSetNewIn = async (show) => {
+    if (selectedProductIds.length === 0) return;
+    const confirmed = window.confirm(`${show ? 'Feature' : 'Unfeature'} ${selectedProductIds.length} selected items in "New In" section?`);
+    if (!confirmed) return;
+
+    setIsUploading(true);
+    for (const id of selectedProductIds) {
+      const prod = products.find(p => p.id === id);
+      if (prod) {
+        await onUpdateProduct({
+          ...prod,
+          showInNewIn: show
+        });
+      }
+    }
+    setSelectedProductIds([]);
+    setIsUploading(false);
+  };
+
   const handleBulkDelete = async () => {
     if (selectedProductIds.length === 0) return;
     const confirmed = window.confirm(`Permanently delete ${selectedProductIds.length} items from your database? This cannot be undone.`);
@@ -1011,6 +1030,20 @@ const Admin = ({
                   </div>
 
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
+                    <button 
+                      type="button" 
+                      onClick={() => handleBulkSetNewIn(true)}
+                      style={{ ...statusBtnStyle, border: '1px solid var(--accent)', color: 'var(--accent)', padding: '8px 12px' }}
+                    >
+                      ADD TO "NEW IN"
+                    </button>
+                    <button 
+                      type="button" 
+                      onClick={() => handleBulkSetNewIn(false)}
+                      style={{ ...statusBtnStyle, padding: '8px 12px' }}
+                    >
+                      REMOVE FROM "NEW IN"
+                    </button>
                     <button 
                       type="button" 
                       onClick={handleBulkRemoveSale}
