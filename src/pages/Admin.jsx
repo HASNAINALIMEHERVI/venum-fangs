@@ -29,7 +29,8 @@ const Admin = ({
     sizes: ['S', 'M', 'L', 'XL', 'XXL'],
     images: ['', '', '', '']
   });
-
+  // Track raw File objects selected by the user for upload
+  const [pendingFiles, setPendingFiles] = useState([null, null, null, null]);
 
   const handleTextChange = (e) => {
     const { name, value } = e.target;
@@ -45,8 +46,7 @@ const Admin = ({
     });
   };
 
-
-  // Helper function to resize and compress images on the client side
+  // Helper function to resize and compress images on the client side (fallback if no ImgBB key)
   const compressImage = (file) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -88,23 +88,45 @@ const Admin = ({
     });
   };
 
+  // Helper function to upload image file to ImgBB
+  const uploadToImgBB = async (file, apiKey) => {
+    const formDataBody = new FormData();
+    formDataBody.append('image', file);
+    try {
+      const res = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
+        method: 'POST',
+        body: formDataBody
+      });
+      if (!res.ok) {
+        throw new Error(`Server returned status ${res.status}`);
+      }
+      const data = await res.json();
+      if (data && data.data && data.data.url) {
+        return data.data.url; // Direct uncompressed high-resolution image link
+      } else {
+        throw new Error('Invalid response structure');
+      }
+    } catch (err) {
+      console.error("ImgBB upload failed:", err);
+      throw err;
+    }
+  };
+
   const handleFileChange = async (e, index) => {
     const file = e.target.files[0];
     if (file) {
-      setIsUploading(true);
-      try {
-        const compressed = await compressImage(file);
-        setFormData(prev => {
-          const images = [...prev.images];
-          images[index] = compressed;
-          return { ...prev, images };
-        });
-      } catch (err) {
-        console.error("Error compressing image:", err);
-        alert("Failed to process image. Please try another file.");
-      } finally {
-        setIsUploading(false);
-      }
+      // Store the File object for uploading when submit is clicked, and show local preview URL
+      const previewUrl = URL.createObjectURL(file);
+      setFormData(prev => {
+        const images = [...prev.images];
+        images[index] = previewUrl;
+        return { ...prev, images };
+      });
+      setPendingFiles(prev => {
+        const files = [...prev];
+        files[index] = file;
+        return files;
+      });
     }
   };
 
@@ -114,6 +136,12 @@ const Admin = ({
       const images = [...prev.images];
       images[index] = url;
       return { ...prev, images };
+    });
+    // Clear any pending file for this slot since user typed a URL
+    setPendingFiles(prev => {
+      const files = [...prev];
+      files[index] = null;
+      return files;
     });
   };
 
@@ -127,6 +155,38 @@ const Admin = ({
 
     setIsUploading(true);
 
+    const imgbbKey = localStorage.getItem('imgbb_api_key') || '';
+    const finalImages = [...formData.images];
+
+    // Process all images
+    for (let i = 0; i < finalImages.length; i++) {
+      if (pendingFiles[i]) {
+        try {
+          if (imgbbKey) {
+            // Upload original full-resolution image to ImgBB
+            const uploadedUrl = await uploadToImgBB(pendingFiles[i], imgbbKey);
+            finalImages[i] = uploadedUrl;
+          } else {
+            // Fallback: compress image on-the-fly and save base64
+            const compressed = await compressImage(pendingFiles[i]);
+            finalImages[i] = compressed;
+          }
+        } catch (err) {
+          console.error("Error processing image slot " + i, err);
+          alert("Error uploading image " + (i + 1) + ". Falling back to local compression.");
+          try {
+            const compressed = await compressImage(pendingFiles[i]);
+            finalImages[i] = compressed;
+          } catch (compressErr) {
+            alert("Could not process image " + (i + 1) + " at all. Please try another image.");
+            setIsUploading(false);
+            return;
+          }
+        }
+      }
+    }
+
+    const filteredImages = finalImages.filter(img => img.trim() !== '');
     const itemPrice = Number(formData.price);
     const itemSalePrice = formData.salePrice ? Number(formData.salePrice) : null;
 
@@ -134,7 +194,7 @@ const Admin = ({
       ...formData,
       price: itemPrice,
       salePrice: itemSalePrice,
-      images: activeImages
+      images: filteredImages
     };
 
     try {
@@ -158,6 +218,7 @@ const Admin = ({
         sizes: ['S', 'M', 'L', 'XL', 'XXL'],
         images: ['', '', '', '']
       });
+      setPendingFiles([null, null, null, null]);
     } catch (err) {
       console.error("Error submitting product:", err);
     } finally {
@@ -965,6 +1026,7 @@ const Admin = ({
               const templateId = e.target.emailjs_template_id.value.trim();
               const newsletterTemplateId = e.target.emailjs_newsletter_template_id.value.trim();
               const publicKey = e.target.emailjs_public_key.value.trim();
+              const imgbbKey = e.target.imgbb_api_key.value.trim();
 
               localStorage.setItem('admin_notify_email', notifyEmail);
               localStorage.setItem('emailjs_service_id', serviceId || 'YOUR_SERVICE_ID');
@@ -972,6 +1034,7 @@ const Admin = ({
               localStorage.setItem('emailjs_template_id', templateId || 'YOUR_TEMPLATE_ID');
               localStorage.setItem('emailjs_newsletter_template_id', newsletterTemplateId || '');
               localStorage.setItem('emailjs_public_key', publicKey || 'YOUR_PUBLIC_KEY');
+              localStorage.setItem('imgbb_api_key', imgbbKey);
 
               alert('STORE SETTINGS UPDATED SUCCESSFULLY!');
             }} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -1041,6 +1104,23 @@ const Admin = ({
                   defaultValue={localStorage.getItem('emailjs_public_key') !== 'YOUR_PUBLIC_KEY' ? localStorage.getItem('emailjs_public_key') || 'd3g91DuUMjmyg7_dQ' : 'd3g91DuUMjmyg7_dQ'}
                   style={inputStyle}
                 />
+              </div>
+
+              <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1.5rem', marginTop: '0.5rem' }}>
+                <h3 style={{ fontFamily: 'Outfit', fontSize: '1.05rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '1rem', color: 'var(--text-primary)' }}>
+                  IMAGE UPLOADING (IMGBB CONFIGURATION)
+                </h3>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.15em', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>IMGBB API KEY</label>
+                <input 
+                  type="text" 
+                  name="imgbb_api_key"
+                  placeholder="Get your key at api.imgbb.com"
+                  defaultValue={localStorage.getItem('imgbb_api_key') || ''}
+                  style={inputStyle}
+                />
+                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block', marginTop: '0.35rem' }}>
+                  If left blank, catalog image files will be compressed locally before saving to the database. Provide a key to upload uncompressed, original quality images.
+                </span>
               </div>
 
               <button type="submit" className="btn-primary" style={{ padding: '1rem', marginTop: '0.5rem' }}>
