@@ -420,6 +420,7 @@ function App() {
       await setDoc(doc(db, "orders", orderId), newOrder);
     } catch (err) {
       console.error("Error saving order to Firestore:", err);
+      alert("Database error: Could not save order details online. Please contact support.");
     }
   };
 
@@ -428,37 +429,46 @@ function App() {
     const randomId = newProd.title.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + Math.floor(Math.random() * 1000);
     const productWithId = { ...newProd, id: randomId };
     const updated = [...products, productWithId];
-    saveProductsToStorage(updated);
 
-    // Save to Firestore
+    // Save to Firestore first before updating state to ensure sync
     try {
       await setDoc(doc(db, "products", randomId), productWithId);
+      saveProductsToStorage(updated);
+      alert("Product successfully added to catalog!");
     } catch (err) {
       console.error("Error saving product to Firestore:", err);
+      alert("Database Error: " + err.message + "\n\nCould not add product online. Please check Firebase rules.");
     }
   };
 
   const handleDeleteProduct = async (id) => {
-    const updated = products.filter(p => p.id !== id);
-    saveProductsToStorage(updated);
+    const confirmed = window.confirm("Are you sure you want to delete this product?");
+    if (!confirmed) return;
 
-    // Delete from Firestore
+    const updated = products.filter(p => p.id !== id);
+
+    // Delete from Firestore first
     try {
       await deleteDoc(doc(db, "products", id));
+      saveProductsToStorage(updated);
+      alert("Product successfully deleted!");
     } catch (err) {
       console.error("Error deleting product from Firestore:", err);
+      alert("Database Error: " + err.message + "\n\nCould not delete product online.");
     }
   };
 
   const handleUpdateProduct = async (updatedProd) => {
     const updated = products.map(p => p.id === updatedProd.id ? updatedProd : p);
-    saveProductsToStorage(updated);
 
-    // Update in Firestore
+    // Update in Firestore first
     try {
       await setDoc(doc(db, "products", updatedProd.id), updatedProd);
+      saveProductsToStorage(updated);
+      alert("Product successfully updated!");
     } catch (err) {
       console.error("Error updating product in Firestore:", err);
+      alert("Database Error: " + err.message + "\n\nCould not update product online.");
     }
   };
 
@@ -469,26 +479,35 @@ function App() {
         ? { ...o, status: newStatus, trackingNum, courierName } 
         : o
     );
-    saveOrdersToStorage(updated);
 
     // Update in Firestore
     try {
       const orderData = updated.find(o => o.id === orderId);
-      if (orderData) await setDoc(doc(db, "orders", orderId), orderData);
+      if (orderData) {
+        await setDoc(doc(db, "orders", orderId), orderData);
+        saveOrdersToStorage(updated);
+        alert("Order status successfully updated!");
+      }
     } catch (err) {
       console.error("Error updating order in Firestore:", err);
+      alert("Database Error: " + err.message + "\n\nCould not update order online.");
     }
   };
 
   const handleDeleteOrder = async (orderId) => {
+    const confirmed = window.confirm("Are you sure you want to delete this order?");
+    if (!confirmed) return;
+
     const updated = orders.filter(o => o.id !== orderId);
-    saveOrdersToStorage(updated);
 
     // Delete from Firestore
     try {
       await deleteDoc(doc(db, "orders", orderId));
+      saveOrdersToStorage(updated);
+      alert("Order successfully deleted!");
     } catch (err) {
       console.error("Error deleting order from Firestore:", err);
+      alert("Database Error: " + err.message + "\n\nCould not delete order online.");
     }
   };
 
