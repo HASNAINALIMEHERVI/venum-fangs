@@ -29,8 +29,7 @@ const Admin = ({
     sizes: ['S', 'M', 'L', 'XL', 'XXL'],
     images: ['', '', '', '']
   });
-  // Track which images are pending file uploads (File objects)
-  const [pendingFiles, setPendingFiles] = useState([null, null, null, null]);
+
 
   const handleTextChange = (e) => {
     const { name, value } = e.target;
@@ -46,21 +45,66 @@ const Admin = ({
     });
   };
 
-  const handleFileChange = (e, index) => {
+
+  // Helper function to resize and compress images on the client side
+  const compressImage = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 800;
+          const MAX_HEIGHT = 800;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Compress to JPEG with 0.7 quality (typically under 50KB)
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+          resolve(compressedBase64);
+        };
+        img.onerror = (err) => reject(err);
+      };
+      reader.onerror = (err) => reject(err);
+    });
+  };
+
+  const handleFileChange = async (e, index) => {
     const file = e.target.files[0];
     if (file) {
-      // Store the File object for upload later, and show a local preview
-      const previewUrl = URL.createObjectURL(file);
-      setFormData(prev => {
-        const images = [...prev.images];
-        images[index] = previewUrl;
-        return { ...prev, images };
-      });
-      setPendingFiles(prev => {
-        const files = [...prev];
-        files[index] = file;
-        return files;
-      });
+      setIsUploading(true);
+      try {
+        const compressed = await compressImage(file);
+        setFormData(prev => {
+          const images = [...prev.images];
+          images[index] = compressed;
+          return { ...prev, images };
+        });
+      } catch (err) {
+        console.error("Error compressing image:", err);
+        alert("Failed to process image. Please try another file.");
+      } finally {
+        setIsUploading(false);
+      }
     }
   };
 
@@ -71,35 +115,6 @@ const Admin = ({
       images[index] = url;
       return { ...prev, images };
     });
-    // Clear any pending file for this slot since user typed a URL
-    setPendingFiles(prev => {
-      const files = [...prev];
-      files[index] = null;
-      return files;
-    });
-  };
-
-  // Upload any pending file images to Firebase Storage and return final URLs
-  const uploadPendingImages = async (finalImages) => {
-    const uploadedUrls = [...finalImages];
-    for (let i = 0; i < uploadedUrls.length; i++) {
-      if (pendingFiles[i]) {
-        try {
-          const file = pendingFiles[i];
-          const timestamp = Date.now();
-          const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-          const storageRef = ref(storage, `products/${timestamp}_${safeName}`);
-          await uploadBytes(storageRef, file);
-          const downloadUrl = await getDownloadURL(storageRef);
-          uploadedUrls[i] = downloadUrl;
-        } catch (err) {
-          console.error(`Error uploading image ${i}:`, err);
-          alert(`Failed to upload image ${i + 1}. Please try again.`);
-          return null; // Signal failure
-        }
-      }
-    }
-    return uploadedUrls;
   };
 
   const handleSubmit = async (e) => {
@@ -112,13 +127,6 @@ const Admin = ({
 
     setIsUploading(true);
 
-    // Upload any file-based images to Firebase Storage
-    const finalImages = await uploadPendingImages(formData.images.filter(img => img.trim() !== ''));
-    if (!finalImages) {
-      setIsUploading(false);
-      return; // Upload failed
-    }
-
     const itemPrice = Number(formData.price);
     const itemSalePrice = formData.salePrice ? Number(formData.salePrice) : null;
 
@@ -126,31 +134,35 @@ const Admin = ({
       ...formData,
       price: itemPrice,
       salePrice: itemSalePrice,
-      images: finalImages.filter(img => img.trim() !== '')
+      images: activeImages
     };
 
-    if (editingId) {
-      onUpdateProduct({
-        ...productPayload,
-        id: editingId
-      });
-      setEditingId(null);
-    } else {
-      onAddProduct(productPayload);
-    }
+    try {
+      if (editingId) {
+        await onUpdateProduct({
+          ...productPayload,
+          id: editingId
+        });
+        setEditingId(null);
+      } else {
+        await onAddProduct(productPayload);
+      }
 
-    // Reset Form
-    setFormData({
-      title: '',
-      category: 'T-Shirts',
-      price: '',
-      salePrice: '',
-      description: '',
-      sizes: ['S', 'M', 'L', 'XL', 'XXL'],
-      images: ['', '', '', '']
-    });
-    setPendingFiles([null, null, null, null]);
-    setIsUploading(false);
+      // Reset Form
+      setFormData({
+        title: '',
+        category: 'T-Shirts',
+        price: '',
+        salePrice: '',
+        description: '',
+        sizes: ['S', 'M', 'L', 'XL', 'XXL'],
+        images: ['', '', '', '']
+      });
+    } catch (err) {
+      console.error("Error submitting product:", err);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleEdit = (product) => {
