@@ -201,30 +201,23 @@ function App() {
     const loadOrders = async () => {
       try {
         const ordersSnap = await getDocs(collection(db, "orders"));
+        const firestoreOrders = [];
         if (!ordersSnap.empty) {
-          const firestoreOrders = [];
           ordersSnap.forEach(docSnap => {
             firestoreOrders.push({ id: docSnap.id, ...docSnap.data() });
           });
           // Sort by date descending
           firestoreOrders.sort((a, b) => new Date(b.date) - new Date(a.date));
-          setOrders(firestoreOrders);
-          localStorage.setItem('black_loom_orders', JSON.stringify(firestoreOrders));
-        } else {
-          // Seed with default orders
-          for (const order of DEFAULT_ORDERS) {
-            await setDoc(doc(db, "orders", order.id), order);
-          }
-          setOrders(DEFAULT_ORDERS);
-          localStorage.setItem('black_loom_orders', JSON.stringify(DEFAULT_ORDERS));
         }
+        setOrders(firestoreOrders);
+        localStorage.setItem('black_loom_orders', JSON.stringify(firestoreOrders));
       } catch (err) {
         console.error("Error loading orders from Firestore:", err);
         const storedOrders = localStorage.getItem('black_loom_orders');
         if (storedOrders) {
           setOrders(JSON.parse(storedOrders));
         } else {
-          setOrders(DEFAULT_ORDERS);
+          setOrders([]);
         }
       }
     };
