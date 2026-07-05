@@ -56,8 +56,8 @@ const Admin = ({
         img.src = event.target.result;
         img.onload = () => {
           const canvas = document.createElement('canvas');
-          const MAX_WIDTH = 1400;
-          const MAX_HEIGHT = 1400;
+          const MAX_WIDTH = 1000;
+          const MAX_HEIGHT = 1000;
           let width = img.width;
           let height = img.height;
 
@@ -78,8 +78,8 @@ const Admin = ({
           const ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0, width, height);
 
-          // Compress to JPEG with 0.88 quality (typically under 180KB)
-          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.88);
+          // Compress to JPEG with 0.78 quality (typically under 80KB per image)
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.78);
           resolve(compressedBase64);
         };
         img.onerror = (err) => reject(err);
