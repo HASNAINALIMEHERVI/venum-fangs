@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { User, MapPin, Phone, Mail, Save, LogOut, ChevronRight } from 'lucide-react';
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "../firebase";
 
 const Account = ({ currentUser, onLogout, onLoginClick }) => {
+  const navigate = useNavigate();
 
   const [profile, setProfile] = useState({
     firstName: '',
@@ -56,7 +57,13 @@ const Account = ({ currentUser, onLogout, onLoginClick }) => {
       const profileRef = doc(db, "profiles", currentUser.uid);
       await setDoc(profileRef, profile);
       setSaved(true);
-      setTimeout(() => setSaved(false), 2500);
+      
+      // Delay navigation slightly so they can see the success button state
+      setTimeout(() => {
+        setSaved(false);
+        alert("Shipping details saved successfully!");
+        navigate('/');
+      }, 1500);
     } catch (err) {
       console.error("Error saving profile:", err);
       alert("Failed to save profile. Please try again.");
