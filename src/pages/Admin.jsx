@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Upload, Trash2, Edit2, Plus, Check, ShoppingBag, User, MapPin, Phone, Mail, Clock, ShieldCheck, Send } from 'lucide-react';
+import { Upload, Trash2, Edit2, Plus, Check, ShoppingBag, User, MapPin, Phone, Mail, Clock, ShieldCheck, Send, ExternalLink } from 'lucide-react';
 import { collection, getDocs, orderBy, query } from "firebase/firestore";
 import { db, storage } from "../firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
@@ -483,6 +483,23 @@ const Admin = ({
               }}
             >
               NEWSLETTER ({subscribers.length > 0 ? subscribers.length : '...'})
+            </button>
+            <button 
+              onClick={() => setActiveTab('platforms')} 
+              style={{
+                background: activeTab === 'platforms' ? 'var(--bg-primary)' : 'transparent',
+                color: activeTab === 'platforms' ? 'var(--accent)' : 'var(--text-secondary)',
+                border: 'none',
+                padding: '0.6rem 1.25rem',
+                fontSize: '0.75rem',
+                fontWeight: 800,
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+            >
+              PLATFORMS
             </button>
           </div>
         </div>
@@ -1294,6 +1311,192 @@ const Admin = ({
           </div>
         )}
 
+        {/* Tab 5: Platforms Dashboard */}
+        {activeTab === 'platforms' && (
+          <div className="fade-in" style={{ padding: '0 0.5rem' }}>
+            <div style={{ marginBottom: '2rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem' }}>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6, maxWidth: '800px', margin: 0 }}>
+                This dashboard lists all third-party services, databases, email dispatchers, and domain platforms driving <strong>wearblackloom.com</strong>. Click any widget to visit the login portal or dashboard for that service.
+              </p>
+            </div>
+
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+              gap: '1.5rem',
+              marginBottom: '3rem'
+            }}>
+              {/* Vercel Hosting */}
+              <div style={platformCardStyle}>
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                    <span style={platformBadgeStyle(true)}>ACTIVE</span>
+                    <span style={{ fontSize: '0.68rem', fontWeight: 800, letterSpacing: '0.1em', color: 'var(--text-muted)' }}>HOSTING</span>
+                  </div>
+                  <h3 style={platformTitleStyle}>Vercel</h3>
+                  <p style={platformDescStyle}>Hosts the frontend code and serves your website globally. Connected directly to your GitHub repository for automated deployments.</p>
+                </div>
+                <div>
+                  <div style={platformMetaStyle}>
+                    <span>PLAN: <strong>Hobby (Free)</strong></span>
+                    <span>LIMIT: <strong>Unlimited</strong></span>
+                  </div>
+                  <a href="https://vercel.com/login" target="_blank" rel="noopener noreferrer" style={platformBtnStyle}>
+                    LOG IN TO VERCEL <ExternalLink size={12} style={{ marginLeft: '4px' }} />
+                  </a>
+                </div>
+              </div>
+
+              {/* Firebase Console */}
+              <div style={platformCardStyle}>
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                    <span style={platformBadgeStyle(true)}>ACTIVE</span>
+                    <span style={{ fontSize: '0.68rem', fontWeight: 800, letterSpacing: '0.1em', color: 'var(--text-muted)' }}>DATABASE & AUTH</span>
+                  </div>
+                  <h3 style={platformTitleStyle}>Firebase</h3>
+                  <p style={platformDescStyle}>Powers the product catalog, order sheets, user accounts, and shopping carts. Stores all website data securely in the cloud.</p>
+                </div>
+                <div>
+                  <div style={platformMetaStyle}>
+                    <span>PLAN: <strong>Spark (Free)</strong></span>
+                    <span>LIMIT: <strong>1GB / 20k writes</strong></span>
+                  </div>
+                  <a href="https://console.firebase.google.com/" target="_blank" rel="noopener noreferrer" style={platformBtnStyle}>
+                    OPEN FIREBASE CONSOLE <ExternalLink size={12} style={{ marginLeft: '4px' }} />
+                  </a>
+                </div>
+              </div>
+
+              {/* Namecheap Portal */}
+              <div style={platformCardStyle}>
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                    <span style={platformBadgeStyle(true)}>ACTIVE</span>
+                    <span style={{ fontSize: '0.68rem', fontWeight: 800, letterSpacing: '0.1em', color: 'var(--text-muted)' }}>DOMAIN & EMAIL</span>
+                  </div>
+                  <h3 style={platformTitleStyle}>Namecheap</h3>
+                  <p style={platformDescStyle}>Manages your domain name (wearblackloom.com) and hosts your professional private email address (support@wearblackloom.com).</p>
+                </div>
+                <div>
+                  <div style={platformMetaStyle}>
+                    <span>PLAN: <strong>Paid Yearly</strong></span>
+                    <span>STATUS: <strong>Connected</strong></span>
+                  </div>
+                  <a href="https://www.namecheap.com/myaccount/login/" target="_blank" rel="noopener noreferrer" style={platformBtnStyle}>
+                    LOG IN TO NAMECHEAP <ExternalLink size={12} style={{ marginLeft: '4px' }} />
+                  </a>
+                </div>
+              </div>
+
+              {/* EmailJS Dashboard */}
+              <div style={platformCardStyle}>
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                    <span style={platformBadgeStyle(true)}>ACTIVE</span>
+                    <span style={{ fontSize: '0.68rem', fontWeight: 800, letterSpacing: '0.1em', color: 'var(--text-muted)' }}>EMAIL DISPATCH</span>
+                  </div>
+                  <h3 style={platformTitleStyle}>EmailJS</h3>
+                  <p style={platformDescStyle}>Sends automatic email receipts for orders (via Gmail) and newsletter campaigns (via Namecheap SMTP) directly from the client.</p>
+                </div>
+                <div>
+                  <div style={platformMetaStyle}>
+                    <span>PLAN: <strong>Free Tier</strong></span>
+                    <span>LIMIT: <strong>200 / month</strong></span>
+                  </div>
+                  <a href="https://dashboard.emailjs.com/admin" target="_blank" rel="noopener noreferrer" style={platformBtnStyle}>
+                    OPEN EMAILJS DASHBOARD <ExternalLink size={12} style={{ marginLeft: '4px' }} />
+                  </a>
+                </div>
+              </div>
+
+              {/* ImgBB Hosting */}
+              <div style={platformCardStyle}>
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                    <span style={platformBadgeStyle(!!localStorage.getItem('imgbb_api_key'))}>{localStorage.getItem('imgbb_api_key') ? 'ACTIVE' : 'INACTIVE'}</span>
+                    <span style={{ fontSize: '0.68rem', fontWeight: 800, letterSpacing: '0.1em', color: 'var(--text-muted)' }}>IMAGE CDN</span>
+                  </div>
+                  <h3 style={platformTitleStyle}>ImgBB</h3>
+                  <p style={platformDescStyle}>Hosts all your high-resolution product catalog images. Saves bandwidth and keeps database documents small and fast.</p>
+                </div>
+                <div>
+                  <div style={platformMetaStyle}>
+                    <span>PLAN: <strong>Free Tier</strong></span>
+                    <span>LIMIT: <strong>Unlimited</strong></span>
+                  </div>
+                  <a href="https://imgbb.com/login" target="_blank" rel="noopener noreferrer" style={platformBtnStyle}>
+                    LOG IN TO IMGBB <ExternalLink size={12} style={{ marginLeft: '4px' }} />
+                  </a>
+                </div>
+              </div>
+
+              {/* Google Search Console */}
+              <div style={platformCardStyle}>
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                    <span style={platformBadgeStyle(true)}>ACTIVE</span>
+                    <span style={{ fontSize: '0.68rem', fontWeight: 800, letterSpacing: '0.1em', color: 'var(--text-muted)' }}>SEO / GOOGLE</span>
+                  </div>
+                  <h3 style={platformTitleStyle}>Google Search Console</h3>
+                  <p style={platformDescStyle}>Allows Google to crawl and index your storefront. Tracks organic keywords, click counts, search impressions, and sitemaps.</p>
+                </div>
+                <div>
+                  <div style={platformMetaStyle}>
+                    <span>PLAN: <strong>Free Tools</strong></span>
+                    <span>STATUS: <strong>Verified</strong></span>
+                  </div>
+                  <a href="https://search.google.com/search-console" target="_blank" rel="noopener noreferrer" style={platformBtnStyle}>
+                    OPEN SEARCH CONSOLE <ExternalLink size={12} style={{ marginLeft: '4px' }} />
+                  </a>
+                </div>
+              </div>
+
+              {/* Bing Webmaster Tools */}
+              <div style={platformCardStyle}>
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                    <span style={platformBadgeStyle(true)}>ACTIVE</span>
+                    <span style={{ fontSize: '0.68rem', fontWeight: 800, letterSpacing: '0.1em', color: 'var(--text-muted)' }}>SEO / BING</span>
+                  </div>
+                  <h3 style={platformTitleStyle}>Bing Webmaster Tools</h3>
+                  <p style={platformDescStyle}>Allows Microsoft Bing and Yahoo to index your website. Monitors indexing status and organic search clicks.</p>
+                </div>
+                <div>
+                  <div style={platformMetaStyle}>
+                    <span>PLAN: <strong>Free Tools</strong></span>
+                    <span>STATUS: <strong>Verified</strong></span>
+                  </div>
+                  <a href="https://www.bing.com/webmasters" target="_blank" rel="noopener noreferrer" style={platformBtnStyle}>
+                    OPEN BING WEBMASTERS <ExternalLink size={12} style={{ marginLeft: '4px' }} />
+                  </a>
+                </div>
+              </div>
+
+              {/* Google Analytics */}
+              <div style={platformCardStyle}>
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                    <span style={platformBadgeStyle(true)}>ACTIVE</span>
+                    <span style={{ fontSize: '0.68rem', fontWeight: 800, letterSpacing: '0.1em', color: 'var(--text-muted)' }}>ANALYTICS</span>
+                  </div>
+                  <h3 style={platformTitleStyle}>Google Analytics</h3>
+                  <p style={platformDescStyle}>Tracks visitor counts, real-time active users, geographic locations, shopping behaviors, and page conversions.</p>
+                </div>
+                <div>
+                  <div style={platformMetaStyle}>
+                    <span>PLAN: <strong>Free Tools</strong></span>
+                    <span>STATUS: <strong>Tracking</strong></span>
+                  </div>
+                  <a href="https://analytics.google.com/analytics/web/" target="_blank" rel="noopener noreferrer" style={platformBtnStyle}>
+                    OPEN GOOGLE ANALYTICS <ExternalLink size={12} style={{ marginLeft: '4px' }} />
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
 
       <style dangerouslySetInnerHTML={{__html: `
@@ -1371,6 +1574,73 @@ const statusBtnStyle = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center'
+};
+
+// Styling helper blocks for Platforms Dashboard
+const platformCardStyle = {
+  background: 'var(--bg-primary)',
+  border: '1px solid var(--border-color)',
+  padding: '1.5rem',
+  display: 'flex',
+  flexDirection: 'column',
+  justifyContent: 'space-between',
+  minHeight: '270px',
+  boxShadow: 'var(--shadow-sm)'
+};
+
+const platformBadgeStyle = (active) => ({
+  display: 'inline-block',
+  fontSize: '0.55rem',
+  fontWeight: 800,
+  letterSpacing: '0.1em',
+  padding: '3px 8px',
+  backgroundColor: active ? 'rgba(22, 163, 74, 0.06)' : 'rgba(245, 108, 108, 0.06)',
+  color: active ? '#16a34a' : '#f56c6c',
+  border: `1px solid ${active ? '#16a34a' : '#f56c6c'}`
+});
+
+const platformTitleStyle = {
+  fontFamily: 'Outfit',
+  fontSize: '1.25rem',
+  fontWeight: 800,
+  letterSpacing: '0.02em',
+  color: 'var(--text-primary)',
+  margin: '0.25rem 0 0.5rem 0'
+};
+
+const platformDescStyle = {
+  fontSize: '0.75rem',
+  color: 'var(--text-secondary)',
+  lineHeight: 1.5,
+  marginBottom: '1rem'
+};
+
+const platformMetaStyle = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  fontSize: '0.7rem',
+  color: 'var(--text-muted)',
+  borderTop: '1px solid var(--border-color)',
+  paddingTop: '0.75rem',
+  marginBottom: '0.75rem'
+};
+
+const platformBtnStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  width: '100%',
+  backgroundColor: '#111111',
+  color: '#fff',
+  border: 'none',
+  padding: '0.65rem',
+  fontSize: '0.65rem',
+  fontWeight: 800,
+  letterSpacing: '0.1em',
+  textTransform: 'uppercase',
+  textDecoration: 'none',
+  cursor: 'pointer',
+  transition: 'opacity 0.2s'
 };
 
 export default Admin;
