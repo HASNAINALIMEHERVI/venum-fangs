@@ -34,6 +34,103 @@ const Admin = ({
   // Track raw File objects selected by the user for upload
   const [pendingFiles, setPendingFiles] = useState([null, null, null, null]);
 
+  // Bulk Product Management States
+  const [selectedProductIds, setSelectedProductIds] = useState([]);
+  const [bulkDropSelect, setBulkDropSelect] = useState('drop1');
+  const [bulkDiscountInput, setBulkDiscountInput] = useState('');
+
+  const toggleSelectProduct = (id) => {
+    setSelectedProductIds(prev => 
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (selectedProductIds.length === products.length) {
+      setSelectedProductIds([]);
+    } else {
+      setSelectedProductIds(products.map(p => p.id));
+    }
+  };
+
+  const handleBulkChangeDrop = async (newDrop) => {
+    if (selectedProductIds.length === 0) return;
+    const confirmed = window.confirm(`Change collection to ${newDrop === 'none' ? 'Basics' : newDrop === 'drop1' ? 'Drop I' : 'Drop II'} for ${selectedProductIds.length} items?`);
+    if (!confirmed) return;
+
+    setIsUploading(true);
+    for (const id of selectedProductIds) {
+      const prod = products.find(p => p.id === id);
+      if (prod) {
+        await onUpdateProduct({
+          ...prod,
+          drop: newDrop
+        });
+      }
+    }
+    setSelectedProductIds([]);
+    setIsUploading(false);
+  };
+
+  const handleBulkSetSale = async (discountPercent) => {
+    if (selectedProductIds.length === 0) return;
+    const pct = Number(discountPercent);
+    if (isNaN(pct) || pct <= 0 || pct >= 100) {
+      alert("Please enter a valid discount percentage between 1 and 99.");
+      return;
+    }
+
+    const confirmed = window.confirm(`Apply a ${pct}% discount to ${selectedProductIds.length} items?`);
+    if (!confirmed) return;
+
+    setIsUploading(true);
+    for (const id of selectedProductIds) {
+      const prod = products.find(p => p.id === id);
+      if (prod) {
+        const calculatedSale = Math.round(prod.price * (1 - pct / 100));
+        await onUpdateProduct({
+          ...prod,
+          salePrice: calculatedSale
+        });
+      }
+    }
+    setSelectedProductIds([]);
+    setBulkDiscountInput('');
+    setIsUploading(false);
+  };
+
+  const handleBulkRemoveSale = async () => {
+    if (selectedProductIds.length === 0) return;
+    const confirmed = window.confirm(`Remove sale prices from ${selectedProductIds.length} selected items?`);
+    if (!confirmed) return;
+
+    setIsUploading(true);
+    for (const id of selectedProductIds) {
+      const prod = products.find(p => p.id === id);
+      if (prod) {
+        await onUpdateProduct({
+          ...prod,
+          salePrice: null
+        });
+      }
+    }
+    setSelectedProductIds([]);
+    setIsUploading(false);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedProductIds.length === 0) return;
+    const confirmed = window.confirm(`Permanently delete ${selectedProductIds.length} items from your database? This cannot be undone.`);
+    if (!confirmed) return;
+
+    setIsUploading(true);
+    for (const id of selectedProductIds) {
+      await onDeleteProduct(id);
+    }
+    setSelectedProductIds([]);
+    setIsUploading(false);
+  };
+
   const handleTextChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -777,17 +874,160 @@ const Admin = ({
 
             {/* Right: Current Products Inventory */}
             <div>
-              <h2 style={{
-                fontFamily: 'Outfit',
-                fontSize: '1.25rem',
-                fontWeight: 800,
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase',
-                marginBottom: '1.5rem',
-                color: 'var(--text-primary)'
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '1rem',
+                marginBottom: '1.5rem'
               }}>
-                CURRENT INVENTORY CATALOG ({products.length})
-              </h2>
+                <h2 style={{
+                  fontFamily: 'Outfit',
+                  fontSize: '1.25rem',
+                  fontWeight: 800,
+                  letterSpacing: '0.1em',
+                  textTransform: 'uppercase',
+                  margin: 0,
+                  color: 'var(--text-primary)'
+                }}>
+                  CURRENT INVENTORY CATALOG ({products.length})
+                </h2>
+                {products.length > 0 && (
+                  <button 
+                    type="button" 
+                    onClick={handleSelectAll} 
+                    style={{
+                      background: 'none',
+                      border: '1px solid var(--border-color)',
+                      color: 'var(--text-secondary)',
+                      padding: '4px 10px',
+                      fontSize: '0.65rem',
+                      fontWeight: 800,
+                      letterSpacing: '0.05em',
+                      textTransform: 'uppercase',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {selectedProductIds.length === products.length ? 'DESELECT ALL' : 'SELECT ALL'}
+                  </button>
+                )}
+              </div>
+
+              {/* Bulk Actions Panel */}
+              {selectedProductIds.length > 0 && (
+                <div style={{
+                  background: 'var(--bg-secondary)',
+                  border: '1px solid var(--accent)',
+                  padding: '1.25rem',
+                  marginBottom: '1.5rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '1rem',
+                  animation: 'fadeIn 0.2s'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.05em', color: 'var(--accent)' }}>
+                      BULK ACTION ON SELECTED ({selectedProductIds.length} ITEMS)
+                    </span>
+                    <button 
+                      type="button" 
+                      onClick={() => setSelectedProductIds([])}
+                      style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '0.65rem', textDecoration: 'underline', cursor: 'pointer' }}
+                    >
+                      CLEAR SELECTIONS
+                    </button>
+                  </div>
+
+                  <div style={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', 
+                    gap: '1rem',
+                    borderTop: '1px solid var(--border-color)',
+                    paddingTop: '1rem'
+                  }}>
+                    {/* Bulk Collection change */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                      <label style={{ fontSize: '0.6rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>MOVE TO COLLECTION</label>
+                      <div style={{ display: 'flex', gap: '0.25rem' }}>
+                        <select 
+                          value={bulkDropSelect}
+                          onChange={(e) => setBulkDropSelect(e.target.value)}
+                          style={{
+                            flexGrow: 1,
+                            background: 'var(--bg-primary)',
+                            border: '1px solid var(--border-color)',
+                            color: 'var(--text-primary)',
+                            padding: '6px',
+                            fontSize: '0.75rem',
+                            fontFamily: 'var(--font-sans)',
+                            outline: 'none',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <option value="drop1">DROP I: BLACK LOOM</option>
+                          <option value="drop2">DROP II: THE ECLIPSE COLLECTION</option>
+                          <option value="none">NO DROP / BASICS</option>
+                        </select>
+                        <button 
+                          type="button" 
+                          onClick={() => handleBulkChangeDrop(bulkDropSelect)}
+                          style={{ ...statusBtnStyle, flexGrow: 0, padding: '6px 12px', border: '1px solid var(--accent)', color: '#fff', backgroundColor: 'var(--accent)' }}
+                        >
+                          APPLY
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Bulk Sale change */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                      <label style={{ fontSize: '0.6rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>SET SALE % OFF</label>
+                      <div style={{ display: 'flex', gap: '0.25rem' }}>
+                        <input 
+                          type="number" 
+                          placeholder="e.g. 20 (for 20% off)" 
+                          value={bulkDiscountInput}
+                          onChange={(e) => setBulkDiscountInput(e.target.value)}
+                          style={{
+                            width: '120px',
+                            background: 'var(--bg-primary)',
+                            border: '1px solid var(--border-color)',
+                            color: 'var(--text-primary)',
+                            padding: '6px',
+                            fontSize: '0.75rem',
+                            fontFamily: 'var(--font-sans)',
+                            outline: 'none'
+                          }}
+                        />
+                        <button 
+                          type="button" 
+                          onClick={() => handleBulkSetSale(bulkDiscountInput)}
+                          style={{ ...statusBtnStyle, flexGrow: 0, padding: '6px 12px', border: '1px solid var(--text-primary)', color: '#fff', backgroundColor: 'var(--text-primary)' }}
+                        >
+                          APPLY SALE
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
+                    <button 
+                      type="button" 
+                      onClick={handleBulkRemoveSale}
+                      style={{ ...statusBtnStyle, padding: '8px 12px' }}
+                    >
+                      REMOVE ALL SALE PRICES
+                    </button>
+                    <button 
+                      type="button" 
+                      onClick={handleBulkDelete}
+                      style={{ ...statusBtnStyle, backgroundColor: '#900', border: 'none', color: '#fff', padding: '8px 12px' }}
+                    >
+                      DELETE SELECTED ITEMS ({selectedProductIds.length})
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 {products.map(p => (
@@ -797,11 +1037,24 @@ const Admin = ({
                       display: 'flex',
                       alignItems: 'center',
                       background: 'var(--bg-secondary)',
-                      border: '1px solid var(--border-color)',
+                      border: `1px solid ${selectedProductIds.includes(p.id) ? 'var(--accent)' : 'var(--border-color)'}`,
                       padding: '1rem',
-                      gap: '1rem'
+                      gap: '1rem',
+                      transition: 'border-color 0.2s'
                     }}
                   >
+                    <input 
+                      type="checkbox"
+                      checked={selectedProductIds.includes(p.id)}
+                      onChange={() => toggleSelectProduct(p.id)}
+                      style={{
+                        width: '18px',
+                        height: '18px',
+                        cursor: 'pointer',
+                        accentColor: 'var(--accent)'
+                      }}
+                    />
+
                     <img 
                       src={p.images[0]} 
                       alt={p.title} 
@@ -809,13 +1062,15 @@ const Admin = ({
                     />
                     
                     <div style={{ flexGrow: 1 }}>
-                      <span style={{ fontSize: '0.6rem', color: 'var(--accent)', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>{p.category}</span>
+                      <span style={{ fontSize: '0.6rem', color: 'var(--accent)', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                        {p.category} {p.drop ? `| ${p.drop === 'none' ? 'Basics' : p.drop === 'drop1' ? 'Drop I' : 'Drop II'}` : ''}
+                      </span>
                       <h4 style={{ textTransform: 'uppercase', fontSize: '0.85rem', fontWeight: 800, margin: '2px 0 4px 0', color: 'var(--text-primary)' }}>{p.title}</h4>
                       <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
                         Rs. {p.salePrice ? `${Number(p.salePrice).toLocaleString()} (Sale)` : Number(p.price).toLocaleString()}
                       </span>
                     </div>
-
+ 
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
                       <button onClick={() => handleEdit(p)} className="inv-btn-edit" style={actionBtnStyle}><Edit2 size={14} /></button>
                       <button 
