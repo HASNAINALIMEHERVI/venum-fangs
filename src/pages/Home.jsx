@@ -435,7 +435,7 @@ const Home = ({ products, onQuickAdd }) => {
               margin: '0 0 1rem 0',
               lineHeight: '1.2'
             }}>
-              Blackloom: The Apex of Streetwear in Pakistan
+              BLACK LOOM: The Apex of Streetwear in Pakistan
             </h1>
             <h2 style={{
               fontSize: '0.95rem',
@@ -456,7 +456,7 @@ const Home = ({ products, onQuickAdd }) => {
             textAlign: 'left'
           }}>
             <p style={{ marginBottom: '1.5rem', fontSize: '0.95rem', color: 'var(--text-primary)', fontWeight: 500 }}>
-              Blackloom redefines the fashion landscape as the definitive <strong>premium streetwear brand</strong> in Pakistan. We invite discerning gentlemen to experience apparel that transcends the ordinary.
+              BLACK LOOM redefines the fashion landscape as the definitive <strong>premium streetwear brand</strong> in Pakistan. We invite discerning gentlemen to experience apparel that transcends the ordinary.
             </p>
 
             <p style={{ marginBottom: '1.5rem' }}>
@@ -514,7 +514,7 @@ const Home = ({ products, onQuickAdd }) => {
                 Unrivaled Quality and Design
               </h3>
               <p style={{ marginBottom: '1.5rem' }}>
-                Blackloom stands apart as a <strong>premium streetwear brand</strong> committed to innovation and quality. Our design philosophy merges raw, contrasting forces with refined aesthetics. The Eclipse Collection, for example, explores the collision of absolute dark and stark white silhouettes through distressed and smoke-inspired textures, delivering a powerful visual narrative. When you choose Blackloom, you choose a brand that elevates <strong>streetwear Pakistan</strong> to an art form.
+                BLACK LOOM stands apart as a <strong>premium streetwear brand</strong> committed to innovation and quality. Our design philosophy merges raw, contrasting forces with refined aesthetics. The Eclipse Collection, for example, explores the collision of absolute dark and stark white silhouettes through distressed and smoke-inspired textures, delivering a powerful visual narrative. When you choose BLACK LOOM, you choose a brand that elevates <strong>streetwear Pakistan</strong> to an art form.
               </p>
 
               <h2 style={{
@@ -528,7 +528,7 @@ const Home = ({ products, onQuickAdd }) => {
                 borderBottom: '1px solid var(--border-color)',
                 paddingBottom: '0.3rem'
               }}>
-                Why Choose Blackloom?
+                Why Choose BLACK LOOM?
               </h2>
               <ul style={{ 
                 listStyle: 'none', 
@@ -552,7 +552,7 @@ const Home = ({ products, onQuickAdd }) => {
                 </li>
                 <li style={{ paddingLeft: '1.5rem', position: 'relative' }}>
                   <span style={{ position: 'absolute', left: 0, color: 'var(--text-primary)' }}>•</span>
-                  <strong>Trusted by Fashion Connoisseurs:</strong> Blackloom is the preferred choice for men seeking the finest <strong>oversized t-shirts pakistan</strong> and premium apparel.
+                  <strong>Trusted by Fashion Connoisseurs:</strong> BLACK LOOM is the preferred choice for men seeking the finest <strong>oversized t-shirts pakistan</strong> and premium apparel.
                 </li>
               </ul>
             </div>
