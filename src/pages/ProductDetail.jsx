@@ -72,26 +72,73 @@ const ProductDetail = ({ products, onAddToCart }) => {
         {/* 2-Column Layout */}
         <div className="product-detail-layout" style={{ display: 'grid', gap: '3rem' }}>
           
-          {/* Images */}
-          <div className="images-column" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {product.images.map((img, idx) => (
+          {/* Images Gallery with Swiper on Mobile */}
+          <div className="images-container" style={{ position: 'relative' }}>
+            <div 
+              className="images-column" 
+              style={{ display: 'flex', gap: '1rem' }}
+              onScroll={(e) => {
+                const index = Math.round(e.target.scrollLeft / e.target.clientWidth);
+                const dots = document.querySelectorAll('.gallery-dot');
+                dots.forEach((dot, idx) => {
+                  if (idx === index) {
+                    dot.style.backgroundColor = '#1a1a1a';
+                    dot.style.transform = 'scale(1.2)';
+                  } else {
+                    dot.style.backgroundColor = '#d4d4d4';
+                    dot.style.transform = 'scale(1)';
+                  }
+                });
+              }}
+            >
+              {product.images.map((img, idx) => (
+                <div 
+                  key={idx} 
+                  className="gallery-image-wrapper"
+                  style={{
+                    aspectRatio: '4 / 5',
+                    backgroundColor: 'var(--bg-secondary)',
+                    borderRadius: '12px',
+                    overflow: 'hidden'
+                  }}
+                >
+                  <img 
+                    src={img} 
+                    alt={`${product.title} view ${idx + 1}`} 
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                  />
+                </div>
+              ))}
+            </div>
+
+            {/* Pagination Dots (Only visible on mobile) */}
+            {product.images.length > 1 && (
               <div 
-                key={idx} 
-                style={{
-                  width: '100%',
-                  aspectRatio: '4 / 5',
-                  backgroundColor: 'var(--bg-secondary)',
-                  borderRadius: '12px',
-                  overflow: 'hidden'
+                className="gallery-dots-row"
+                style={{ 
+                  display: 'flex', 
+                  justifyContent: 'center', 
+                  gap: '8px', 
+                  marginTop: '1rem',
+                  alignItems: 'center'
                 }}
               >
-                <img 
-                  src={img} 
-                  alt={`${product.title} view ${idx + 1}`} 
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
-                />
+                {product.images.map((_, idx) => (
+                  <span 
+                    key={idx} 
+                    className="gallery-dot"
+                    style={{
+                      width: '6px',
+                      height: '6px',
+                      borderRadius: '50%',
+                      backgroundColor: idx === 0 ? '#1a1a1a' : '#d4d4d4',
+                      transform: idx === 0 ? 'scale(1.2)' : 'scale(1)',
+                      transition: 'all 0.25s ease'
+                    }}
+                  />
+                ))}
               </div>
-            ))}
+            )}
           </div>
 
           {/* Product Info */}
@@ -378,9 +425,35 @@ const ProductDetail = ({ products, onAddToCart }) => {
         .product-detail-layout {
           grid-template-columns: 1fr;
         }
+        .images-column {
+          overflow-x: auto;
+          scroll-snap-type: x mandatory;
+          -webkit-overflow-scrolling: touch;
+          scrollbar-width: none; /* Firefox */
+        }
+        .images-column::-webkit-scrollbar {
+          display: none; /* Safari and Chrome */
+        }
+        .gallery-image-wrapper {
+          scroll-snap-align: start;
+          flex-shrink: 0;
+          width: 100%;
+        }
         @media (min-width: 1024px) {
           .product-detail-layout {
             grid-template-columns: 1.2fr 0.8fr;
+          }
+          .images-column {
+            flex-direction: column;
+            overflow-x: visible;
+            scroll-snap-type: none;
+          }
+          .gallery-image-wrapper {
+            width: 100%;
+            flex-shrink: 1;
+          }
+          .gallery-dots-row {
+            display: none !important;
           }
           .info-column {
             position: sticky;
