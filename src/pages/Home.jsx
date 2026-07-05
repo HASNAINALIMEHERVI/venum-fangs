@@ -7,6 +7,7 @@ const Home = ({ products, onQuickAdd }) => {
   const categoryFilter = searchParams.get('category');
   const navigate = useNavigate();
   const [showManifesto, setShowManifesto] = React.useState(false);
+  const [selectedDrop, setSelectedDrop] = React.useState('all');
 
   const filteredProducts = categoryFilter 
     ? products.filter(p => p.category.toLowerCase() === categoryFilter.toLowerCase())
@@ -195,11 +196,14 @@ const Home = ({ products, onQuickAdd }) => {
         </div>
       </section>
 
-      {/* NEW IN Product Grid (First 4 products) */}
+      {/* NEW IN Product Grid (Filtered by showInNewIn) */}
       <section style={{ padding: '0 0 1rem 0' }}>
         <div style={{ padding: '0 0.5rem' }}>
           <div className="product-grid-tight">
-            {products.slice(0, 4).map(product => (
+            {(products.filter(p => p.showInNewIn === true).length > 0
+              ? products.filter(p => p.showInNewIn === true).slice(0, 4)
+              : products.slice(0, 4)
+            ).map(product => (
               <ProductCard 
                 key={product.id} 
                 product={product} 
@@ -324,11 +328,48 @@ const Home = ({ products, onQuickAdd }) => {
         </div>
       </section>
 
+      {/* Drop/Collection filter buttons */}
+      <section style={{ padding: '1rem 0 1rem 0', overflowX: 'auto', display: 'flex', gap: '0.5rem', paddingLeft: '0.5rem', paddingRight: '0.5rem', scrollbarWidth: 'none' }} className="hide-scrollbar">
+        {[
+          { id: 'all', label: 'ALL ITEMS' },
+          { id: 'drop1', label: 'DROP I: BLACK LOOM' },
+          { id: 'drop2', label: 'DROP II: ECLIPSE' },
+          { id: 'none', label: 'BASICS' }
+        ].map(dropItem => {
+          const isActive = selectedDrop === dropItem.id;
+          return (
+            <button
+              key={dropItem.id}
+              onClick={() => setSelectedDrop(dropItem.id)}
+              style={{
+                backgroundColor: isActive ? 'var(--text-primary)' : 'var(--bg-secondary)',
+                color: isActive ? '#fff' : 'var(--text-secondary)',
+                border: `1px solid ${isActive ? 'var(--text-primary)' : 'var(--border-color)'}`,
+                padding: '0.5rem 1.25rem',
+                fontSize: '0.68rem',
+                fontWeight: 800,
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                borderRadius: '0px',
+                flexShrink: 0
+              }}
+            >
+              {dropItem.label}
+            </button>
+          );
+        })}
+      </section>
+
       {/* ALL PRODUCTS Grid */}
       <section style={{ padding: '0 0 1.5rem 0' }}>
         <div style={{ padding: '0 0.5rem' }}>
           <div className="product-grid-tight">
-            {products.map(product => (
+            {(selectedDrop === 'all' 
+              ? products 
+              : products.filter(p => (p.drop || 'drop1') === selectedDrop)
+            ).map(product => (
               <ProductCard 
                 key={product.id} 
                 product={product} 

@@ -27,7 +27,9 @@ const Admin = ({
     salePrice: '',
     description: '',
     sizes: ['S', 'M', 'L', 'XL', 'XXL'],
-    images: ['', '', '', '']
+    images: ['', '', '', ''],
+    drop: 'drop1',
+    showInNewIn: true
   });
   // Track raw File objects selected by the user for upload
   const [pendingFiles, setPendingFiles] = useState([null, null, null, null]);
@@ -216,7 +218,9 @@ const Admin = ({
         salePrice: '',
         description: '',
         sizes: ['S', 'M', 'L', 'XL', 'XXL'],
-        images: ['', '', '', '']
+        images: ['', '', '', ''],
+        drop: 'drop1',
+        showInNewIn: true
       });
       setPendingFiles([null, null, null, null]);
     } catch (err) {
@@ -240,7 +244,9 @@ const Admin = ({
         product.images[1] || '',
         product.images[2] || '',
         product.images[3] || ''
-      ]
+      ],
+      drop: product.drop || 'drop1',
+      showInNewIn: product.showInNewIn !== false
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -627,6 +633,47 @@ const Admin = ({
                       onChange={handleTextChange}
                       style={inputStyle}
                     />
+                  </div>
+                </div>
+
+                {/* Drop / Collection & Display Row */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.1em', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>DROP / COLLECTION</label>
+                    <select 
+                      name="drop"
+                      value={formData.drop}
+                      onChange={handleTextChange}
+                      style={{
+                        width: '100%',
+                        background: 'var(--bg-primary)',
+                        border: '1px solid var(--border-color)',
+                        color: 'var(--text-primary)',
+                        padding: '0.8rem',
+                        fontSize: '0.85rem',
+                        fontFamily: 'var(--font-sans)',
+                        outline: 'none',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <option value="drop1">DROP I: BLACK LOOM</option>
+                      <option value="drop2">DROP II: THE ECLIPSE COLLECTION</option>
+                      <option value="none">NO DROP / STANDARD CATALOG</option>
+                    </select>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', paddingTop: '1.8rem' }}>
+                    <input 
+                      type="checkbox" 
+                      name="showInNewIn" 
+                      id="showInNewIn" 
+                      checked={formData.showInNewIn} 
+                      onChange={(e) => setFormData(prev => ({ ...prev, showInNewIn: e.target.checked }))}
+                      style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: 'var(--accent)' }}
+                    />
+                    <label htmlFor="showInNewIn" style={{ fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>
+                      FEATURE IN "NEW IN"
+                    </label>
                   </div>
                 </div>
 

@@ -28,7 +28,9 @@ const DEFAULT_PRODUCTS = [
     salePrice: 2790,
     description: "A PREMIUM STREETWEAR PIECE DECORATED WITH OUR SIGNATURE BLACK LOOM COILED GEOMETRIC ARTWORK. BULKY DROP-SHOULDER CUT ENHANCES THE SILHOUETTE, OFFERING EXTRA ROOM FOR COMFORT AND DRAPE.",
     sizes: ["S", "M", "L", "XL", "XXL"],
-    images: ["/images/loom_tee_front.png", "/images/loom_tee_back.png"]
+    images: ["/images/loom_tee_front.png", "/images/loom_tee_back.png"],
+    drop: "drop1",
+    showInNewIn: true
   },
   {
     id: "loom-fleece-hoodie",
@@ -38,7 +40,9 @@ const DEFAULT_PRODUCTS = [
     salePrice: 4290,
     description: "BUILT FROM 350 GSM HEAVYWEIGHT BRUSHED FLEECE. THE BACK FEATURES THE INDUSTRIAL BLACK LOOM METALLIC EMBLEM EMBROIDERED METICULOUSLY FOR A SHARP VISUAL ATTITUDE.",
     sizes: ["S", "M", "L", "XL", "XXL"],
-    images: ["/images/loom_hoodie_front.png", "/images/loom_hoodie_back.png"]
+    images: ["/images/loom_hoodie_front.png", "/images/loom_hoodie_back.png"],
+    drop: "drop1",
+    showInNewIn: true
   },
   {
     id: "loom-woven-crewneck",
@@ -48,7 +52,9 @@ const DEFAULT_PRODUCTS = [
     salePrice: null,
     description: "DEEP BLACK ACID WASH SWEATSHIRT FEATURING A TOXIC PURPLE LOOM TEXTURE PATTERN ALONG BOTH SLEEVES AND A COMPACT BRASS-EMBOSSED BLACK LOOM SCRIPT ON THE FRONT CREWNECK COLLAR.",
     sizes: ["M", "L", "XL"],
-    images: ["/images/loom_crewneck.png", "/images/loom_crewneck.png"]
+    images: ["/images/loom_crewneck.png", "/images/loom_crewneck.png"],
+    drop: "drop1",
+    showInNewIn: false
   },
   {
     id: "loom-signature-tee",
@@ -58,7 +64,9 @@ const DEFAULT_PRODUCTS = [
     salePrice: 2990,
     description: "LIMITED DROP PIECE IN CORROSIVE GREY. DESIGN REPRESENTS THE HYPNOTIC TEXTURE LOGO GRAPHIC METICULOUSLY PUFF SCREEN-PRINTED ON A HEAVYWEIGHT DROP SHOULDER COTTON BLEND.",
     sizes: ["S", "M", "L", "XL"],
-    images: ["/images/loom_tee_front.png", "/images/loom_tee_back.png"]
+    images: ["/images/loom_tee_front.png", "/images/loom_tee_back.png"],
+    drop: "drop1",
+    showInNewIn: true
   },
   {
     id: "black-loom-heavy-tee",
@@ -68,7 +76,9 @@ const DEFAULT_PRODUCTS = [
     salePrice: null,
     description: "MATTE BLACK FINISH T-SHIRT DEVELOPED WITH A WIDER COLLAR LINING AND OVERSIZE FITTING. MINIMALIST EMBOSSED BLACK LOOM SCRIPT ON FRONT CHEST.",
     sizes: ["S", "M", "L", "XL", "XXL"],
-    images: ["/images/loom_tee_front.png", "/images/loom_tee_back.png"]
+    images: ["/images/loom_tee_front.png", "/images/loom_tee_back.png"],
+    drop: "drop1",
+    showInNewIn: false
   },
   {
     id: "acid-loom-sweatshirt",
@@ -78,7 +88,9 @@ const DEFAULT_PRODUCTS = [
     salePrice: 3200,
     description: "FEATURING TOXIC GREEN SPLATTERS SCATTERED OVER AN INTENSE BRUSHED CHARCOAL SWEATSHIRT BASE. COMFORTABLE DOUBLE NEEDLE SEAMS AND DURABLE COLLAR RIBS.",
     sizes: ["S", "M", "L", "XL"],
-    images: ["/images/loom_crewneck.png", "/images/loom_crewneck.png"]
+    images: ["/images/loom_crewneck.png", "/images/loom_crewneck.png"],
+    drop: "drop1",
+    showInNewIn: false
   },
   {
     id: "eclipse-split-tee",
@@ -88,7 +100,9 @@ const DEFAULT_PRODUCTS = [
     salePrice: null,
     description: "FEATURING A HIGH-CONTRAST DUAL SPLIT DESIGN. ONE HALF STARK BRIGHT WHITE, THE OTHER A DEEP MATTE BLACK, MERGING SEAMLESSLY AT THE CENTER.",
     sizes: ["S", "M", "L", "XL", "XXL"],
-    images: ["/images/eclipse_split_tee.png", "/images/eclipse_split_tee.png"]
+    images: ["/images/eclipse_split_tee.png", "/images/eclipse_split_tee.png"],
+    drop: "drop2",
+    showInNewIn: true
   },
   {
     id: "monochrome-smoke-hoodie",
@@ -98,7 +112,9 @@ const DEFAULT_PRODUCTS = [
     salePrice: 4990,
     description: "CRAFTED FROM A PREMIUM 400 GSM BRUSHED COTTON FLEECE. EMBELLISHED WITH ELEGANT GREYISH WHITE SMOKE TEXTURES RISING FROM THE BOTTOM HEM.",
     sizes: ["S", "M", "L", "XL", "XXL"],
-    images: ["/images/smoke_hoodie.png", "/images/smoke_hoodie.png"]
+    images: ["/images/smoke_hoodie.png", "/images/smoke_hoodie.png"],
+    drop: "drop2",
+    showInNewIn: true
   },
   {
     id: "phantom-white-tee",
@@ -108,7 +124,9 @@ const DEFAULT_PRODUCTS = [
     salePrice: null,
     description: "AN ULTRA-CLEAN BRIGHT WHITE STREETWEAR PIECE WITH MINIMAL ASH-GREY BRAND SCRIPT PRINTED ACROSS THE FRONT COLLAR REGION.",
     sizes: ["S", "M", "L", "XL"],
-    images: ["/images/phantom_white_tee.png", "/images/phantom_white_tee.png"]
+    images: ["/images/phantom_white_tee.png", "/images/phantom_white_tee.png"],
+    drop: "drop2",
+    showInNewIn: false
   },
   {
     id: "coal-ash-sweatshirt",
@@ -118,7 +136,9 @@ const DEFAULT_PRODUCTS = [
     salePrice: 3990,
     description: "FINISHED IN A DISTRESSED ACID-WASHED COAL GREY. DECORATED WITH A SLIGHT TEXTURED SMOKY DESIGN THROUGHOUT THE BACK PANELS.",
     sizes: ["S", "M", "L", "XL"],
-    images: ["/images/coal_ash_sweatshirt.png", "/images/coal_ash_sweatshirt.png"]
+    images: ["/images/coal_ash_sweatshirt.png", "/images/coal_ash_sweatshirt.png"],
+    drop: "drop2",
+    showInNewIn: false
   }
 ];
 
