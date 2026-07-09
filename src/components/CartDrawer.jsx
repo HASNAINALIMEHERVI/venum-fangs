@@ -115,7 +115,7 @@ const CartDrawer = ({ isOpen, onClose, cartItems, onUpdateQty, onRemoveItem, car
                       {item.title}
                     </h4>
                     <button 
-                      onClick={() => onRemoveItem(item.id, item.selectedSize)}
+                      onClick={() => onRemoveItem(item.id, item.selectedSize, item.selectedColor)}
                       style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '2px', flexShrink: 0 }}
                       className="remove-btn"
                     >
@@ -123,22 +123,25 @@ const CartDrawer = ({ isOpen, onClose, cartItems, onUpdateQty, onRemoveItem, car
                     </button>
                   </div>
 
-                  <span style={{ fontSize: '0.75rem', color: 'var(--accent)', fontWeight: 600 }}>
-                    Size: {item.selectedSize}
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
+                    Size: <span style={{ fontWeight: 600, color: 'var(--accent)' }}>{item.selectedSize}</span>
+                    {item.selectedColor && (
+                      <> | Color: <span style={{ fontWeight: 600, color: 'var(--accent)' }}>{item.selectedColor}</span></>
+                    )}
                   </span>
 
                   {/* Qty + Price */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' }}>
                     <div style={{ display: 'flex', alignItems: 'center', border: '1px solid var(--border-color)', borderRadius: '10px', overflow: 'hidden' }}>
                       <button 
-                        onClick={() => onUpdateQty(item.id, item.selectedSize, -1)}
+                        onClick={() => onUpdateQty(item.id, item.selectedSize, item.selectedColor, -1)}
                         style={{ padding: '5px 10px', background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
                       >
                         <Minus size={13} strokeWidth={1.5} />
                       </button>
                       <span style={{ width: '26px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 600 }}>{item.qty}</span>
                       <button 
-                        onClick={() => onUpdateQty(item.id, item.selectedSize, 1)}
+                        onClick={() => onUpdateQty(item.id, item.selectedSize, item.selectedColor, 1)}
                         style={{ padding: '5px 10px', background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
                       >
                         <Plus size={13} strokeWidth={1.5} />

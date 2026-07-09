@@ -106,6 +106,7 @@ const Footer = () => {
             <li><Link to="/?category=T-Shirts" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.75rem', fontWeight: 400 }} className="footer-link">DROP SHOULDER T-SHIRTS</Link></li>
             <li><Link to="/?category=Hoodies" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.75rem', fontWeight: 400 }} className="footer-link">HEAVYWEIGHT HOODIES</Link></li>
             <li><Link to="/?category=Sweatshirts" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.75rem', fontWeight: 400 }} className="footer-link">FLEECE SWEATSHIRTS</Link></li>
+            <li><Link to="/?category=Old Money" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.75rem', fontWeight: 400 }} className="footer-link">OLD MONEY CLASSICS</Link></li>
             <li><Link to="/" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.75rem', fontWeight: 400 }} className="footer-link">LATEST DROPS</Link></li>
           </ul>
         </div>

@@ -316,29 +316,30 @@ function App() {
   };
 
   // Cart operations
-  const handleAddToCart = (product, size) => {
-    const existing = cartItems.find(item => item.id === product.id && item.selectedSize === size);
+  const handleAddToCart = (product, size, color = 'Default') => {
+    const existing = cartItems.find(item => item.id === product.id && item.selectedSize === size && item.selectedColor === color);
     let newCart;
     if (existing) {
       newCart = cartItems.map(item => 
-        (item.id === product.id && item.selectedSize === size) 
+        (item.id === product.id && item.selectedSize === size && item.selectedColor === color) 
           ? { ...item, qty: item.qty + 1 }
           : item
       );
     } else {
-      newCart = [...cartItems, { ...product, selectedSize: size, qty: 1 }];
+      newCart = [...cartItems, { ...product, selectedSize: size, selectedColor: color, qty: 1 }];
     }
     saveCartToStorage(newCart);
     setCartOpen(true);
   };
 
   const handleQuickAdd = (product) => {
-    handleAddToCart(product, 'M');
+    const defaultColor = product.colors && product.colors.length > 0 ? product.colors[0] : 'Default';
+    handleAddToCart(product, 'M', defaultColor);
   };
 
-  const handleUpdateCartQty = (id, size, change) => {
+  const handleUpdateCartQty = (id, size, color, change) => {
     const updated = cartItems.map(item => {
-      if (item.id === id && item.selectedSize === size) {
+      if (item.id === id && item.selectedSize === size && item.selectedColor === color) {
         const newQty = item.qty + change;
         return newQty > 0 ? { ...item, qty: newQty } : null;
       }
@@ -347,8 +348,8 @@ function App() {
     saveCartToStorage(updated);
   };
 
-  const handleRemoveCartItem = (id, size) => {
-    const updated = cartItems.filter(item => !(item.id === id && item.selectedSize === size));
+  const handleRemoveCartItem = (id, size, color) => {
+    const updated = cartItems.filter(item => !(item.id === id && item.selectedSize === size && item.selectedColor === color));
     saveCartToStorage(updated);
   };
 

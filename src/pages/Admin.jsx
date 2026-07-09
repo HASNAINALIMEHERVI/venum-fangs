@@ -29,7 +29,8 @@ const Admin = ({
     sizes: ['S', 'M', 'L', 'XL', 'XXL'],
     images: ['', '', '', ''],
     drop: 'drop1',
-    showInNewIn: true
+    showInNewIn: true,
+    colorsString: ''
   });
   // Track raw File objects selected by the user for upload
   const [pendingFiles, setPendingFiles] = useState([null, null, null, null]);
@@ -307,12 +308,20 @@ const Admin = ({
     const filteredImages = finalImages.filter(img => img.trim() !== '');
     const itemPrice = Number(formData.price);
     const itemSalePrice = formData.salePrice ? Number(formData.salePrice) : null;
+    
+    // Parse colors from comma-separated string
+    const colors = formData.colorsString
+      ? formData.colorsString.split(',').map(c => c.trim()).filter(c => c !== '')
+      : [];
+
+    const { colorsString, ...payloadToSave } = formData;
 
     const productPayload = {
-      ...formData,
+      ...payloadToSave,
       price: itemPrice,
       salePrice: itemSalePrice,
-      images: filteredImages
+      images: filteredImages,
+      colors: colors
     };
 
     try {
@@ -336,7 +345,8 @@ const Admin = ({
         sizes: ['S', 'M', 'L', 'XL', 'XXL'],
         images: ['', '', '', ''],
         drop: 'drop1',
-        showInNewIn: true
+        showInNewIn: true,
+        colorsString: ''
       });
       setPendingFiles([null, null, null, null]);
     } catch (err) {
@@ -362,7 +372,8 @@ const Admin = ({
         product.images[3] || ''
       ],
       drop: product.drop || 'drop1',
-      showInNewIn: product.showInNewIn !== false
+      showInNewIn: product.showInNewIn !== false,
+      colorsString: product.colors ? product.colors.join(', ') : ''
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -691,6 +702,7 @@ const Admin = ({
                       <option value="T-Shirts">T-SHIRTS</option>
                       <option value="Hoodies">HOODIES</option>
                       <option value="Sweatshirts">SWEATSHIRTS</option>
+                      <option value="Old Money">OLD MONEY</option>
                     </select>
                   </div>
 
@@ -813,6 +825,19 @@ const Admin = ({
                       outline: 'none',
                       resize: 'vertical'
                     }}
+                  />
+                </div>
+
+                {/* Colors */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.1em', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>COLORS AVAILABLE (COMMA-SEPARATED)</label>
+                  <input 
+                    type="text" 
+                    name="colorsString"
+                    placeholder="E.G. BLACK, WHITE, CHARCOAL GREY, SAND (LEAVE EMPTY FOR DEFAULT)"
+                    value={formData.colorsString}
+                    onChange={handleTextChange}
+                    style={inputStyle}
                   />
                 </div>
 

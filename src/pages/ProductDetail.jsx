@@ -7,6 +7,7 @@ const ProductDetail = ({ products, onAddToCart }) => {
   const navigate = useNavigate();
   const [product, setProduct] = useState(null);
   const [selectedSize, setSelectedSize] = useState('M');
+  const [selectedColor, setSelectedColor] = useState('');
   const [activeAccordion, setActiveAccordion] = useState(null);
   const [addedMessage, setAddedMessage] = useState(false);
 
@@ -14,6 +15,11 @@ const ProductDetail = ({ products, onAddToCart }) => {
     const found = products.find(p => p.id === id);
     if (found) {
       setProduct(found);
+      if (found.colors && found.colors.length > 0) {
+        setSelectedColor(found.colors[0]);
+      } else {
+        setSelectedColor('Default');
+      }
     }
   }, [id, products]);
 
@@ -28,7 +34,7 @@ const ProductDetail = ({ products, onAddToCart }) => {
   const hasSale = product.salePrice && Number(product.salePrice) < Number(product.price);
 
   const handleAddToCart = () => {
-    onAddToCart(product, selectedSize);
+    onAddToCart(product, selectedSize, selectedColor);
     setAddedMessage(true);
     setTimeout(() => setAddedMessage(false), 3000);
   };
@@ -222,6 +228,40 @@ const ProductDetail = ({ products, onAddToCart }) => {
                   })}
                 </div>
               </div>
+
+              {/* Color Selector */}
+              {product.colors && product.colors.length > 0 && (
+                <div>
+                  <span style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, letterSpacing: '0.02em', marginBottom: '0.75rem' }}>
+                    Color: <span style={{ color: 'var(--accent)', textTransform: 'uppercase' }}>{selectedColor}</span>
+                  </span>
+                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    {product.colors.map(color => (
+                      <button
+                        key={color}
+                        type="button"
+                        onClick={() => setSelectedColor(color)}
+                        style={{
+                          background: selectedColor === color ? '#1a1a1a' : 'transparent',
+                          color: selectedColor === color ? '#fff' : 'var(--text-primary)',
+                          border: `1.5px solid ${selectedColor === color ? '#1a1a1a' : 'var(--border-color)'}`,
+                          padding: '0.55rem 1.25rem',
+                          fontWeight: 600,
+                          fontSize: '0.75rem',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                          borderRadius: '14px',
+                          fontFamily: 'var(--font-sans)',
+                          textTransform: 'uppercase'
+                        }}
+                        className={selectedColor !== color ? 'size-btn-hover' : ''}
+                      >
+                        {color}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Action Buttons */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '0.5rem' }}>
