@@ -39,6 +39,35 @@ const ProductDetail = ({ products, onAddToCart }) => {
     setTimeout(() => setAddedMessage(false), 3000);
   };
 
+  const handleColorChange = (color) => {
+    setSelectedColor(color);
+    if (product && product.images && product.imageColors) {
+      const matchIndex = product.imageColors.findIndex(
+        c => c && c.toLowerCase().trim() === color.toLowerCase().trim()
+      );
+      if (matchIndex !== -1) {
+        const wrappers = document.querySelectorAll('.gallery-image-wrapper');
+        if (wrappers[matchIndex]) {
+          setTimeout(() => {
+            wrappers[matchIndex].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            
+            // Highlight the correct dot on mobile
+            const dots = document.querySelectorAll('.gallery-dot');
+            dots.forEach((dot, idx) => {
+              if (idx === matchIndex) {
+                dot.style.backgroundColor = '#1a1a1a';
+                dot.style.transform = 'scale(1.2)';
+              } else {
+                dot.style.backgroundColor = '#d4d4d4';
+                dot.style.transform = 'scale(1)';
+              }
+            });
+          }, 50);
+        }
+      }
+    }
+  };
+
   const toggleAccordion = (index) => {
     setActiveAccordion(activeAccordion === index ? null : index);
   };
@@ -240,7 +269,7 @@ const ProductDetail = ({ products, onAddToCart }) => {
                       <button
                         key={color}
                         type="button"
-                        onClick={() => setSelectedColor(color)}
+                        onClick={() => handleColorChange(color)}
                         style={{
                           background: selectedColor === color ? '#1a1a1a' : 'transparent',
                           color: selectedColor === color ? '#fff' : 'var(--text-primary)',

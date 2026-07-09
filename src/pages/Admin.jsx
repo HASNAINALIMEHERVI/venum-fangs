@@ -28,6 +28,7 @@ const Admin = ({
     description: '',
     sizes: ['S', 'M', 'L', 'XL', 'XXL'],
     images: ['', '', '', ''],
+    imageColors: ['', '', '', ''],
     drop: 'drop1',
     showInNewIn: true,
     colorsString: ''
@@ -314,14 +315,17 @@ const Admin = ({
       ? formData.colorsString.split(',').map(c => c.trim()).filter(c => c !== '')
       : [];
 
-    const { colorsString, ...payloadToSave } = formData;
+    const { colorsString, imageColors, ...payloadToSave } = formData;
 
     const productPayload = {
       ...payloadToSave,
       price: itemPrice,
       salePrice: itemSalePrice,
       images: filteredImages,
-      colors: colors
+      colors: colors,
+      imageColors: finalImages.map((img, idx) => ({ img, color: formData.imageColors?.[idx] || '' }))
+                              .filter(item => item.img.trim() !== '')
+                              .map(item => item.color)
     };
 
     try {
@@ -344,6 +348,7 @@ const Admin = ({
         description: '',
         sizes: ['S', 'M', 'L', 'XL', 'XXL'],
         images: ['', '', '', ''],
+        imageColors: ['', '', '', ''],
         drop: 'drop1',
         showInNewIn: true,
         colorsString: ''
@@ -358,6 +363,18 @@ const Admin = ({
 
   const handleEdit = (product) => {
     setEditingId(product.id);
+    const imageList = product.images && product.images.length > 0 
+      ? [...product.images] 
+      : ['', '', '', ''];
+    const imageColorList = product.imageColors && product.imageColors.length > 0
+      ? [...product.imageColors]
+      : new Array(imageList.length).fill('');
+
+    // Make sure lists are aligned in size
+    while (imageColorList.length < imageList.length) {
+      imageColorList.push('');
+    }
+
     setFormData({
       title: product.title,
       category: product.category,
@@ -365,16 +382,13 @@ const Admin = ({
       salePrice: product.salePrice ? product.salePrice.toString() : '',
       description: product.description,
       sizes: product.sizes || ['S', 'M', 'L', 'XL', 'XXL'],
-      images: [
-        product.images[0] || '',
-        product.images[1] || '',
-        product.images[2] || '',
-        product.images[3] || ''
-      ],
+      images: imageList,
+      imageColors: imageColorList,
       drop: product.drop || 'drop1',
       showInNewIn: product.showInNewIn !== false,
       colorsString: product.colors ? product.colors.join(', ') : ''
     });
+    setPendingFiles(new Array(imageList.length).fill(null));
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -843,15 +857,33 @@ const Admin = ({
 
                 {/* Product Images Upload Row */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginTop: '0.5rem' }}>
-                  {[0, 1, 2, 3].map(index => (
-                    <div key={index} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                      <label style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.15em', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
-                        {index === 0 ? 'IMAGE 1 (FRONT VIEW) *' : `IMAGE ${index + 1}`}
-                      </label>
+                  {formData.images.map((_, index) => (
+                    <div key={index} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', border: '1px solid var(--border-color)', padding: '1rem', background: 'rgba(0,0,0,0.02)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.15em', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
+                          {index === 0 ? 'IMAGE 1 (FRONT) *' : `IMAGE ${index + 1}`}
+                        </label>
+                        {index >= 4 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setFormData(prev => {
+                                const newImages = prev.images.filter((_, i) => i !== index);
+                                const newImageColors = (prev.imageColors || []).filter((_, i) => i !== index);
+                                return { ...prev, images: newImages, imageColors: newImageColors };
+                              });
+                              setPendingFiles(prev => prev.filter((_, i) => i !== index));
+                            }}
+                            style={{ background: 'none', border: 'none', color: '#ff4d4d', fontSize: '0.7rem', cursor: 'pointer', fontWeight: 600 }}
+                          >
+                            REMOVE
+                          </button>
+                        )}
+                      </div>
                       {formData.images[index] && (
-                        <img src={formData.images[index]} style={{ width: '100px', height: '125px', objectFit: 'cover', border: '1px solid var(--accent)' }} alt={`Preview ${index + 1}`} />
+                        <img src={formData.images[index]} style={{ width: '100px', height: '125px', objectFit: 'cover', border: '1px solid var(--accent)', alignSelf: 'center' }} alt={`Preview ${index + 1}`} />
                       )}
-                      <div style={{ position: 'relative', overflow: 'hidden', border: '1px dashed var(--border-color)', padding: '1.25rem', textAlign: 'center', cursor: 'pointer' }}>
+                      <div style={{ position: 'relative', overflow: 'hidden', border: '1px dashed var(--border-color)', padding: '1.25rem', textAlign: 'center', cursor: 'pointer', background: 'var(--bg-primary)' }}>
                         <Upload size={20} style={{ color: 'var(--text-secondary)', marginBottom: '0.25rem' }} />
                         <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>UPLOAD IMAGE FILE</p>
                         <input 
@@ -877,9 +909,74 @@ const Admin = ({
                           outline: 'none'
                         }}
                       />
+
+                      {/* Associated Color Dropdown */}
+                      <div style={{ marginTop: '0.5rem' }}>
+                        <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                          Associate Color
+                        </label>
+                        <select
+                          value={formData.imageColors?.[index] || ''}
+                          onChange={(e) => {
+                            const newImageColors = [...(formData.imageColors || [])];
+                            while (newImageColors.length <= index) newImageColors.push('');
+                            newImageColors[index] = e.target.value;
+                            setFormData(prev => ({ ...prev, imageColors: newImageColors }));
+                          }}
+                          style={{
+                            width: '100%',
+                            background: 'var(--bg-primary)',
+                            border: '1px solid var(--border-color)',
+                            color: 'var(--text-primary)',
+                            padding: '0.5rem',
+                            fontSize: '0.75rem',
+                            fontFamily: 'var(--font-sans)',
+                            outline: 'none',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <option value="">None / General View</option>
+                          {formData.colorsString && formData.colorsString.split(',').map(c => c.trim()).filter(Boolean).map(color => (
+                            <option key={color} value={color}>{color.toUpperCase()}</option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
                   ))}
                 </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFormData(prev => ({
+                      ...prev,
+                      images: [...prev.images, ''],
+                      imageColors: [...(prev.imageColors || []), '']
+                    }));
+                    setPendingFiles(prev => [...prev, null]);
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    background: 'transparent',
+                    border: '1.5px dashed var(--border-color)',
+                    color: 'var(--text-primary)',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    marginTop: '1rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem',
+                    letterSpacing: '0.08em',
+                    fontFamily: 'var(--font-sans)',
+                    borderRadius: '8px'
+                  }}
+                  className="add-slot-btn"
+                >
+                  + ADD ANOTHER IMAGE SLOT
+                </button>
 
                 {/* Action Buttons */}
                 <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
