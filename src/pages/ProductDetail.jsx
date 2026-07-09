@@ -2,6 +2,30 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ShoppingBag, ChevronDown, Check, ArrowLeft } from 'lucide-react';
 
+const getColorHex = (colorName) => {
+  const name = colorName.toLowerCase().trim();
+  const colorMap = {
+    black: '#000000',
+    white: '#ffffff',
+    sand: '#e1d7c6',
+    charcoal: '#2f3538',
+    'charcoal grey': '#2f3538',
+    grey: '#8a8a8a',
+    gray: '#8a8a8a',
+    smoke: '#737373',
+    beige: '#e3d9c6',
+    cream: '#fdf9f5',
+    'off-white': '#faf9f6',
+    olive: '#556b2f',
+    brown: '#8b4513',
+    rust: '#b7410e',
+    navy: '#000080',
+    'navy blue': '#000080',
+    blue: '#0000ff'
+  };
+  return colorMap[name] || name;
+};
+
 const ProductDetail = ({ products, onAddToCart }) => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -172,52 +196,134 @@ const ProductDetail = ({ products, onAddToCart }) => {
               
               {/* Category & Title */}
               <div>
-                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 600 }}>
-                  {product.category}
-                </span>
                 <h1 style={{
                   fontFamily: 'var(--font-sans)',
-                  fontSize: 'clamp(1.5rem, 3.5vw, 2rem)',
-                  fontWeight: 700,
-                  letterSpacing: '-0.01em',
-                  marginTop: '0.4rem',
+                  fontSize: 'clamp(1.4rem, 3.2vw, 1.8rem)',
+                  fontWeight: 800,
+                  letterSpacing: '0.02em',
+                  marginTop: '0px',
+                  marginBottom: '4px',
                   lineHeight: 1.2,
-                  color: 'var(--text-primary)'
+                  color: 'var(--text-primary)',
+                  textTransform: 'uppercase'
                 }}>
-                  {formatTitle(product.title)}
+                  {product.title.toUpperCase()}
                 </h1>
+                <span style={{ 
+                  fontSize: '0.72rem', 
+                  color: 'var(--text-muted)', 
+                  letterSpacing: '0.08em', 
+                  textTransform: 'uppercase', 
+                  fontWeight: 600,
+                  display: 'block'
+                }}>
+                  {product.category === 'T-Shirts' || product.category === 'Hoodies' ? 'OVERSIZED FIT' : 'REGULAR FIT'}
+                </span>
               </div>
 
-              {/* Price */}
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.75rem' }}>
+              {/* Price & Discount Row */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
                 {hasSale ? (
                   <>
-                    <span style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--accent)' }}>
-                      Rs. {Number(product.salePrice).toLocaleString()}
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textDecoration: 'line-through', fontWeight: 700 }}>
+                      PKR {Number(product.price).toLocaleString()}
                     </span>
-                    <span style={{ fontSize: '1rem', color: 'var(--text-muted)', textDecoration: 'line-through' }}>
-                      Rs. {Number(product.price).toLocaleString()}
+                    <span style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                      PKR {Number(product.salePrice).toLocaleString()}
+                    </span>
+                    <span style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                      -{Math.round(((product.price - product.salePrice) / product.price) * 100)}%
                     </span>
                   </>
                 ) : (
-                  <span style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                    Rs. {Number(product.price).toLocaleString()}
+                  <span style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                    PKR {Number(product.price).toLocaleString()}
                   </span>
                 )}
               </div>
 
-              {/* Size Selector */}
+              {/* Baadmay Widget */}
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '0.5rem', 
+                background: 'rgba(0,0,0,0.02)', 
+                padding: '6px 10px', 
+                borderRadius: '6px', 
+                border: '1px solid rgba(0,0,0,0.05)',
+                width: 'fit-content'
+              }}>
+                <div style={{
+                  backgroundColor: '#5d2df5',
+                  color: '#fff',
+                  fontSize: '0.625rem',
+                  fontWeight: 900,
+                  padding: '3px 8px',
+                  borderRadius: '4px',
+                  letterSpacing: '0.02em',
+                  textTransform: 'lowercase',
+                  fontFamily: 'var(--font-sans)',
+                  display: 'inline-block'
+                }}>
+                  baadmay
+                </div>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
+                  Pay in 3 Installments of <strong style={{ color: '#5d2df5', fontWeight: 700 }}>Rs. {Math.round((product.salePrice || product.price) / 3).toLocaleString()}</strong>
+                </span>
+              </div>
+
+              {/* Color Swatch Selector */}
+              {product.colors && product.colors.length > 0 && (
+                <div>
+                  <span style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 500, marginBottom: '0.75rem' }}>
+                    {selectedColor.toUpperCase()}
+                  </span>
+                  <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                    {product.colors.map(color => (
+                      <div 
+                        key={color} 
+                        style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => handleColorChange(color)}
+                          style={{
+                            width: '26px',
+                            height: '26px',
+                            background: getColorHex(color),
+                            border: '1px solid var(--border-color)',
+                            cursor: 'pointer',
+                            boxSizing: 'border-box',
+                            boxShadow: selectedColor === color ? '0 0 0 1px #000' : 'none'
+                          }}
+                          title={color}
+                        />
+                        {selectedColor === color && (
+                          <div style={{ width: '18px', height: '2px', backgroundColor: '#000' }} />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Size Selector Header */}
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                  <span style={{ fontSize: '0.8rem', fontWeight: 600, letterSpacing: '0.02em' }}>
-                    Size: <span style={{ color: 'var(--accent)' }}>{selectedSize}</span>
+                  <span style={{ fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.05em', color: 'var(--text-primary)', textTransform: 'uppercase' }}>
+                    SELECT SIZE
                   </span>
-                  <a href="#sizing-fit" onClick={() => setActiveAccordion(0)} style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textDecoration: 'underline' }}>
-                    Size chart
+                  <a 
+                    href="#sizing-fit" 
+                    onClick={() => setActiveAccordion(0)} 
+                    style={{ fontSize: '0.72rem', color: '#000', textDecoration: 'underline', fontWeight: 800, letterSpacing: '0.05em', textTransform: 'uppercase' }}
+                  >
+                    SIZE GUIDE
                   </a>
                 </div>
 
-                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                {/* Size Swatches */}
+                <div style={{ display: 'flex', gap: '1.25rem', flexWrap: 'wrap', alignItems: 'center' }}>
                   {['S', 'M', 'L', 'XL', 'XXL'].map(size => {
                     const available = product.sizes ? product.sizes.includes(size) : true;
                     return (
@@ -226,20 +332,18 @@ const ProductDetail = ({ products, onAddToCart }) => {
                         onClick={() => available && setSelectedSize(size)}
                         disabled={!available}
                         style={{
-                          width: '48px',
-                          height: '48px',
-                          background: selectedSize === size ? '#1a1a1a' : 'transparent',
-                          color: selectedSize === size ? '#fff' : (available ? 'var(--text-primary)' : 'var(--text-muted)'),
-                          border: `1.5px solid ${selectedSize === size ? '#1a1a1a' : (available ? 'var(--border-color)' : 'rgba(0,0,0,0.05)')}`,
-                          fontWeight: 600,
+                          background: 'none',
+                          border: 'none',
+                          color: selectedSize === size ? '#000' : (available ? 'var(--text-secondary)' : '#ccc'),
+                          fontWeight: selectedSize === size ? 800 : 500,
                           fontSize: '0.8rem',
                           cursor: available ? 'pointer' : 'not-allowed',
-                          transition: 'all 0.2s',
                           textDecoration: !available ? 'line-through' : 'none',
-                          borderRadius: '14px',
-                          fontFamily: 'var(--font-sans)'
+                          padding: '4px 0px',
+                          fontFamily: 'var(--font-sans)',
+                          transition: 'all 0.2s',
+                          opacity: available ? 1 : 0.4
                         }}
-                        className={available && selectedSize !== size ? 'size-btn-hover' : ''}
                       >
                         {size}
                       </button>
@@ -248,90 +352,62 @@ const ProductDetail = ({ products, onAddToCart }) => {
                 </div>
               </div>
 
-              {/* Color Selector */}
-              {product.colors && product.colors.length > 0 && (
-                <div>
-                  <span style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, letterSpacing: '0.02em', marginBottom: '0.75rem' }}>
-                    Color: <span style={{ color: 'var(--accent)', textTransform: 'uppercase' }}>{selectedColor}</span>
-                  </span>
-                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                    {product.colors.map(color => (
-                      <button
-                        key={color}
-                        type="button"
-                        onClick={() => handleColorChange(color)}
-                        style={{
-                          background: selectedColor === color ? '#1a1a1a' : 'transparent',
-                          color: selectedColor === color ? '#fff' : 'var(--text-primary)',
-                          border: `1.5px solid ${selectedColor === color ? '#1a1a1a' : 'var(--border-color)'}`,
-                          padding: '0.55rem 1.25rem',
-                          fontWeight: 600,
-                          fontSize: '0.75rem',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s',
-                          borderRadius: '14px',
-                          fontFamily: 'var(--font-sans)',
-                          textTransform: 'uppercase'
-                        }}
-                        className={selectedColor !== color ? 'size-btn-hover' : ''}
-                      >
-                        {color}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Action Buttons */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '0.5rem' }}>
+              {/* Add to Cart Action Button */}
+              <div style={{ marginTop: '0.5rem' }}>
                 <button 
                   onClick={handleAddToCart}
                   style={{
-                    backgroundColor: '#1a1a1a',
-                    color: '#fff',
+                    backgroundColor: '#000000',
+                    color: '#ffffff',
                     border: 'none',
-                    padding: '1rem',
-                    fontWeight: 600,
+                    width: '100%',
+                    padding: '1.1rem',
+                    fontWeight: 700,
                     fontSize: '0.85rem',
-                    letterSpacing: '0.02em',
+                    letterSpacing: '0.08em',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: '0.6rem',
                     position: 'relative',
-                    borderRadius: '14px',
+                    borderRadius: '0px',
                     fontFamily: 'var(--font-sans)',
-                    transition: 'all 0.25s'
+                    textTransform: 'uppercase',
+                    transition: 'opacity 0.2s'
                   }}
-                  className="atc-btn"
+                  className="atc-btn-black"
                 >
-                  <ShoppingBag size={17} strokeWidth={1.5} />
-                  {addedMessage ? 'Added to Bag' : 'Add to Bag'}
-                  {addedMessage && (
-                    <span style={{ position: 'absolute', right: '1.25rem', color: 'var(--accent)' }}>
-                      <Check size={17} />
-                    </span>
-                  )}
-                </button>
-
-                <button 
-                  onClick={() => {
-                    onAddToCart(product, selectedSize);
-                    navigate('/checkout');
-                  }}
-                  className="btn-venom"
-                  style={{ padding: '1rem', fontWeight: 600, fontSize: '0.85rem' }}
-                >
-                  Buy It Now
+                  <span>{addedMessage ? 'ADDED TO BAG' : 'ADD TO CART'}</span>
+                  <ShoppingBag size={18} strokeWidth={1.5} style={{ position: 'absolute', right: '1.5rem' }} />
                 </button>
               </div>
 
-              {/* Accordion Tabs */}
-              <div style={{ borderTop: '1px solid var(--border-color)', marginTop: '1rem' }}>
+              {/* Product Description Section */}
+              <div style={{ marginTop: '1.5rem' }}>
+                <h3 style={{ fontSize: '0.85rem', fontWeight: 800, letterSpacing: '0.05em', color: 'var(--text-primary)', textTransform: 'uppercase', marginBottom: '0.75rem' }}>
+                  PRODUCT DESCRIPTION
+                </h3>
+                <p style={{ 
+                  fontSize: '0.85rem', 
+                  color: 'var(--text-secondary)', 
+                  lineHeight: 1.6, 
+                  whiteSpace: 'pre-wrap',
+                  marginBottom: '1rem'
+                }}>
+                  {product.description}
+                </p>
                 
-                {/* Sizing Tab */}
-                <div id="sizing-fit">
+                {/* Dynamic Model Details */}
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-primary)', fontWeight: 500 }}>
+                  Model Details: The Model Is Wearing Size: L; Model Height: 5.11Ft
+                </p>
+              </div>
+
+              {/* Accordion Tabs */}
+              <div style={{ marginTop: '1.5rem' }}>
+                
+                {/* Size Guide Accordion */}
+                <div id="sizing-fit" style={{ borderTop: '1px solid #eaeaea', borderBottom: '1px solid #eaeaea' }}>
                   <button 
                     onClick={() => toggleAccordion(0)}
                     style={{
@@ -340,26 +416,27 @@ const ProductDetail = ({ products, onAddToCart }) => {
                       border: 'none',
                       color: 'var(--text-primary)',
                       display: 'flex',
-                      justifyContent: 'space-between',
                       alignItems: 'center',
                       padding: '1.1rem 0',
-                      fontWeight: 500,
-                      fontSize: '0.85rem',
-                      letterSpacing: '0.02em',
+                      fontWeight: 700,
+                      fontSize: '0.75rem',
+                      letterSpacing: '0.05em',
                       cursor: 'pointer',
-                      borderBottom: '1px solid var(--border-color)',
-                      fontFamily: 'var(--font-sans)'
+                      fontFamily: 'var(--font-sans)',
+                      textAlign: 'left'
                     }}
                   >
-                    <span>Sizing & Fit</span>
-                    <ChevronDown size={16} strokeWidth={1.5} style={{ transform: activeAccordion === 0 ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.2s' }} />
+                    <span style={{ marginRight: '1rem', width: '12px', display: 'inline-block' }}>
+                      {activeAccordion === 0 ? '−' : '+'}
+                    </span>
+                    <span>SIZE GUIDE</span>
                   </button>
                   {activeAccordion === 0 && (
-                    <div style={{ padding: '1rem 0 1.25rem 0', color: 'var(--text-secondary)', fontSize: '0.85rem', borderBottom: '1px solid var(--border-color)' }}>
+                    <div style={{ padding: '0 0 1.25rem 0', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
                       <p style={{ marginBottom: '1rem', lineHeight: 1.6 }}>
-                        This apparel features an oversized fit with a boxier dropped shoulder silhouette. We recommend buying your true size for the perfect streetwear slouch, or sizing down for a regular fit.
+                        This apparel features our signature street fit. We recommend buying your true size for the perfect look, or sizing down for a regular fit.
                       </p>
-                      <table style={{ width: '100%', borderCollapse: 'collapse', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border-color)', textAlign: 'center', fontSize: '0.8rem' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'center', fontSize: '0.8rem', border: '1px solid var(--border-color)' }}>
                         <thead>
                           <tr style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)', fontWeight: 600 }}>
                             <th style={{ padding: '10px', border: '1px solid var(--border-color)' }}>Size</th>
@@ -399,8 +476,8 @@ const ProductDetail = ({ products, onAddToCart }) => {
                   )}
                 </div>
 
-                {/* Description Tab */}
-                <div>
+                {/* Product Details Accordion */}
+                <div style={{ borderBottom: '1px solid #eaeaea', marginTop: '-1px' }}>
                   <button 
                     onClick={() => toggleAccordion(1)}
                     style={{
@@ -409,26 +486,26 @@ const ProductDetail = ({ products, onAddToCart }) => {
                       border: 'none',
                       color: 'var(--text-primary)',
                       display: 'flex',
-                      justifyContent: 'space-between',
                       alignItems: 'center',
                       padding: '1.1rem 0',
-                      fontWeight: 500,
-                      fontSize: '0.85rem',
-                      letterSpacing: '0.02em',
+                      fontWeight: 700,
+                      fontSize: '0.75rem',
+                      letterSpacing: '0.05em',
                       cursor: 'pointer',
-                      borderBottom: '1px solid var(--border-color)',
-                      fontFamily: 'var(--font-sans)'
+                      fontFamily: 'var(--font-sans)',
+                      textAlign: 'left'
                     }}
                   >
-                    <span>Product Details</span>
-                    <ChevronDown size={16} strokeWidth={1.5} style={{ transform: activeAccordion === 1 ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.2s' }} />
+                    <span style={{ marginRight: '1rem', width: '12px', display: 'inline-block' }}>
+                      {activeAccordion === 1 ? '−' : '+'}
+                    </span>
+                    <span>PRODUCT DETAILS & COMPOSITION</span>
                   </button>
                   {activeAccordion === 1 && (
-                    <div style={{ padding: '1rem 0 1.25rem 0', color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: 1.6, borderBottom: '1px solid var(--border-color)' }}>
-                      <p style={{ whiteSpace: 'pre-wrap', marginBottom: '0.75rem' }}>{product.description}</p>
+                    <div style={{ padding: '0 0 1.25rem 0', color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: 1.6 }}>
                       <ul style={{ paddingLeft: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                         <li>100% Premium Combed Cotton</li>
-                        <li>Heavy Fabric Density: 240 GSM (Tees) / 350 GSM (Hoodies)</li>
+                        <li>Heavy Fabric Density: 240 GSM (Tees) / 350 GSM (Hoodies & Sweatshirts)</li>
                         <li>Vibrant High-Definition Puff Screen Print</li>
                         <li>Ribbed Crew Neck & Double Needle Stitched Seams</li>
                         <li>Wash Care: Cold wash separately, iron inside out</li>
@@ -437,8 +514,8 @@ const ProductDetail = ({ products, onAddToCart }) => {
                   )}
                 </div>
 
-                {/* Shipping Tab */}
-                <div>
+                {/* Deliveries & Returns Accordion */}
+                <div style={{ borderBottom: '1px solid #eaeaea', marginTop: '-1px' }}>
                   <button 
                     onClick={() => toggleAccordion(2)}
                     style={{
@@ -447,22 +524,23 @@ const ProductDetail = ({ products, onAddToCart }) => {
                       border: 'none',
                       color: 'var(--text-primary)',
                       display: 'flex',
-                      justifyContent: 'space-between',
                       alignItems: 'center',
                       padding: '1.1rem 0',
-                      fontWeight: 500,
-                      fontSize: '0.85rem',
-                      letterSpacing: '0.02em',
+                      fontWeight: 700,
+                      fontSize: '0.75rem',
+                      letterSpacing: '0.05em',
                       cursor: 'pointer',
-                      borderBottom: '1px solid var(--border-color)',
-                      fontFamily: 'var(--font-sans)'
+                      fontFamily: 'var(--font-sans)',
+                      textAlign: 'left'
                     }}
                   >
-                    <span>Shipping & Returns</span>
-                    <ChevronDown size={16} strokeWidth={1.5} style={{ transform: activeAccordion === 2 ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.2s' }} />
+                    <span style={{ marginRight: '1rem', width: '12px', display: 'inline-block' }}>
+                      {activeAccordion === 2 ? '−' : '+'}
+                    </span>
+                    <span>DELIVERIES & RETURNS</span>
                   </button>
                   {activeAccordion === 2 && (
-                    <div style={{ padding: '1rem 0 1.25rem 0', color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: 1.6, borderBottom: '1px solid var(--border-color)' }}>
+                    <div style={{ padding: '0 0 1.25rem 0', color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: 1.6 }}>
                       <p style={{ marginBottom: '0.75rem' }}><strong>Shipping in Pakistan:</strong></p>
                       <p style={{ marginBottom: '1rem' }}>All orders placed in Pakistan are delivered via Leopards/TCS Courier within 3 to 5 working days. Shipping is entirely free.</p>
                       <p style={{ marginBottom: '0.75rem' }}><strong>Returns Policy:</strong></p>
