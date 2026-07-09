@@ -242,36 +242,6 @@ const ProductDetail = ({ products, onAddToCart }) => {
                 )}
               </div>
 
-              {/* Baadmay Widget */}
-              <div style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: '0.5rem', 
-                background: 'rgba(0,0,0,0.02)', 
-                padding: '6px 10px', 
-                borderRadius: '6px', 
-                border: '1px solid rgba(0,0,0,0.05)',
-                width: 'fit-content'
-              }}>
-                <div style={{
-                  backgroundColor: '#5d2df5',
-                  color: '#fff',
-                  fontSize: '0.625rem',
-                  fontWeight: 900,
-                  padding: '3px 8px',
-                  borderRadius: '4px',
-                  letterSpacing: '0.02em',
-                  textTransform: 'lowercase',
-                  fontFamily: 'var(--font-sans)',
-                  display: 'inline-block'
-                }}>
-                  baadmay
-                </div>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
-                  Pay in 3 Installments of <strong style={{ color: '#5d2df5', fontWeight: 700 }}>Rs. {Math.round((product.salePrice || product.price) / 3).toLocaleString()}</strong>
-                </span>
-              </div>
-
               {/* Color Swatch Selector */}
               {product.colors && product.colors.length > 0 && (
                 <div>
