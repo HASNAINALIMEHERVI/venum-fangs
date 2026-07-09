@@ -41,31 +41,6 @@ const ProductDetail = ({ products, onAddToCart }) => {
 
   const handleColorChange = (color) => {
     setSelectedColor(color);
-    if (product && product.images && product.imageColors) {
-      const matchIndex = product.imageColors.findIndex(
-        c => c && c.toLowerCase().trim() === color.toLowerCase().trim()
-      );
-      if (matchIndex !== -1) {
-        const wrappers = document.querySelectorAll('.gallery-image-wrapper');
-        if (wrappers[matchIndex]) {
-          setTimeout(() => {
-            wrappers[matchIndex].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-            
-            // Highlight the correct dot on mobile
-            const dots = document.querySelectorAll('.gallery-dot');
-            dots.forEach((dot, idx) => {
-              if (idx === matchIndex) {
-                dot.style.backgroundColor = '#1a1a1a';
-                dot.style.transform = 'scale(1.2)';
-              } else {
-                dot.style.backgroundColor = '#d4d4d4';
-                dot.style.transform = 'scale(1)';
-              }
-            });
-          }, 50);
-        }
-      }
-    }
   };
 
   const toggleAccordion = (index) => {
@@ -77,6 +52,20 @@ const ProductDetail = ({ products, onAddToCart }) => {
       word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
     ).join(' ');
   };
+
+  const getActiveImages = () => {
+    if (!product || !product.images) return [];
+    if (!selectedColor || selectedColor === 'Default') {
+      return product.images;
+    }
+    const filtered = product.images.filter((img, idx) => {
+      const imgColor = product.imageColors?.[idx];
+      return imgColor && imgColor.toLowerCase().trim() === selectedColor.toLowerCase().trim();
+    });
+    return filtered.length > 0 ? filtered : product.images;
+  };
+
+  const activeImages = getActiveImages();
 
   return (
     <div style={{ padding: '1.5rem 0 3rem' }} className="fade-in">
@@ -110,6 +99,7 @@ const ProductDetail = ({ products, onAddToCart }) => {
           {/* Images Gallery with Swiper on Mobile */}
           <div className="images-container" style={{ position: 'relative' }}>
             <div 
+              key={selectedColor}
               className="images-column" 
               style={{ display: 'flex', gap: '1rem' }}
               onScroll={(e) => {
@@ -126,7 +116,7 @@ const ProductDetail = ({ products, onAddToCart }) => {
                 });
               }}
             >
-              {product.images.map((img, idx) => (
+              {activeImages.map((img, idx) => (
                 <div 
                   key={idx} 
                   className="gallery-image-wrapper"
@@ -147,7 +137,7 @@ const ProductDetail = ({ products, onAddToCart }) => {
             </div>
 
             {/* Pagination Dots (Only visible on mobile) */}
-            {product.images.length > 1 && (
+            {activeImages.length > 1 && (
               <div 
                 className="gallery-dots-row"
                 style={{ 
@@ -158,7 +148,7 @@ const ProductDetail = ({ products, onAddToCart }) => {
                   alignItems: 'center'
                 }}
               >
-                {product.images.map((_, idx) => (
+                {activeImages.map((_, idx) => (
                   <span 
                     key={idx} 
                     className="gallery-dot"
