@@ -186,7 +186,7 @@ function App() {
     setCurrentUser(null);
   };
 
-  // Initialize products from Firestore (with localStorage + DEFAULT_PRODUCTS as fallback seed)
+  // Initialize products from Firestore (with localStorage fallback)
   useEffect(() => {
     const loadProducts = async () => {
       try {
@@ -199,12 +199,9 @@ function App() {
           setProducts(firestoreProducts);
           localStorage.setItem('black_loom_products', JSON.stringify(firestoreProducts));
         } else {
-          // Seed Firestore with default products
-          for (const prod of DEFAULT_PRODUCTS) {
-            await setDoc(doc(db, "products", prod.id), prod);
-          }
-          setProducts(DEFAULT_PRODUCTS);
-          localStorage.setItem('black_loom_products', JSON.stringify(DEFAULT_PRODUCTS));
+          // If database is empty, leave it empty (no more auto-seeding zombie products!)
+          setProducts([]);
+          localStorage.setItem('black_loom_products', JSON.stringify([]));
         }
       } catch (err) {
         console.error("Error loading products from Firestore:", err);
@@ -213,7 +210,7 @@ function App() {
         if (storedProds) {
           setProducts(JSON.parse(storedProds));
         } else {
-          setProducts(DEFAULT_PRODUCTS);
+          setProducts([]);
         }
       }
     };
