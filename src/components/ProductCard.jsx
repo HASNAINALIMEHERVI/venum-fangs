@@ -38,7 +38,7 @@ const ProductCard = ({ product, onQuickAdd }) => {
   const dummyColors = ['White', 'Light Blue', 'Grey', 'Black', 'Olive', 'Tan', 'Charcoal'];
   const displayColors = product.colors && product.colors.length > 0 ? product.colors : dummyColors;
 
-  const [activeColor, setActiveColor] = useState(displayColors[0]);
+  const [activeColor, setActiveColor] = useState(product.initialColor || displayColors[0]);
 
   // Determine subtitle
   const subtitle = (product.category || '').toUpperCase() === 'HOODIES' || (product.category || '').toUpperCase() === 'SWEATSHIRTS'
@@ -67,6 +67,12 @@ const ProductCard = ({ product, onQuickAdd }) => {
   const primaryImg = displayImages[0];
   const secondaryImg = displayImages.length > 1 ? displayImages[1] : null;
 
+  const handleCardClick = () => {
+    const targetId = product.originalId || product.id;
+    const colorParam = activeColor ? `?color=${encodeURIComponent(activeColor)}` : '';
+    navigate(`/product/${targetId}${colorParam}`);
+  };
+
   return (
     <div 
       className="fade-in"
@@ -79,7 +85,7 @@ const ProductCard = ({ product, onQuickAdd }) => {
       }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      onClick={() => navigate(`/product/${product.id}`)}
+      onClick={handleCardClick}
     >
       {/* Image Container */}
       <div style={{ 

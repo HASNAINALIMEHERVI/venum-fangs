@@ -9,9 +9,24 @@ const Home = ({ products, onQuickAdd }) => {
   const [showManifesto, setShowManifesto] = React.useState(false);
   const [selectedDrop, setSelectedDrop] = React.useState('all');
 
+  // Flatten products by color so each color variant has its own card
+  const flattenedProducts = React.useMemo(() => {
+    const flat = [];
+    products.forEach(p => {
+      if (p.colors && p.colors.length > 0) {
+        p.colors.forEach(color => {
+          flat.push({ ...p, id: `${p.id}-${color}`, originalId: p.id, initialColor: color });
+        });
+      } else {
+        flat.push({ ...p, originalId: p.id });
+      }
+    });
+    return flat;
+  }, [products]);
+
   const filteredProducts = categoryFilter 
-    ? products.filter(p => p.category.toLowerCase() === categoryFilter.toLowerCase())
-    : products;
+    ? flattenedProducts.filter(p => p.category.toLowerCase() === categoryFilter.toLowerCase())
+    : flattenedProducts;
 
   // Category view layout
   if (categoryFilter) {
@@ -200,9 +215,9 @@ const Home = ({ products, onQuickAdd }) => {
       <section style={{ padding: '0 0 1rem 0' }}>
         <div style={{ padding: '0 0.5rem' }}>
           <div className="product-grid-tight">
-            {(products.filter(p => p.showInNewIn === true).length > 0
-              ? products.filter(p => p.showInNewIn === true).slice(0, 4)
-              : products.slice(0, 4)
+            {(flattenedProducts.filter(p => p.showInNewIn === true).length > 0
+              ? flattenedProducts.filter(p => p.showInNewIn === true).slice(0, 4)
+              : flattenedProducts.slice(0, 4)
             ).map(product => (
               <ProductCard 
                 key={product.id} 
@@ -367,8 +382,8 @@ const Home = ({ products, onQuickAdd }) => {
         <div style={{ padding: '0 0.5rem' }}>
           <div className="product-grid-tight">
             {(selectedDrop === 'all' 
-              ? products 
-              : products.filter(p => (p.drop || 'drop1') === selectedDrop)
+              ? flattenedProducts 
+              : flattenedProducts.filter(p => (p.drop || 'drop1') === selectedDrop)
             ).map(product => (
               <ProductCard 
                 key={product.id} 

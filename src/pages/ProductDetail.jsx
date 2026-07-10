@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { ShoppingBag, ChevronDown, Check, ArrowLeft } from 'lucide-react';
 
 const getColorHex = (colorName) => {
@@ -29,6 +29,7 @@ const getColorHex = (colorName) => {
 const ProductDetail = ({ products, onAddToCart }) => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [product, setProduct] = useState(null);
   const [selectedSize, setSelectedSize] = useState('M');
   const [selectedColor, setSelectedColor] = useState('');
@@ -39,13 +40,21 @@ const ProductDetail = ({ products, onAddToCart }) => {
     const found = products.find(p => p.id === id);
     if (found) {
       setProduct(found);
-      if (found.colors && found.colors.length > 0) {
+      
+      const searchParams = new URLSearchParams(location.search);
+      const urlColor = searchParams.get('color');
+      
+      if (urlColor && found.colors && found.colors.map(c => c.toLowerCase()).includes(urlColor.toLowerCase())) {
+        const exactColor = found.colors.find(c => c.toLowerCase() === urlColor.toLowerCase());
+        setSelectedColor(exactColor);
+      } else if (found.colors && found.colors.length > 0) {
         setSelectedColor(found.colors[0]);
       } else {
         setSelectedColor('Default');
       }
+
     }
-  }, [id, products]);
+  }, [id, products, location.search]);
 
   if (!product) {
     return (
