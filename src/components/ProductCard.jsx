@@ -1,10 +1,49 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ShoppingBag } from 'lucide-react';
+
+const getColorHex = (colorName) => {
+  const name = colorName.toLowerCase().trim();
+  const colorMap = {
+    black: '#000000',
+    white: '#ffffff',
+    sand: '#e1d7c6',
+    charcoal: '#2f3538',
+    'charcoal grey': '#2f3538',
+    grey: '#8a8a8a',
+    gray: '#8a8a8a',
+    smoke: '#737373',
+    beige: '#e3d9c6',
+    cream: '#fdf9f5',
+    'off-white': '#faf9f6',
+    olive: '#556b2f',
+    brown: '#8b4513',
+    rust: '#b7410e',
+    navy: '#000080',
+    'navy blue': '#000080',
+    blue: '#0000ff',
+    'light blue': '#b5d5e5',
+    tan: '#d2b48c'
+  };
+  return colorMap[name] || name;
+};
 
 const ProductCard = ({ product, onQuickAdd }) => {
   const [hovered, setHovered] = useState(false);
+  const navigate = useNavigate();
   const hasSale = product.salePrice && Number(product.salePrice) < Number(product.price);
+  const discountPercent = hasSale ? Math.round(((Number(product.price) - Number(product.salePrice)) / Number(product.price)) * 100) : 0;
+  
+  // Default dummy colors if the product has none uploaded yet, just to match the visual aesthetic
+  const dummyColors = ['White', 'Light Blue', 'Grey', 'Black', 'Olive', 'Tan', 'Charcoal'];
+  const displayColors = product.colors && product.colors.length > 0 ? product.colors : dummyColors;
+
+  const [activeColor, setActiveColor] = useState(displayColors[0]);
+
+  // Determine subtitle
+  const subtitle = (product.category || '').toUpperCase() === 'HOODIES' || (product.category || '').toUpperCase() === 'SWEATSHIRTS'
+    ? 'RELAXED FIT | MEN' 
+    : 'REGULAR FIT | MEN';
 
   return (
     <div 
@@ -13,19 +52,21 @@ const ProductCard = ({ product, onQuickAdd }) => {
         display: 'flex',
         flexDirection: 'column',
         position: 'relative',
-        cursor: 'pointer'
+        cursor: 'pointer',
+        textAlign: 'left'
       }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
+      onClick={() => navigate(`/product/${product.id}`)}
     >
-      {/* Image — square edges, no border-radius, tight to edges */}
-      <Link to={`/product/${product.id}`} style={{ 
+      {/* Image Container */}
+      <div style={{ 
         display: 'block', 
         overflow: 'hidden', 
         position: 'relative', 
         width: '100%', 
         aspectRatio: '3 / 4',
-        backgroundColor: '#e8e8e8'
+        backgroundColor: '#f1f2f4' // Light cool grey background matching the screenshot
       }}>
         
         {/* Sale Badge */}
@@ -83,7 +124,7 @@ const ProductCard = ({ product, onQuickAdd }) => {
           />
         )}
 
-        {/* Quick Add — bottom overlay on hover */}
+        {/* Quick Add Overlay */}
         <div style={{
           position: 'absolute',
           bottom: 0,
@@ -100,6 +141,7 @@ const ProductCard = ({ product, onQuickAdd }) => {
           <button 
             onClick={(e) => {
               e.preventDefault();
+              e.stopPropagation();
               onQuickAdd(product);
             }}
             style={{
@@ -126,48 +168,101 @@ const ProductCard = ({ product, onQuickAdd }) => {
             QUICK ADD
           </button>
         </div>
-      </Link>
+      </div>
 
-      {/* Product Info — matches fear.com.pk exactly */}
-      <div style={{ padding: '0.35rem 0.15rem 0.5rem 0.15rem', display: 'flex', flexDirection: 'column', gap: '0.05rem' }}>
-        <Link to={`/product/${product.id}`} style={{ textDecoration: 'none', color: 'var(--text-primary)' }}>
-          <h3 style={{
-            fontSize: '0.68rem',
-            fontWeight: 400,
-            letterSpacing: '0.05em',
-            textTransform: 'uppercase',
-            margin: 0,
-            lineHeight: 1.25,
-            fontFamily: 'var(--font-sans)',
-            transition: 'color 0.2s ease'
-          }} className="product-title-hover">
-            {product.title}
-          </h3>
-        </Link>
+      {/* Product Info */}
+      <div style={{ padding: '0.8rem 0 0.5rem 0', display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
         
-        {/* Price — format matches RS.X,XXX */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '1px' }}>
+        <h3 style={{
+          fontSize: '0.85rem',
+          fontWeight: 400,
+          letterSpacing: '0.02em',
+          textTransform: 'uppercase',
+          margin: 0,
+          lineHeight: 1.2,
+          fontFamily: 'var(--font-sans)',
+          color: 'var(--text-primary)'
+        }}>
+          {product.title}
+        </h3>
+        
+        <p style={{
+          fontSize: '0.65rem',
+          color: '#666',
+          letterSpacing: '0.05em',
+          margin: '0 0 0.2rem 0',
+          fontFamily: 'var(--font-sans)',
+          textTransform: 'uppercase'
+        }}>
+          {subtitle}
+        </p>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.1rem' }}>
           {hasSale ? (
             <>
-              <span style={{ fontSize: '0.68rem', fontWeight: 400, color: 'var(--text-primary)', fontFamily: 'var(--font-sans)' }}>
-                RS.{Number(product.salePrice).toLocaleString()}
+              <span style={{ fontSize: '0.85rem', color: '#000', textDecoration: 'line-through', fontFamily: 'var(--font-sans)', fontWeight: 400 }}>
+                PKR {Number(product.price).toLocaleString()}
               </span>
-              <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textDecoration: 'line-through', fontFamily: 'var(--font-sans)', fontWeight: 400 }}>
-                RS.{Number(product.price).toLocaleString()}
+              <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#000', fontFamily: 'var(--font-sans)' }}>
+                PKR {Number(product.salePrice).toLocaleString()}
+              </span>
+              <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#000', fontFamily: 'var(--font-sans)' }}>
+                -{discountPercent}%
               </span>
             </>
           ) : (
-            <span style={{ fontSize: '0.68rem', fontWeight: 400, color: 'var(--text-primary)', fontFamily: 'var(--font-sans)' }}>
-              RS.{Number(product.price).toLocaleString()}
+            <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#000', fontFamily: 'var(--font-sans)' }}>
+              PKR {Number(product.price).toLocaleString()}
             </span>
           )}
         </div>
+
+        {/* Color Swatches */}
+        {displayColors.length > 0 && (
+          <div style={{ display: 'flex', gap: '0.35rem', marginTop: '0.5rem' }}>
+            {displayColors.map((color, index) => {
+              const isActive = activeColor === color;
+              const isWhite = color.toLowerCase().trim() === 'white';
+              return (
+                <div 
+                  key={index}
+                  onClick={(e) => { e.stopPropagation(); setActiveColor(color); }}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}
+                >
+                  <div style={{
+                    width: '14px',
+                    height: '14px',
+                    backgroundColor: getColorHex(color),
+                    border: isWhite ? '1px solid #ccc' : '1px solid #222',
+                    cursor: 'pointer'
+                  }} />
+                  {/* Underline for active state */}
+                  {isActive ? (
+                    <div style={{
+                      width: '14px',
+                      height: '2px',
+                      backgroundColor: '#000'
+                    }} />
+                  ) : (
+                    <div style={{
+                      width: '14px',
+                      height: '2px',
+                      backgroundColor: 'transparent'
+                    }} />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <style dangerouslySetInnerHTML={{__html: `
-        .product-title-hover:hover {
-          opacity: 0.75 !important;
-        }
         .quick-add-btn:hover {
           background-color: #000 !important;
           color: #fff !important;
