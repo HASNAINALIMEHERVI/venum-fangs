@@ -45,6 +45,28 @@ const ProductCard = ({ product, onQuickAdd }) => {
     ? 'RELAXED FIT | MEN' 
     : 'REGULAR FIT | MEN';
 
+  // Get images associated with the active color
+  const getDisplayImages = () => {
+    if (!product || !product.images) return [];
+    
+    // If a color is active and we have image color mappings
+    if (activeColor && product.imageColors) {
+      const matchingImages = product.images.filter((img, idx) => {
+        const imgColor = product.imageColors[idx];
+        return imgColor && imgColor.toLowerCase().trim() === activeColor.toLowerCase().trim();
+      });
+      
+      if (matchingImages.length > 0) {
+        return matchingImages;
+      }
+    }
+    return product.images; // Default fallback
+  };
+
+  const displayImages = getDisplayImages();
+  const primaryImg = displayImages[0];
+  const secondaryImg = displayImages.length > 1 ? displayImages[1] : null;
+
   return (
     <div 
       className="fade-in"
@@ -89,26 +111,28 @@ const ProductCard = ({ product, onQuickAdd }) => {
         )}
 
         {/* Primary Image */}
-        <img 
-          src={product.images[0]} 
-          alt={product.title} 
-          style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            transition: 'opacity 0.4s ease, transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-            opacity: hovered && product.images[1] ? 0 : 1,
-            transform: hovered ? 'scale(1.03)' : 'scale(1)'
-          }}
-        />
+        {primaryImg && (
+          <img 
+            src={primaryImg} 
+            alt={product.title} 
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              transition: 'opacity 0.4s ease, transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+              opacity: hovered && secondaryImg ? 0 : 1,
+              transform: hovered ? 'scale(1.03)' : 'scale(1)'
+            }}
+          />
+        )}
         
         {/* Secondary Image */}
-        {product.images[1] && (
+        {secondaryImg && (
           <img 
-            src={product.images[1]} 
+            src={secondaryImg} 
             alt={`${product.title} alternate`} 
             style={{
               width: '100%',
