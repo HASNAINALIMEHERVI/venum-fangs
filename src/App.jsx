@@ -636,8 +636,6 @@ function App() {
           cartItems={cartItems}
           onUpdateQty={handleUpdateCartQty}
           onRemoveItem={handleRemoveCartItem}
-          products={products}
-          onAddToCart={handleAddToCart}
           cartNotes={cartNotes}
           onNotesChange={setCartNotes}
         />
