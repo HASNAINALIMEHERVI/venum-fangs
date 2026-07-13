@@ -71,11 +71,11 @@ const Checkout = ({ cartItems, onClearCart, onPlaceOrder, currentUser }) => {
       return;
     }
     onPlaceOrder(formData, 'cod');
+    onClearCart();
     setCompleted(true);
   };
 
   const handleDone = () => {
-    onClearCart();
     navigate('/');
   };
 
