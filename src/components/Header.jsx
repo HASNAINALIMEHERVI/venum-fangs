@@ -71,8 +71,6 @@ const Header = ({ cartCount, onCartClick, products, currentUser, onLogout }) => 
             <Link to="/?category=Hoodies" className="nav-link" style={{ color: 'var(--text-primary)', textDecoration: 'none', fontSize: '0.68rem', fontWeight: 400, letterSpacing: '0.08em', textTransform: 'uppercase', transition: 'opacity 0.2s' }}>HOODIES</Link>
             <Link to="/?category=Sweatshirts" className="nav-link" style={{ color: 'var(--text-primary)', textDecoration: 'none', fontSize: '0.68rem', fontWeight: 400, letterSpacing: '0.08em', textTransform: 'uppercase', transition: 'opacity 0.2s' }}>SWEATSHIRTS</Link>
             <Link to="/?category=Old Money" className="nav-link" style={{ color: 'var(--text-primary)', textDecoration: 'none', fontSize: '0.68rem', fontWeight: 400, letterSpacing: '0.08em', textTransform: 'uppercase', transition: 'opacity 0.2s' }}>OLD MONEY</Link>
-            <Link to="/track" className="nav-link" style={{ color: 'var(--text-primary)', textDecoration: 'none', fontSize: '0.68rem', fontWeight: 400, letterSpacing: '0.08em', textTransform: 'uppercase', transition: 'opacity 0.2s' }}>TRACK ORDER</Link>
-            <a href="#contact" className="nav-link" style={{ color: 'var(--text-primary)', textDecoration: 'none', fontSize: '0.68rem', fontWeight: 400, letterSpacing: '0.08em', textTransform: 'uppercase', transition: 'opacity 0.2s' }}>CONTACT</a>
           </nav>
 
           {/* Right: Icons */}
@@ -288,8 +286,6 @@ const Header = ({ cartCount, onCartClick, products, currentUser, onLogout }) => 
               <Link to="/?category=Hoodies" onClick={() => setMobileMenuOpen(false)} style={{ color: 'var(--text-primary)', textDecoration: 'none', fontSize: '0.8rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase' }}>HOODIES</Link>
               <Link to="/?category=Sweatshirts" onClick={() => setMobileMenuOpen(false)} style={{ color: 'var(--text-primary)', textDecoration: 'none', fontSize: '0.8rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase' }}>SWEATSHIRTS</Link>
               <Link to="/?category=Old Money" onClick={() => setMobileMenuOpen(false)} style={{ color: 'var(--text-primary)', textDecoration: 'none', fontSize: '0.8rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase' }}>OLD MONEY</Link>
-              <Link to="/track" onClick={() => setMobileMenuOpen(false)} style={{ color: 'var(--text-primary)', textDecoration: 'none', fontSize: '0.8rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase' }}>TRACK ORDER</Link>
-              <a href="#contact" onClick={() => setMobileMenuOpen(false)} style={{ color: 'var(--text-primary)', textDecoration: 'none', fontSize: '0.8rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase' }}>CONTACT</a>
               <Link to="/account" onClick={() => setMobileMenuOpen(false)} style={{ color: 'var(--text-primary)', textDecoration: 'none', fontSize: '0.8rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase' }}>MY ACCOUNT</Link>
             </nav>
             

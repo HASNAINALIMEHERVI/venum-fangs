@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, MapPin, Phone, Mail, Save, LogOut, ChevronRight } from 'lucide-react';
+import { User, MapPin, Phone, Mail, Save, LogOut, ChevronRight, Package } from 'lucide-react';
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "../firebase";
 
@@ -268,6 +268,27 @@ const Account = ({ currentUser, onLogout, onLoginClick }) => {
         >
           <Save size={15} strokeWidth={2} />
           {saved ? 'SAVED SUCCESSFULLY ✓' : 'SAVE SHIPPING DETAILS'}
+        </button>
+      </div>
+
+      {/* Track Shipment */}
+      <div style={{ marginTop: '1.5rem' }}>
+        <button
+          onClick={() => navigate('/track')}
+          style={{
+            background: 'none', border: '1px solid var(--text-primary)',
+            color: 'var(--text-primary)', width: '100%',
+            padding: '0.85rem', fontSize: '0.72rem', fontWeight: 700,
+            letterSpacing: '0.12em', textTransform: 'uppercase', cursor: 'pointer',
+            fontFamily: 'var(--font-sans)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+            transition: 'all 0.2s'
+          }}
+          onMouseOver={(e) => { e.currentTarget.style.backgroundColor = 'var(--text-primary)'; e.currentTarget.style.color = '#fff'; }}
+          onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-primary)'; }}
+        >
+          <Package size={15} strokeWidth={2} />
+          TRACK MY SHIPMENT
         </button>
       </div>
 
