@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { ShoppingBag, ChevronDown, Check, ArrowLeft } from 'lucide-react';
+import ProductCard from '../components/ProductCard';
 
 const getColorHex = (colorName) => {
   const name = colorName.toLowerCase().trim();
@@ -55,6 +56,40 @@ const ProductDetail = ({ products, onAddToCart }) => {
 
     }
   }, [id, products, location.search]);
+
+  const recommendations = React.useMemo(() => {
+    if (!product || !products) return [];
+    
+    let flat = [];
+    products.forEach(p => {
+      if (p.colors && p.colors.length > 0) {
+        p.colors.forEach(color => {
+          flat.push({ ...p, id: `${p.id}-${color}`, originalId: p.id, initialColor: color });
+        });
+      } else {
+        flat.push({ ...p, originalId: p.id });
+      }
+    });
+
+    const currentBaseId = product.originalId || product.id;
+    const sameCategory = flat.filter(p => 
+      p.category.toLowerCase() === product.category.toLowerCase() && 
+      (p.originalId || p.id) !== currentBaseId
+    );
+
+    const otherCategories = flat.filter(p => 
+      p.category.toLowerCase() !== product.category.toLowerCase() && 
+      (p.originalId || p.id) !== currentBaseId
+    );
+
+    const combined = [...sameCategory, ...otherCategories];
+    return combined.slice(0, 4);
+  }, [product, products]);
+
+  const handleQuickAdd = (prod) => {
+    const defaultColor = prod.colors && prod.colors.length > 0 ? prod.colors[0] : 'Default';
+    onAddToCart(prod, 'M', defaultColor);
+  };
 
   if (!product) {
     return (
@@ -537,9 +572,46 @@ const ProductDetail = ({ products, onAddToCart }) => {
 
       </div>
 
+      {/* Recommended Products Section */}
+      {recommendations.length > 0 && (
+        <div style={{ marginTop: '5rem', borderTop: '1px solid var(--border-color)', paddingTop: '4rem' }}>
+          <h2 style={{
+            fontSize: '1rem',
+            fontWeight: 800,
+            letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+            color: 'var(--text-primary)',
+            marginBottom: '2.5rem',
+            textAlign: 'left'
+          }}>
+            You May Also Like
+          </h2>
+          <div className="product-grid-tight" style={{ display: 'grid', gap: '2px' }}>
+            {recommendations.map(p => (
+              <ProductCard 
+                key={p.id} 
+                product={p} 
+                onQuickAdd={handleQuickAdd} 
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
       <style dangerouslySetInnerHTML={{__html: `
         .product-detail-layout {
           grid-template-columns: 1fr;
+        }
+        .product-grid-tight {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 2px;
+        }
+        @media (min-width: 768px) {
+          .product-grid-tight {
+            grid-template-columns: repeat(4, 1fr);
+            gap: 2px;
+          }
         }
         .images-column {
           overflow-x: auto;
