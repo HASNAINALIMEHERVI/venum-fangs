@@ -133,7 +133,6 @@ const Footer = () => {
                 REFUND POLICY
               </a>
             </li>
-            <li><a href="#terms-of-service" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.75rem', fontWeight: 400 }} className="footer-link">TERMS OF SERVICE</a></li>
             <li>
               <a 
                 href="#shipping-policy" 

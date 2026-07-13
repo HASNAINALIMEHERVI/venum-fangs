@@ -306,7 +306,7 @@ const Checkout = ({ cartItems, onClearCart, onPlaceOrder, currentUser }) => {
 
               {/* Footer Links */}
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', justifyContent: 'center' }}>
-                {['Refund policy', 'Shipping', 'Privacy policy', 'Terms of service'].map(link => {
+                {['Refund policy', 'Shipping', 'Privacy policy'].map(link => {
                   if (link === 'Shipping') {
                     return (
                       <a 
