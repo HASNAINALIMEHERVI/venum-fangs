@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { CheckCircle, ShoppingBag, ArrowLeft, CreditCard, ShieldCheck } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import { CheckCircle, ShoppingBag } from 'lucide-react';
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../firebase";
 
@@ -8,7 +8,6 @@ const PROVINCES = ['Punjab', 'Sindh', 'KPK', 'Balochistan', 'Islamabad', 'AJK', 
 
 const Checkout = ({ cartItems, onClearCart, onPlaceOrder, currentUser }) => {
   const navigate = useNavigate();
-  const [shippingMethod, setShippingMethod] = useState('cod'); // cod or card
   const [completed, setCompleted] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
@@ -16,7 +15,6 @@ const Checkout = ({ cartItems, onClearCart, onPlaceOrder, currentUser }) => {
     firstName: '',
     lastName: '',
     address: '',
-    apartment: '',
     city: '',
     province: 'Punjab',
     postalCode: '',
@@ -26,7 +24,6 @@ const Checkout = ({ cartItems, onClearCart, onPlaceOrder, currentUser }) => {
   // Auto-fill from saved Firestore profile
   useEffect(() => {
     if (!currentUser) return;
-
     const loadProfile = async () => {
       try {
         const profileRef = doc(db, "profiles", currentUser.uid);
@@ -46,17 +43,12 @@ const Checkout = ({ cartItems, onClearCart, onPlaceOrder, currentUser }) => {
             country: p.country || prev.country
           }));
         } else {
-          // At least fill email from auth
-          setFormData(prev => ({
-            ...prev,
-            email: currentUser.email || prev.email
-          }));
+          setFormData(prev => ({ ...prev, email: currentUser.email || prev.email }));
         }
       } catch (err) {
         console.error("Error loading profile for checkout:", err);
       }
     };
-
     loadProfile();
   }, [currentUser]);
 
@@ -64,9 +56,7 @@ const Checkout = ({ cartItems, onClearCart, onPlaceOrder, currentUser }) => {
     const price = item.salePrice || item.price;
     return acc + price * item.qty;
   }, 0);
-
-  const shippingCost = 0; // Free shipping as announced
-  const total = subtotal + shippingCost;
+  const total = subtotal; // Free shipping
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -76,11 +66,10 @@ const Checkout = ({ cartItems, onClearCart, onPlaceOrder, currentUser }) => {
   const handlePlaceOrder = (e) => {
     e.preventDefault();
     if (!formData.email || !formData.address || !formData.firstName || !formData.city || !formData.phone) {
-      alert('PLEASE FILL OUT ALL THE REQUIRED SHIPPING DETAILS.');
+      alert('Please fill out all required shipping details.');
       return;
     }
-    // Call the parent state to store the order
-    onPlaceOrder(formData, shippingMethod);
+    onPlaceOrder(formData, 'cod');
     setCompleted(true);
   };
 
@@ -89,330 +78,341 @@ const Checkout = ({ cartItems, onClearCart, onPlaceOrder, currentUser }) => {
     navigate('/');
   };
 
+  // Empty cart state
   if (cartItems.length === 0 && !completed) {
     return (
-      <div className="container" style={{ padding: '6rem 0', textAlign: 'center' }}>
-        <ShoppingBag size={48} style={{ opacity: 0.2, marginBottom: '1rem' }} />
-        <h3 style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>YOUR SHOPPING BAG IS EMPTY</h3>
-        <button className="btn-primary" onClick={() => navigate('/')}>RETURN TO STORE</button>
+      <div style={{ minHeight: '70vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem', fontFamily: 'var(--font-sans)' }}>
+        <ShoppingBag size={48} style={{ opacity: 0.15, marginBottom: '1.5rem' }} />
+        <h3 style={{ fontSize: '0.85rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>Your shopping bag is empty</h3>
+        <button onClick={() => navigate('/')} style={{ background: '#000', color: '#fff', border: 'none', padding: '0.85rem 2.5rem', fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer', fontFamily: 'var(--font-sans)' }}>Return to store</button>
       </div>
     );
   }
 
+  // Floating label input component
+  const FloatingInput = ({ label, name, type = 'text', value, onChange, required = false, disabled = false }) => (
+    <div style={{ position: 'relative', width: '100%' }}>
+      <input
+        type={type}
+        name={name}
+        value={value}
+        onChange={onChange}
+        required={required}
+        disabled={disabled}
+        placeholder=" "
+        style={{
+          width: '100%',
+          padding: '1.1rem 0.85rem 0.45rem',
+          fontSize: '0.85rem',
+          fontFamily: 'var(--font-sans)',
+          border: '1px solid #d1d5db',
+          borderRadius: '6px',
+          outline: 'none',
+          background: disabled ? '#f9fafb' : '#fff',
+          color: disabled ? '#9ca3af' : '#111',
+          boxSizing: 'border-box',
+          transition: 'border-color 0.2s'
+        }}
+        onFocus={(e) => e.target.style.borderColor = '#2563eb'}
+        onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+      />
+      <label style={{
+        position: 'absolute',
+        left: '0.85rem',
+        top: value ? '0.3rem' : '0.78rem',
+        fontSize: value ? '0.6rem' : '0.82rem',
+        color: '#6b7280',
+        pointerEvents: 'none',
+        transition: 'all 0.15s ease',
+        fontFamily: 'var(--font-sans)'
+      }}>{label}</label>
+    </div>
+  );
+
+  // Floating label select component
+  const FloatingSelect = ({ label, name, value, onChange, options, required = false }) => (
+    <div style={{ position: 'relative', width: '100%' }}>
+      <select
+        name={name}
+        value={value}
+        onChange={onChange}
+        required={required}
+        style={{
+          width: '100%',
+          padding: '1.1rem 0.85rem 0.45rem',
+          fontSize: '0.85rem',
+          fontFamily: 'var(--font-sans)',
+          border: '1px solid #d1d5db',
+          borderRadius: '6px',
+          outline: 'none',
+          background: '#fff',
+          color: '#111',
+          cursor: 'pointer',
+          boxSizing: 'border-box',
+          appearance: 'none',
+          WebkitAppearance: 'none',
+          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
+          backgroundRepeat: 'no-repeat',
+          backgroundPosition: 'right 0.85rem center',
+          transition: 'border-color 0.2s'
+        }}
+        onFocus={(e) => e.target.style.borderColor = '#2563eb'}
+        onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+      >
+        {options.map(opt => (
+          <option key={opt} value={opt}>{opt}</option>
+        ))}
+      </select>
+      <label style={{
+        position: 'absolute',
+        left: '0.85rem',
+        top: '0.3rem',
+        fontSize: '0.6rem',
+        color: '#6b7280',
+        pointerEvents: 'none',
+        fontFamily: 'var(--font-sans)'
+      }}>{label}</label>
+    </div>
+  );
+
   return (
-    <div style={{ padding: '3rem 0' }} className="fade-in">
-      <div className="container">
-        
-        {completed ? (
-          /* Order Complete Success screen */
-          <div style={{
-            maxWidth: '600px',
-            margin: '4rem auto',
-            backgroundColor: 'var(--bg-secondary)',
-            border: '1px solid var(--accent)',
-            padding: '3rem',
-            textAlign: 'center',
-            boxShadow: 'var(--accent-glow)'
-          }} className="fade-in">
-            <CheckCircle size={64} style={{ color: 'var(--accent)', marginBottom: '1.5rem' }} />
-            
-            <h1 style={{
-              fontFamily: 'Outfit',
-              fontSize: '2rem',
-              fontWeight: 900,
-              letterSpacing: '0.05em',
-              textTransform: 'uppercase',
-              marginBottom: '1rem',
-              color: 'var(--text-primary)'
-            }}>ORDER CONFIRMED</h1>
-            
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.6', marginBottom: '2.5rem' }}>
-              THANK YOU FOR SHOPPING WITH **BLACK LOOM**. WE HAVE RECEIVED YOUR ORDER AND STARTED PREPARING YOUR DROPS. YOU WILL RECEIVE A CONFIRMATION CALL/SMS SOON!
-            </p>
-            
-            <button 
-              onClick={handleDone}
-              className="btn-primary"
-              style={{ width: '100%' }}
-            >
-              CONTINUE SHOPPING
-            </button>
-          </div>
-        ) : (
-          /* Checkout layout */
-          <div className="checkout-layout" style={{ display: 'grid', gap: '3rem' }}>
-            
-            {/* Left: Shipping Form */}
-            <form onSubmit={handlePlaceOrder} style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-              
-              <div>
-                <h2 style={{ fontFamily: 'Outfit', fontSize: '1.25rem', fontWeight: 800, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '1rem', color: 'var(--text-primary)' }}>
-                  1. CONTACT INFORMATION
-                </h2>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-                  <input 
-                    type="email" 
-                    name="email"
-                    placeholder="EMAIL ADDRESS" 
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    required
-                    style={inputStyle}
-                  />
-                  <input 
-                    type="tel" 
-                    name="phone"
-                    placeholder="PHONE NUMBER" 
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                    required
-                    style={inputStyle}
-                  />
-                </div>
+    <div className="fade-in" style={{ fontFamily: 'var(--font-sans)' }}>
+      
+      {completed ? (
+        <div style={{
+          maxWidth: '560px',
+          margin: '5rem auto',
+          padding: '3rem 2rem',
+          textAlign: 'center'
+        }}>
+          <CheckCircle size={56} style={{ color: '#16a34a', marginBottom: '1.5rem' }} />
+          <h1 style={{ fontSize: '1.6rem', fontWeight: 700, letterSpacing: '0.02em', margin: '0 0 0.75rem', color: '#111' }}>Order Confirmed</h1>
+          <p style={{ color: '#6b7280', fontSize: '0.88rem', lineHeight: 1.6, marginBottom: '2.5rem' }}>
+            Thank you for shopping with Black Loom. We've received your order and will contact you shortly to confirm delivery details.
+          </p>
+          <button onClick={handleDone} style={{ background: '#000', color: '#fff', border: 'none', padding: '1rem 3rem', fontSize: '0.82rem', fontWeight: 600, borderRadius: '6px', cursor: 'pointer', fontFamily: 'var(--font-sans)' }}>
+            Continue Shopping
+          </button>
+        </div>
+      ) : (
+        <div className="checkout-grid" style={{ display: 'grid', minHeight: '100vh' }}>
+
+          {/* ===== LEFT COLUMN: Form ===== */}
+          <div style={{ padding: '2.5rem 2rem 4rem', maxWidth: '580px', margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
+
+            {/* Logo */}
+            <div style={{ marginBottom: '2rem', textAlign: 'center' }}>
+              <Link to="/" style={{ textDecoration: 'none', color: '#111', fontFamily: '"Didot", "Bodoni MT", "Georgia", serif', fontSize: '1.5rem', fontWeight: 900, letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+                BLACK LOOM
+              </Link>
+            </div>
+
+            <form onSubmit={handlePlaceOrder}>
+
+              {/* Contact */}
+              <div style={{ marginBottom: '2rem' }}>
+                <h2 style={{ fontSize: '1.05rem', fontWeight: 600, color: '#111', margin: '0 0 1rem' }}>Contact</h2>
+                <FloatingInput label="Email" name="email" type="email" value={formData.email} onChange={handleInputChange} required />
               </div>
 
-              <div>
-                <h2 style={{ fontFamily: 'Outfit', fontSize: '1.25rem', fontWeight: 800, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '1rem', color: 'var(--text-primary)' }}>
-                  2. DELIVERY ADDRESS
-                </h2>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                    <input 
-                      type="text" 
-                      name="firstName"
-                      placeholder="FIRST NAME" 
-                      value={formData.firstName}
-                      onChange={handleInputChange}
-                      required
-                      style={inputStyle}
-                    />
-                    <input 
-                      type="text" 
-                      name="lastName"
-                      placeholder="LAST NAME" 
-                      value={formData.lastName}
-                      onChange={handleInputChange}
-                      required
-                      style={inputStyle}
-                    />
-                  </div>
-                  
-                   <input 
-                    type="text" 
-                    name="address"
-                    placeholder="COMPLETE STREET ADDRESS (HOUSE / PLOT / STREET NO.)" 
-                    value={formData.address}
-                    onChange={handleInputChange}
-                    required
-                    style={inputStyle}
-                  />
-
-                  <input 
-                    type="text" 
-                    name="apartment"
-                    placeholder="APARTMENT, SUITE, UNIT, ETC. (OPTIONAL)" 
-                    value={formData.apartment}
-                    onChange={handleInputChange}
-                    style={inputStyle}
-                  />
-
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                    <input 
-                      type="text" 
-                      name="city"
-                      placeholder="CITY" 
-                      value={formData.city}
-                      onChange={handleInputChange}
-                      required
-                      style={inputStyle}
-                    />
-                    <select
-                      name="province"
-                      value={formData.province}
-                      onChange={handleInputChange}
-                      required
-                      style={{ ...inputStyle, cursor: 'pointer' }}
-                    >
-                      {PROVINCES.map(p => (
-                        <option key={p} value={p}>{p.toUpperCase()}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                    <input 
-                      type="text" 
-                      name="postalCode"
-                      placeholder="POSTAL CODE" 
-                      value={formData.postalCode}
-                      onChange={handleInputChange}
-                      style={inputStyle}
-                    />
-                    <input 
-                      type="text" 
-                      name="country"
-                      placeholder="COUNTRY" 
-                      value={formData.country}
-                      onChange={handleInputChange}
-                      required
-                      style={{ ...inputStyle, color: 'var(--text-muted)' }}
-                      disabled
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <h2 style={{ fontFamily: 'Outfit', fontSize: '1.25rem', fontWeight: 800, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '1rem', color: 'var(--text-primary)' }}>
-                  3. PAYMENT METHOD
-                </h2>
-                
+              {/* Delivery */}
+              <div style={{ marginBottom: '2rem' }}>
+                <h2 style={{ fontSize: '1.05rem', fontWeight: 600, color: '#111', margin: '0 0 1rem' }}>Delivery</h2>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  {/* COD */}
+                  
+                  <FloatingSelect label="Country/Region" name="country" value={formData.country} onChange={handleInputChange} options={['Pakistan']} required />
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                    <FloatingInput label="First name" name="firstName" value={formData.firstName} onChange={handleInputChange} required />
+                    <FloatingInput label="Last name" name="lastName" value={formData.lastName} onChange={handleInputChange} />
+                  </div>
+
+                  <FloatingInput label="Address" name="address" value={formData.address} onChange={handleInputChange} required />
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                    <FloatingInput label="City" name="city" value={formData.city} onChange={handleInputChange} required />
+                    <FloatingInput label="Postal code (optional)" name="postalCode" value={formData.postalCode} onChange={handleInputChange} />
+                  </div>
+
+                  <FloatingSelect label="Province" name="province" value={formData.province} onChange={handleInputChange} options={PROVINCES} required />
+
+                  <FloatingInput label="Phone" name="phone" type="tel" value={formData.phone} onChange={handleInputChange} required />
+                </div>
+              </div>
+
+              {/* Payment */}
+              <div style={{ marginBottom: '2rem' }}>
+                <h2 style={{ fontSize: '1.05rem', fontWeight: 600, color: '#111', margin: '0 0 0.25rem' }}>Payment</h2>
+                <p style={{ fontSize: '0.78rem', color: '#6b7280', margin: '0 0 1rem' }}>All transactions are secure and encrypted.</p>
+
+                <div style={{
+                  border: '2px solid #2563eb',
+                  borderRadius: '8px',
+                  overflow: 'hidden'
+                }}>
                   <div style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '1rem',
-                    padding: '1.25rem',
-                    background: 'var(--bg-secondary)',
-                    border: '1px solid var(--accent)'
+                    gap: '0.6rem',
+                    padding: '0.9rem 1rem',
+                    backgroundColor: '#eff6ff',
+                    cursor: 'pointer'
                   }}>
-                    <div>
-                      <strong style={{ display: 'block', fontSize: '0.85rem', letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--accent)' }}>CASH ON DELIVERY (COD)</strong>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>PAY WITH CASH UPON COURIER DELIVERY (FREE SHIPPING NATIONWIDE)</span>
+                    <div style={{
+                      width: '18px',
+                      height: '18px',
+                      borderRadius: '50%',
+                      border: '2px solid #2563eb',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0
+                    }}>
+                      <div style={{
+                        width: '9px',
+                        height: '9px',
+                        borderRadius: '50%',
+                        backgroundColor: '#2563eb'
+                      }} />
                     </div>
+                    <span style={{ fontSize: '0.88rem', fontWeight: 500, color: '#111' }}>Cash on Delivery (COD)</span>
                   </div>
                 </div>
               </div>
 
-              <button 
-                type="submit" 
-                className="btn-primary" 
-                style={{ width: '100%', padding: '1.1rem', marginTop: '1rem' }}
+              {/* Complete Order Button */}
+              <button
+                type="submit"
+                style={{
+                  width: '100%',
+                  padding: '1.1rem',
+                  fontSize: '0.9rem',
+                  fontWeight: 600,
+                  fontFamily: 'var(--font-sans)',
+                  color: '#fff',
+                  backgroundColor: '#000',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  transition: 'opacity 0.2s',
+                  marginBottom: '2rem'
+                }}
+                onMouseOver={(e) => e.currentTarget.style.opacity = '0.85'}
+                onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
               >
-                PLACE SECURE ORDER
+                Complete order
               </button>
 
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.75rem' }}>
-                <ShieldCheck size={16} style={{ color: 'var(--accent)' }} />
-                <span>YOUR TRANSACTION IS SECURE & ENCRYPTED.</span>
+              {/* Footer Links */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', justifyContent: 'center' }}>
+                {['Refund policy', 'Shipping', 'Privacy policy', 'Terms of service'].map(link => (
+                  <Link key={link} to="/privacy-policy" style={{ fontSize: '0.72rem', color: '#2563eb', textDecoration: 'underline', fontFamily: 'var(--font-sans)' }}>{link}</Link>
+                ))}
               </div>
             </form>
+          </div>
 
-            {/* Right: Order Summary */}
-            <div style={{
-              background: 'var(--bg-secondary)',
-              border: '1px solid var(--border-color)',
-              padding: '2rem',
-              height: 'fit-content',
-              position: 'sticky',
-              top: '100px'
-            }}>
-              <h2 style={{
-                fontFamily: 'Outfit',
-                fontSize: '1.25rem',
-                fontWeight: 800,
-                letterSpacing: '0.05em',
-                textTransform: 'uppercase',
-                borderBottom: '1px solid var(--border-color)',
-                paddingBottom: '1rem',
-                marginBottom: '1.5rem',
-                color: 'var(--text-primary)'
-              }}>
-                ORDER SUMMARY
-              </h2>
+          {/* ===== RIGHT COLUMN: Order Summary ===== */}
+          <div style={{
+            backgroundColor: '#f5f5f5',
+            borderLeft: '1px solid #e5e7eb',
+            padding: '2.5rem 2rem',
+            boxSizing: 'border-box'
+          }}>
+            <div style={{ maxWidth: '420px' }}>
 
-              {/* Items List */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', maxHeight: '240px', overflowY: 'auto', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1.5rem' }}>
+              {/* Cart Items */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
                 {cartItems.map((item, idx) => (
                   <div key={idx} style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                    <div style={{ position: 'relative' }}>
-                      <img 
-                        src={item.images[0]} 
-                        alt={item.title} 
-                        style={{ width: '50px', height: '62px', objectFit: 'cover', border: '1px solid #222' }} 
+                    <div style={{ position: 'relative', flexShrink: 0 }}>
+                      <img
+                        src={item.images[0]}
+                        alt={item.title}
+                        style={{ width: '64px', height: '64px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #e5e7eb' }}
                       />
                       <span style={{
                         position: 'absolute',
-                        top: '-8px',
-                        right: '-8px',
-                        backgroundColor: '#fff',
-                        color: '#000',
-                        fontSize: '0.65rem',
-                        fontWeight: 800,
-                        width: '18px',
-                        height: '18px',
+                        top: '-6px',
+                        right: '-6px',
+                        backgroundColor: '#6b7280',
+                        color: '#fff',
+                        fontSize: '0.6rem',
+                        fontWeight: 700,
+                        width: '20px',
+                        height: '20px',
                         borderRadius: '50%',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center',
-                        border: '1px solid #000'
+                        justifyContent: 'center'
                       }}>{item.qty}</span>
                     </div>
-                    
+
                     <div style={{ flexGrow: 1 }}>
-                      <h4 style={{ textTransform: 'uppercase', fontSize: '0.8rem', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>{item.title}</h4>
-                      <span style={{ fontSize: '0.7rem', color: 'var(--accent)', fontWeight: 700 }}>SIZE: {item.selectedSize}</span>
+                      <h4 style={{ fontSize: '0.82rem', fontWeight: 500, margin: 0, color: '#111' }}>{item.title}</h4>
+                      <span style={{ fontSize: '0.72rem', color: '#6b7280' }}>
+                        {item.selectedColor && item.selectedColor !== 'Default' ? item.selectedColor + ' / ' : ''}
+                        {item.selectedSize}
+                      </span>
                     </div>
 
-                    <span style={{ fontSize: '0.85rem', fontWeight: 700 }}>
-                      Rs. {((item.salePrice || item.price) * item.qty).toLocaleString()}
+                    <span style={{ fontSize: '0.88rem', fontWeight: 500, color: '#111', whiteSpace: 'nowrap' }}>
+                      Rs {((item.salePrice || item.price) * item.qty).toLocaleString()}
                     </span>
                   </div>
                 ))}
               </div>
 
-              {/* Calculations */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1.25rem', marginBottom: '1.25rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem' }}>
-                  <span>SUBTOTAL</span>
-                  <strong>Rs. {subtotal.toLocaleString()}</strong>
+              {/* Divider */}
+              <div style={{ borderTop: '1px solid #e5e7eb', margin: '1rem 0' }} />
+
+              {/* Subtotal & Shipping */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#374151' }}>
+                  <span>Subtotal</span>
+                  <span style={{ fontWeight: 500 }}>Rs {subtotal.toLocaleString()}</span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem' }}>
-                  <span>SHIPPING</span>
-                  <strong style={{ color: 'var(--accent)' }}>FREE</strong>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#374151' }}>
+                  <span>Shipping</span>
+                  <span style={{ fontWeight: 500, color: '#16a34a' }}>FREE</span>
                 </div>
               </div>
+
+              {/* Divider */}
+              <div style={{ borderTop: '1px solid #e5e7eb', margin: '1rem 0' }} />
 
               {/* Total */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontFamily: 'Outfit', fontWeight: 800, letterSpacing: '0.05em' }}>ORDER TOTAL</span>
-                <span style={{ fontFamily: 'Outfit', fontSize: '1.4rem', fontWeight: 900, color: 'var(--accent)', textShadow: 'var(--accent-glow)' }}>
-                  Rs. {total.toLocaleString()}
-                </span>
+                <span style={{ fontSize: '1rem', fontWeight: 600, color: '#111' }}>Total</span>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem' }}>
+                  <span style={{ fontSize: '0.72rem', color: '#6b7280' }}>PKR</span>
+                  <span style={{ fontSize: '1.35rem', fontWeight: 700, color: '#111' }}>Rs {total.toLocaleString()}</span>
+                </div>
               </div>
+
             </div>
-
           </div>
-        )}
 
-      </div>
+        </div>
+      )}
 
       <style dangerouslySetInnerHTML={{__html: `
-        .checkout-layout {
+        .checkout-grid {
           grid-template-columns: 1fr;
         }
-        @media (min-width: 1024px) {
-          .checkout-layout {
-            grid-template-columns: 1.1fr 0.9fr;
+        @media (min-width: 900px) {
+          .checkout-grid {
+            grid-template-columns: 1.15fr 0.85fr;
           }
+        }
+        .checkout-grid input:focus + label,
+        .checkout-grid input:not(:placeholder-shown) + label {
+          top: 0.3rem !important;
+          font-size: 0.6rem !important;
         }
       `}} />
     </div>
   );
-};
-
-// Common Input style
-const inputStyle = {
-  width: '100%',
-  background: 'var(--bg-secondary)',
-  border: '1px solid var(--border-color)',
-  color: 'var(--text-primary)',
-  padding: '0.9rem',
-  fontSize: '0.85rem',
-  fontFamily: 'var(--font-sans)',
-  outline: 'none',
-  letterSpacing: '0.05em'
 };
 
 export default Checkout;
