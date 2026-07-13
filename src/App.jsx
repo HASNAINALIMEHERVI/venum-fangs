@@ -14,6 +14,11 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import LoginGate from './components/LoginGate';
 import ShippingModal from './components/ShippingModal';
 import ReturnPolicyModal from './components/ReturnPolicyModal';
+import AboutUsModal from './components/AboutUsModal';
+import HowToBuyModal from './components/HowToBuyModal';
+import PaymentModal from './components/PaymentModal';
+import ContactUsModal from './components/ContactUsModal';
+import ShoppingGuideModal from './components/ShoppingGuideModal';
 
 // Firebase imports
 import { onAuthStateChanged, signOut } from "firebase/auth";
@@ -631,6 +636,21 @@ function App() {
 
         {/* Global Return Policy Modal Popup */}
         <ReturnPolicyModal />
+
+        {/* Global About Us Modal Popup */}
+        <AboutUsModal />
+
+        {/* Global How To Buy Modal Popup */}
+        <HowToBuyModal />
+
+        {/* Global Payment Modal Popup */}
+        <PaymentModal />
+
+        {/* Global Contact Us Modal Popup */}
+        <ContactUsModal />
+
+        {/* Global Shopping Guide Modal Popup */}
+        <ShoppingGuideModal />
 
 
 

@@ -178,7 +178,14 @@ const Footer = () => {
             
             {/* Column 1 */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              <Link to="/privacy-policy" style={linkStyle}>Shopping Guide</Link>
+              <a 
+                href="#shopping-guide" 
+                onClick={(e) => { e.preventDefault(); window.dispatchEvent(new Event('open-shopping-guide-modal')); }} 
+                style={linkStyle}
+              >
+                Shopping Guide
+              </a>
+
               <Link to="/account" style={linkStyle}>Log In/Sign Up</Link>
               
               <a 
@@ -197,19 +204,39 @@ const Footer = () => {
                 Shipping & Deliveries
               </a>
 
-              <Link to="/privacy-policy" style={linkStyle}>How To Buy</Link>
-              <Link to="/privacy-policy" style={linkStyle}>Payment</Link>
+              <a 
+                href="#how-to-buy" 
+                onClick={(e) => { e.preventDefault(); window.dispatchEvent(new Event('open-how-to-buy-modal')); }} 
+                style={linkStyle}
+              >
+                How To Buy
+              </a>
+
+              <a 
+                href="#payment" 
+                onClick={(e) => { e.preventDefault(); window.dispatchEvent(new Event('open-payment-modal')); }} 
+                style={linkStyle}
+              >
+                Payment
+              </a>
             </div>
 
             {/* Column 2 */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              <a href="#about-brand" style={linkStyle} onClick={() => {
-                const element = document.getElementById('about-brand');
-                if (element) {
-                  element.scrollIntoView({ behavior: 'smooth' });
-                }
-              }}>About Us</a>
-              <a href="#contact" onClick={handleContactClick} style={linkStyle}>Contact Us</a>
+              <a 
+                href="#about-us" 
+                onClick={(e) => { e.preventDefault(); window.dispatchEvent(new Event('open-about-us-modal')); }} 
+                style={linkStyle}
+              >
+                About Us
+              </a>
+              <a 
+                href="#contact-us" 
+                onClick={(e) => { e.preventDefault(); window.dispatchEvent(new Event('open-contact-us-modal')); }} 
+                style={linkStyle}
+              >
+                Contact Us
+              </a>
             </div>
 
           </div>
