@@ -64,15 +64,74 @@ const Home = ({ products, onQuickAdd }) => {
 
         <section style={{ padding: '0 0 4rem 0' }}>
           <div style={{ padding: '0 0.5rem' }}>
-            <div className="product-grid-tight">
-              {filteredProducts.map(product => (
-                <ProductCard 
-                  key={product.id} 
-                  product={product} 
-                  onQuickAdd={onQuickAdd} 
-                />
-              ))}
-            </div>
+            {filteredProducts.length > 0 ? (
+              <div className="product-grid-tight">
+                {filteredProducts.map(product => (
+                  <ProductCard 
+                    key={product.id} 
+                    product={product} 
+                    onQuickAdd={onQuickAdd} 
+                  />
+                ))}
+              </div>
+            ) : (
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '6rem 2rem',
+                textAlign: 'center'
+              }}>
+                <div style={{
+                  width: '64px',
+                  height: '64px',
+                  border: '2px solid var(--border-color)',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: '1.5rem'
+                }}>
+                  <span style={{ fontSize: '1.5rem' }}>✦</span>
+                </div>
+                <h2 style={{
+                  fontFamily: 'var(--font-sans)',
+                  fontSize: '1.4rem',
+                  fontWeight: 700,
+                  letterSpacing: '0.15em',
+                  textTransform: 'uppercase',
+                  color: 'var(--text-primary)',
+                  margin: '0 0 0.75rem 0'
+                }}>
+                  COMING SOON
+                </h2>
+                <p style={{
+                  fontFamily: 'var(--font-sans)',
+                  fontSize: '0.8rem',
+                  color: 'var(--text-muted)',
+                  maxWidth: '360px',
+                  lineHeight: 1.6,
+                  margin: '0 0 2rem 0'
+                }}>
+                  We're working on something special for this collection. Stay tuned for the drop.
+                </p>
+                <Link to="/" style={{
+                  fontFamily: 'var(--font-sans)',
+                  fontSize: '0.7rem',
+                  fontWeight: 600,
+                  letterSpacing: '0.1em',
+                  textTransform: 'uppercase',
+                  color: '#fff',
+                  backgroundColor: '#000',
+                  padding: '0.75rem 2rem',
+                  textDecoration: 'none',
+                  transition: 'opacity 0.2s'
+                }}>
+                  EXPLORE OTHER COLLECTIONS
+                </Link>
+              </div>
+            )}
           </div>
         </section>
         
