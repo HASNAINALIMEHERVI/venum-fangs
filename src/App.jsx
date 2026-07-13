@@ -13,6 +13,7 @@ import Account from './pages/Account';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import LoginGate from './components/LoginGate';
 import ShippingModal from './components/ShippingModal';
+import ReturnPolicyModal from './components/ReturnPolicyModal';
 
 // Firebase imports
 import { onAuthStateChanged, signOut } from "firebase/auth";
@@ -627,6 +628,9 @@ function App() {
 
         {/* Global Shipping Policy Modal Popup */}
         <ShippingModal />
+
+        {/* Global Return Policy Modal Popup */}
+        <ReturnPolicyModal />
 
 
 

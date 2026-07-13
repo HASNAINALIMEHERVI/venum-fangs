@@ -123,7 +123,16 @@ const Footer = () => {
           }}>Customer Service</h4>
           <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
             <li><Link to="/privacy-policy" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.75rem', fontWeight: 400 }} className="footer-link">PRIVACY POLICY</Link></li>
-            <li><a href="#refund-policy" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.75rem', fontWeight: 400 }} className="footer-link">REFUND POLICY</a></li>
+            <li>
+              <a 
+                href="#refund-policy" 
+                onClick={(e) => { e.preventDefault(); window.dispatchEvent(new Event('open-return-policy-modal')); }} 
+                style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.75rem', fontWeight: 400, cursor: 'pointer' }} 
+                className="footer-link"
+              >
+                REFUND POLICY
+              </a>
+            </li>
             <li><a href="#terms-of-service" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.75rem', fontWeight: 400 }} className="footer-link">TERMS OF SERVICE</a></li>
             <li>
               <a 

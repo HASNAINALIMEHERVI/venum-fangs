@@ -319,6 +319,18 @@ const Checkout = ({ cartItems, onClearCart, onPlaceOrder, currentUser }) => {
                       </a>
                     );
                   }
+                  if (link === 'Refund policy') {
+                    return (
+                      <a 
+                        key={link} 
+                        href="#refund" 
+                        onClick={(e) => { e.preventDefault(); window.dispatchEvent(new Event('open-return-policy-modal')); }} 
+                        style={{ fontSize: '0.72rem', color: '#2563eb', textDecoration: 'underline', fontFamily: 'var(--font-sans)', cursor: 'pointer' }}
+                      >
+                        {link}
+                      </a>
+                    );
+                  }
                   return (
                     <Link key={link} to="/privacy-policy" style={{ fontSize: '0.72rem', color: '#2563eb', textDecoration: 'underline', fontFamily: 'var(--font-sans)' }}>{link}</Link>
                   );
