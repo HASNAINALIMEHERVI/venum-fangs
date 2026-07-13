@@ -12,6 +12,7 @@ import TrackOrder from './pages/TrackOrder';
 import Account from './pages/Account';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import LoginGate from './components/LoginGate';
+import ShippingModal from './components/ShippingModal';
 
 // Firebase imports
 import { onAuthStateChanged, signOut } from "firebase/auth";
@@ -623,6 +624,9 @@ function App() {
           cartNotes={cartNotes}
           onNotesChange={setCartNotes}
         />
+
+        {/* Global Shipping Policy Modal Popup */}
+        <ShippingModal />
 
 
 

@@ -305,9 +305,23 @@ const Checkout = ({ cartItems, onClearCart, onPlaceOrder, currentUser }) => {
 
               {/* Footer Links */}
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', justifyContent: 'center' }}>
-                {['Refund policy', 'Shipping', 'Privacy policy', 'Terms of service'].map(link => (
-                  <Link key={link} to="/privacy-policy" style={{ fontSize: '0.72rem', color: '#2563eb', textDecoration: 'underline', fontFamily: 'var(--font-sans)' }}>{link}</Link>
-                ))}
+                {['Refund policy', 'Shipping', 'Privacy policy', 'Terms of service'].map(link => {
+                  if (link === 'Shipping') {
+                    return (
+                      <a 
+                        key={link} 
+                        href="#shipping" 
+                        onClick={(e) => { e.preventDefault(); window.dispatchEvent(new Event('open-shipping-modal')); }} 
+                        style={{ fontSize: '0.72rem', color: '#2563eb', textDecoration: 'underline', fontFamily: 'var(--font-sans)', cursor: 'pointer' }}
+                      >
+                        {link}
+                      </a>
+                    );
+                  }
+                  return (
+                    <Link key={link} to="/privacy-policy" style={{ fontSize: '0.72rem', color: '#2563eb', textDecoration: 'underline', fontFamily: 'var(--font-sans)' }}>{link}</Link>
+                  );
+                })}
               </div>
             </form>
           </div>
