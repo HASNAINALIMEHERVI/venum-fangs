@@ -234,41 +234,36 @@ const CartDrawer = ({ isOpen, onClose, cartItems, onUpdateQty, onRemoveItem, pro
 
           {/* YOU MAY ALSO LIKE Section */}
           {recommendations.length > 0 && (
-            <div style={{ marginTop: '2rem', borderTop: '1px solid #f3f4f6', paddingTop: '1.5rem' }}>
+            <div style={{ marginTop: '2.5rem', borderTop: '1px solid #e5e7eb', paddingTop: '2rem' }}>
               <h3 style={{
-                fontSize: '0.78rem',
+                fontSize: '0.82rem',
                 fontWeight: 700,
                 letterSpacing: '0.08em',
                 textTransform: 'uppercase',
                 color: '#000000',
-                marginBottom: '1rem',
+                marginBottom: '1.25rem',
                 textAlign: 'center'
               }}>
                 YOU MAY ALSO LIKE
               </h3>
               <div 
                 style={{
-                  display: 'flex',
-                  gap: '0.75rem',
-                  overflowX: 'auto',
-                  paddingBottom: '0.5rem',
-                  scrollbarWidth: 'none',
-                  msOverflowStyle: 'none'
-                }} 
-                className="horizontal-scroll"
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(3, 1fr)',
+                  gap: '6px'
+                }}
               >
-                {recommendations.map(p => {
-                  const price = p.salePrice || p.price;
+                {recommendations.slice(0, 6).map(p => {
                   const defaultColor = p.colors && p.colors.length > 0 ? p.colors[0] : 'Default';
                   return (
                     <div 
                       key={p.id}
                       style={{
-                        width: '110px',
-                        flexShrink: 0,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '0.35rem',
+                        position: 'relative',
+                        width: '100%',
+                        paddingBottom: '135%',
+                        overflow: 'hidden',
+                        backgroundColor: '#f3f4f6',
                         cursor: 'pointer'
                       }}
                       onClick={() => {
@@ -276,52 +271,21 @@ const CartDrawer = ({ isOpen, onClose, cartItems, onUpdateQty, onRemoveItem, pro
                         navigate(`/product/${p.originalId || p.id}?color=${p.initialColor || defaultColor}`);
                       }}
                     >
-                      <div style={{ position: 'relative', width: '110px', height: '140px', backgroundColor: '#f3f4f6' }}>
-                        <img 
-                          src={p.images?.[0]} 
-                          alt={p.title} 
-                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                        />
-                        {/* Quick Add Button */}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onAddToCart(p, 'M', p.initialColor || defaultColor);
-                          }}
-                          style={{
-                            position: 'absolute',
-                            bottom: '0.5rem',
-                            right: '0.5rem',
-                            width: '24px',
-                            height: '24px',
-                            borderRadius: '50%',
-                            backgroundColor: '#ffffff',
-                            border: '1px solid #e5e7eb',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: '1rem',
-                            fontWeight: 600,
-                            color: '#000000',
-                            cursor: 'pointer',
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                          }}
-                        >
-                          +
-                        </button>
-                      </div>
-                      <span style={{
-                        fontSize: '0.72rem',
-                        fontWeight: 700,
-                        color: '#000000',
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        display: 'block'
-                      }}>{p.title}</span>
-                      <span style={{ fontSize: '0.72rem', color: '#6b7280', fontWeight: 500 }}>
-                        PKR {price.toLocaleString()}
-                      </span>
+                      <img 
+                        src={p.images?.[0]} 
+                        alt={p.title} 
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                          transition: 'opacity 0.2s'
+                        }}
+                        onMouseOver={(e) => e.currentTarget.style.opacity = '0.85'}
+                        onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
+                      />
                     </div>
                   );
                 })}
