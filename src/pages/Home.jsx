@@ -6,6 +6,7 @@ const Home = ({ products, onQuickAdd }) => {
   const [searchParams] = useSearchParams();
   const categoryFilter = searchParams.get('category');
   const navigate = useNavigate();
+  const [showManifesto, setShowManifesto] = React.useState(false);
   const [selectedDrop, setSelectedDrop] = React.useState('all');
 
   // Flatten products by color so each color variant has its own card
@@ -477,70 +478,184 @@ const Home = ({ products, onQuickAdd }) => {
         </button>
       </section>
 
-      {/* Brand Story Section */}
+      {/* Brand Story SEO Section */}
       <section style={{ 
         borderTop: '1px solid var(--border-color)', 
-        padding: '5.5rem 1.5rem',
-        backgroundColor: '#ffffff',
-        fontFamily: 'var(--font-sans)',
-        color: '#000000'
+        padding: '5rem 1.5rem',
+        backgroundColor: 'var(--bg-secondary)',
+        fontFamily: 'var(--font-sans)'
       }} id="about-brand">
-        <div className="container" style={{ maxWidth: '720px', margin: '0 auto', textAlign: 'center' }}>
+        <div className="container" style={{ maxWidth: '800px', margin: '0 auto' }}>
           
-          <div style={{ marginBottom: '2.5rem' }}>
+          <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
             <span style={{
-              fontSize: '0.68rem',
+              fontSize: '0.625rem',
               fontWeight: 800,
-              letterSpacing: '0.25em',
+              letterSpacing: '0.3em',
               textTransform: 'uppercase',
-              color: '#888888',
+              color: 'var(--text-muted)',
               display: 'block',
-              marginBottom: '0.85rem'
+              marginBottom: '0.75rem'
             }}>
-              Brand Narrative
+              Brand Manifesto
             </span>
             <h1 style={{
               fontFamily: '"Didot", "Bodoni MT", "Georgia", serif',
-              fontSize: '2.2rem',
+              fontSize: '1.8rem',
               fontWeight: 900,
-              color: '#000000',
-              letterSpacing: '0.02em',
+              color: 'var(--text-primary)',
+              letterSpacing: '0.05em',
               textTransform: 'uppercase',
               margin: '0 0 1rem 0',
               lineHeight: '1.2'
             }}>
-              About Us
+              BLACK LOOM: The Apex of Streetwear in Pakistan
             </h1>
+            <h2 style={{
+              fontSize: '0.95rem',
+              fontWeight: 600,
+              color: 'var(--text-secondary)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              margin: '0 0 2rem 0'
+            }}>
+              Premium Weaves: Apparel in Its Most Extreme Form
+            </h2>
           </div>
 
-          <div style={{
-            fontSize: '0.88rem',
+          <div className="brand-seo-content" style={{
+            color: 'var(--text-secondary)',
+            fontSize: '0.875rem',
             lineHeight: '1.8',
-            color: '#333333',
-            textAlign: 'center',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '1.75rem'
+            textAlign: 'left'
           }}>
-            <p style={{ margin: 0, fontWeight: 500, color: '#000000', fontSize: '0.925rem' }}>
-              Blackloom is a Pakistani streetwear brand built for people who value confidence, individuality, and timeless style. We believe clothing should be more than something you wear—it should reflect who you are without saying a word.
+            <p style={{ marginBottom: '1.5rem', fontSize: '0.95rem', color: 'var(--text-primary)', fontWeight: 500 }}>
+              BLACK LOOM redefines the fashion landscape as the definitive <strong>premium streetwear brand</strong> in Pakistan. We invite discerning gentlemen to experience apparel that transcends the ordinary.
             </p>
 
-            <p style={{ margin: 0 }}>
-              Our collections focus on premium-quality essentials, oversized silhouettes, and thoughtfully designed graphics that balance minimalism with bold expression. Every piece is created with attention to comfort, fit, and versatility, making it easy to wear every day while still standing out.
+            <p style={{ marginBottom: '1.5rem' }}>
+              Our collections are a testament to superior craftsmanship, featuring heavyweight fabrics, unique acid wash textures, and detailed puff-print embellishments. Each piece is meticulously designed to offer an unparalleled statement of style and quality, setting a new standard for high-end urban fashion.
             </p>
 
-            <p style={{ margin: 0 }}>
-              Inspired by modern street culture and clean aesthetics, Blackloom is committed to creating apparel that feels authentic rather than following short-lived trends. We design clothing that can become a lasting part of your wardrobe, combining quality craftsmanship with a refined, contemporary look.
-            </p>
+            {/* Collapsible Content */}
+            <div style={{
+              maxHeight: showManifesto ? '2500px' : '0px',
+              overflow: 'hidden',
+              transition: 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
+              opacity: showManifesto ? 1 : 0
+            }}>
+              <h2 style={{
+                fontSize: '1.1rem',
+                fontWeight: 700,
+                color: 'var(--text-primary)',
+                textTransform: 'uppercase',
+                marginTop: '2rem',
+                marginBottom: '1rem',
+                letterSpacing: '0.05em',
+                borderBottom: '1px solid var(--border-color)',
+                paddingBottom: '0.3rem'
+              }}>
+                Discover Our Signature Collections
+              </h2>
+              <p style={{ marginBottom: '1.5rem' }}>
+                As a leading destination for <strong>streetwear Pakistan</strong>, we offer an exclusive selection of garments conceived for the modern man. Our commitment to excellence is evident in every thread, from our iconic heavyweight hoodies to our sought-after oversized t-shirts. We offer a curated experience for those who demand the best.
+              </p>
 
-            <p style={{ margin: 0 }}>
-              As a growing Pakistani brand, our goal is simple: to deliver premium streetwear that people can wear with confidence, wherever life takes them. Every collection reflects our dedication to quality, detail, and a community that values originality.
-            </p>
+              <h3 style={{
+                fontSize: '0.95rem',
+                fontWeight: 700,
+                color: 'var(--text-primary)',
+                textTransform: 'uppercase',
+                marginTop: '1.5rem',
+                marginBottom: '0.75rem',
+                letterSpacing: '0.05em'
+              }}>
+                The Definitive Source for Oversized T-Shirts in Pakistan
+              </h3>
+              <p style={{ marginBottom: '1.5rem' }}>
+                Our collection of <strong>oversized t-shirts pakistan</strong> is crafted for superior comfort and a formidable silhouette. Made from premium, heavyweight cotton, these tees provide a structured yet relaxed fit, making them a cornerstone of any contemporary wardrobe. Explore various designs, from minimalist signature tees to bold, graphic-embellished pieces that capture the essence of modern streetwear.
+              </p>
 
-            <p style={{ margin: '0.5rem 0 0 0', fontWeight: 600, color: '#000000', letterSpacing: '0.05em', textTransform: 'uppercase', fontSize: '0.9rem' }}>
-              Welcome to Blackloom—where simplicity meets statement.
-            </p>
+              <h3 style={{
+                fontSize: '0.95rem',
+                fontWeight: 700,
+                color: 'var(--text-primary)',
+                textTransform: 'uppercase',
+                marginTop: '1.5rem',
+                marginBottom: '0.75rem',
+                letterSpacing: '0.05em'
+              }}>
+                Unrivaled Quality and Design
+              </h3>
+              <p style={{ marginBottom: '1.5rem' }}>
+                BLACK LOOM stands apart as a <strong>premium streetwear brand</strong> committed to innovation and quality. Our design philosophy merges raw, contrasting forces with refined aesthetics. The Eclipse Collection, for example, explores the collision of absolute dark and stark white silhouettes through distressed and smoke-inspired textures, delivering a powerful visual narrative. When you choose BLACK LOOM, you choose a brand that elevates <strong>streetwear Pakistan</strong> to an art form.
+              </p>
+
+              <h2 style={{
+                fontSize: '1.1rem',
+                fontWeight: 700,
+                color: 'var(--text-primary)',
+                textTransform: 'uppercase',
+                marginTop: '2rem',
+                marginBottom: '1rem',
+                letterSpacing: '0.05em',
+                borderBottom: '1px solid var(--border-color)',
+                paddingBottom: '0.3rem'
+              }}>
+                Why Choose BLACK LOOM?
+              </h2>
+              <ul style={{ 
+                listStyle: 'none', 
+                padding: 0, 
+                margin: '0 0 1.5rem 0',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '1rem'
+              }}>
+                <li style={{ paddingLeft: '1.5rem', position: 'relative' }}>
+                  <span style={{ position: 'absolute', left: 0, color: 'var(--text-primary)' }}>•</span>
+                  <strong>Exceptional Fabrics:</strong> We utilize only premium, heavyweight materials for lasting comfort and durability.
+                </li>
+                <li style={{ paddingLeft: '1.5rem', position: 'relative' }}>
+                  <span style={{ position: 'absolute', left: 0, color: 'var(--text-primary)' }}>•</span>
+                  <strong>Exclusive Designs:</strong> Our collections feature unique acid washes, puff-prints, and curated aesthetics you will not find elsewhere.
+                </li>
+                <li style={{ paddingLeft: '1.5rem', position: 'relative' }}>
+                  <span style={{ position: 'absolute', left: 0, color: 'var(--text-primary)' }}>•</span>
+                  <strong>The Ultimate Fit:</strong> From drop shoulder tees to perfectly proportioned hoodies, every garment is designed for a modern, commanding fit.
+                </li>
+                <li style={{ paddingLeft: '1.5rem', position: 'relative' }}>
+                  <span style={{ position: 'absolute', left: 0, color: 'var(--text-primary)' }}>•</span>
+                  <strong>Trusted by Fashion Connoisseurs:</strong> BLACK LOOM is the preferred choice for men seeking the finest <strong>oversized t-shirts pakistan</strong> and premium apparel.
+                </li>
+              </ul>
+            </div>
+
+            {/* Toggle Button */}
+            <div style={{ textAlign: 'center', marginTop: '2rem' }}>
+              <button 
+                onClick={() => setShowManifesto(!showManifesto)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--text-primary)',
+                  fontSize: '0.72rem',
+                  fontWeight: 600,
+                  letterSpacing: '0.15em',
+                  textTransform: 'uppercase',
+                  cursor: 'pointer',
+                  padding: '0.5rem 1rem',
+                  borderBottom: '1px solid var(--text-primary)',
+                  fontFamily: 'var(--font-sans)',
+                  transition: 'opacity 0.2s'
+                }}
+                onMouseOver={(e) => e.target.style.opacity = '0.7'}
+                onMouseOut={(e) => e.target.style.opacity = '1'}
+              >
+                {showManifesto ? 'Collapse Story -' : 'Read Full Manifesto +'}
+              </button>
+            </div>
+
           </div>
         </div>
       </section>
