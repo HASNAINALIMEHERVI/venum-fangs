@@ -19,6 +19,7 @@ import HowToBuyModal from './components/HowToBuyModal';
 import PaymentModal from './components/PaymentModal';
 import ContactUsModal from './components/ContactUsModal';
 import ShoppingGuideModal from './components/ShoppingGuideModal';
+import ScrollToTop from './components/ScrollToTop';
 
 // Firebase imports
 import { onAuthStateChanged, signOut } from "firebase/auth";
@@ -293,6 +294,13 @@ function App() {
     return () => unsubscribe();
   }, []);
 
+  // Listen to global open-login-gate triggers
+  useEffect(() => {
+    const handleOpenLogin = () => setShowLogin(true);
+    window.addEventListener('open-login-gate', handleOpenLogin);
+    return () => window.removeEventListener('open-login-gate', handleOpenLogin);
+  }, []);
+
   // Update storage helpers
   const saveProductsToStorage = async (updatedList) => {
     setProducts(updatedList);
@@ -533,6 +541,7 @@ function App() {
 
   return (
     <Router>
+      <ScrollToTop />
       <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', position: 'relative' }}>
         
         {/* Login Modal (only shown when triggered) */}
@@ -618,7 +627,7 @@ function App() {
         </main>
 
         {/* Global Footer */}
-        <Footer />
+        <Footer currentUser={currentUser} />
 
         {/* Slide-out Cart Panel overlay */}
         <CartDrawer 

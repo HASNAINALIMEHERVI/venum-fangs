@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../firebase";
 
-const Footer = () => {
+const Footer = ({ currentUser }) => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState('idle'); // idle, loading, success, error
 
@@ -186,7 +187,28 @@ const Footer = () => {
                 Shopping Guide
               </a>
 
-              <Link to="/account" style={linkStyle}>Log In/Sign Up</Link>
+              {currentUser ? (
+                <span 
+                  onClick={() => alert(`You are already logged in as ${currentUser.name || currentUser.email}.`)} 
+                  style={linkStyle}
+                >
+                  Log In/Sign Up
+                </span>
+              ) : (
+                <a 
+                  href="#login"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    navigate('/account');
+                    setTimeout(() => {
+                      window.dispatchEvent(new Event('open-login-gate'));
+                    }, 50);
+                  }}
+                  style={linkStyle}
+                >
+                  Log In/Sign Up
+                </a>
+              )}
               
               <a 
                 href="#refund-policy" 
