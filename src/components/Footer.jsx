@@ -30,221 +30,268 @@ const Footer = () => {
     }
   };
 
+  const handleContactClick = (e) => {
+    e.preventDefault();
+    alert("Contact Us:\nEmail: support@wearblackloom.com\nWhatsApp: 03709539945");
+  };
+
   return (
-    <footer style={{
-      backgroundColor: '#ffffff',
-      borderTop: '1px solid var(--border-color)',
-      padding: '3.5rem 0 1.75rem 0',
-      marginTop: '4rem',
-      fontSize: '0.85rem',
-      color: 'var(--text-secondary)'
-    }}>
-      <div className="container" style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-        gap: '2.5rem',
-        marginBottom: '2.5rem'
+    <footer style={{ marginTop: '4rem', fontFamily: 'var(--font-sans)' }}>
+      
+      {/* ===== UPPER SECTION (White Newsletter) ===== */}
+      <div style={{
+        backgroundColor: '#ffffff',
+        borderTop: '1px solid var(--border-color)',
+        borderBottom: '1px solid var(--border-color)',
+        padding: '5rem 2rem'
       }}>
-        
-        {/* About */}
-        <div>
-          <h3 style={{
-            fontFamily: '"Didot", "Bodoni MT", "Georgia", serif',
-            fontWeight: 900,
-            fontSize: '1.2rem',
-            color: 'var(--text-primary)',
-            letterSpacing: '0.02em',
-            marginBottom: '1rem',
-            textTransform: 'uppercase'
-          }}>
-            BLACK LOOM
-          </h3>
-          <p style={{ lineHeight: 1.6, color: 'var(--text-secondary)', fontSize: '0.78rem' }}>
-            PREMIUM STREETWEAR BUILT TO THE HIGHEST SPECIFICATIONS. HEAVYWEIGHT FABRICS, EXTREME SILHOUETTES, AND EMBELLISHED GRAPHICS.
-          </p>
-          <div style={{ display: 'flex', gap: '1.25rem', marginTop: '1.25rem', alignItems: 'center' }}>
-            <a 
-              href="https://www.instagram.com/wearblackloom" 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              style={{ color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', transition: 'color 0.2s' }} 
-              className="social-link"
-              aria-label="Instagram"
-            >
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
-                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
-              </svg>
-            </a>
-            <a 
-              href="https://www.facebook.com/share/1JcSypjdJ6/" 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              style={{ color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', transition: 'color 0.2s' }} 
-              className="social-link"
-              aria-label="Facebook"
-            >
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
-              </svg>
-            </a>
+        <div className="container" style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr',
+          gap: '2.5rem',
+          alignItems: 'start',
+          maxWidth: '1200px',
+          margin: '0 auto'
+        }} className="footer-upper-grid">
+          
+          {/* Left Title */}
+          <div>
+            <h2 style={{
+              fontSize: '2.2rem',
+              fontWeight: 800,
+              lineHeight: 1.1,
+              letterSpacing: '0.02em',
+              color: '#000000',
+              margin: 0,
+              textTransform: 'uppercase'
+            }}>
+              BE THE FIRST<br />TO KNOW
+            </h2>
           </div>
-        </div>
- 
-        {/* Collections */}
-        <div>
-          <h4 style={{
-            fontWeight: 600,
-            color: 'var(--text-primary)',
-            letterSpacing: '0.1em',
-            marginBottom: '1rem',
-            fontSize: '0.68rem',
-            textTransform: 'uppercase'
-          }}>Collections</h4>
-          <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
-            <li><Link to="/?category=T-Shirts" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.75rem', fontWeight: 400 }} className="footer-link">DROP SHOULDER T-SHIRTS</Link></li>
-            <li><Link to="/?category=Hoodies" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.75rem', fontWeight: 400 }} className="footer-link">HEAVYWEIGHT HOODIES</Link></li>
-            <li><Link to="/?category=Sweatshirts" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.75rem', fontWeight: 400 }} className="footer-link">FLEECE SWEATSHIRTS</Link></li>
-            <li><Link to="/?category=Old Money" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.75rem', fontWeight: 400 }} className="footer-link">OLD MONEY CLASSICS</Link></li>
-            <li><Link to="/" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.75rem', fontWeight: 400 }} className="footer-link">LATEST DROPS</Link></li>
-          </ul>
-        </div>
- 
-        {/* Customer Service */}
-        <div>
-          <h4 style={{
-            fontWeight: 600,
-            color: 'var(--text-primary)',
-            letterSpacing: '0.1em',
-            marginBottom: '1rem',
-            fontSize: '0.68rem',
-            textTransform: 'uppercase'
-          }}>Customer Service</h4>
-          <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
-            <li><Link to="/privacy-policy" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.75rem', fontWeight: 400 }} className="footer-link">PRIVACY POLICY</Link></li>
-            <li>
-              <a 
-                href="#refund-policy" 
-                onClick={(e) => { e.preventDefault(); window.dispatchEvent(new Event('open-return-policy-modal')); }} 
-                style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.75rem', fontWeight: 400, cursor: 'pointer' }} 
-                className="footer-link"
+
+          {/* Right Newsletter Form */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            <span style={{
+              fontSize: '0.72rem',
+              fontWeight: 600,
+              letterSpacing: '0.05em',
+              color: '#000000',
+              textTransform: 'uppercase'
+            }}>
+              GET AN UPDATE OF ALL OUR LATEST COLLECTIONS, DISCOUNTS & FEATURES COMING UP
+            </span>
+            
+            <form onSubmit={handleSubscribe} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', alignItems: 'flex-start', width: '100%' }}>
+              <div style={{ width: '100%', position: 'relative' }}>
+                <input 
+                  type="email" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="ENTER YOUR EMAIL" 
+                  disabled={status === 'loading' || status === 'success'}
+                  style={{
+                    width: '100%',
+                    background: 'transparent',
+                    border: 'none',
+                    borderBottom: '1px solid #babcbf',
+                    borderRadius: '0px',
+                    color: '#000000',
+                    outline: 'none',
+                    fontSize: '0.82rem',
+                    fontFamily: 'var(--font-sans)',
+                    padding: '0.75rem 0',
+                    letterSpacing: '0.05em',
+                    boxSizing: 'border-box'
+                  }}
+                  className="newsletter-input"
+                />
+              </div>
+              
+              <button 
+                type="submit"
+                disabled={status === 'loading' || status === 'success'}
+                style={{
+                  background: status === 'success' ? '#16a34a' : '#000000',
+                  border: 'none',
+                  color: '#ffffff',
+                  cursor: status === 'success' || status === 'loading' ? 'default' : 'pointer',
+                  fontWeight: 600,
+                  fontSize: '0.72rem',
+                  borderRadius: '0px',
+                  padding: '0.85rem 2.5rem',
+                  fontFamily: 'var(--font-sans)',
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  transition: 'opacity 0.2s'
+                }}
+                onMouseOver={(e) => { if (status !== 'success' && status !== 'loading') e.currentTarget.style.opacity = '0.85'; }}
+                onMouseOut={(e) => { e.currentTarget.style.opacity = '1'; }}
               >
-                REFUND POLICY
-              </a>
-            </li>
-            <li>
-              <a 
-                href="#shipping-policy" 
-                onClick={(e) => { e.preventDefault(); window.dispatchEvent(new Event('open-shipping-modal')); }} 
-                style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.75rem', fontWeight: 400, cursor: 'pointer' }} 
-                className="footer-link"
-              >
-                SHIPPING POLICY
-              </a>
-            </li>
-            <li id="contact" style={{ paddingTop: '0.5rem' }}>
-                <span style={{ color: 'var(--text-primary)', fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '0.2rem' }}>CONTACT US</span>
-                <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', display: 'block' }}>Email: support@wearblackloom.com</span>
-                <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', display: 'block' }}>WhatsApp: 03709539945</span>
-            </li>
-          </ul>
-        </div>
- 
-        {/* Newsletter */}
-        <div>
-          <h4 style={{
-            fontWeight: 600,
-            color: 'var(--text-primary)',
-            letterSpacing: '0.1em',
-            marginBottom: '1rem',
-            fontSize: '0.68rem',
-            textTransform: 'uppercase'
-          }}>Newsletter</h4>
-          <p style={{ marginBottom: '1rem', lineHeight: 1.6, fontSize: '0.78rem', color: 'var(--text-secondary)' }}>SUBSCRIBE FOR UPDATES ON NEW RELEASES AND EXCLUSIVE OFFERS.</p>
-          <form onSubmit={handleSubscribe} style={{ display: 'flex', gap: '0px' }}>
-            <input 
-              type="email" 
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="ENTER YOUR EMAIL" 
-              disabled={status === 'loading' || status === 'success'}
-              style={{
-                flex: 1,
-                background: '#fff',
-                border: '1px solid var(--border-color)',
-                borderRadius: '0px',
-                color: 'var(--text-primary)',
-                outline: 'none',
-                fontSize: '0.68rem',
-                fontFamily: 'var(--font-sans)',
-                padding: '0.65rem 0.875rem',
-                borderRight: 'none'
-              }}
-            />
-            <button 
-              type="submit"
-              disabled={status === 'loading' || status === 'success'}
-              style={{
-              background: status === 'success' ? '#16a34a' : '#121212',
-              border: '1px solid',
-              borderColor: status === 'success' ? '#16a34a' : '#121212',
-              color: '#fff',
-              cursor: status === 'success' || status === 'loading' ? 'default' : 'pointer',
-              fontWeight: 500,
-              fontSize: '0.68rem',
-              borderRadius: '0px',
-              padding: '0.65rem 1.25rem',
-              fontFamily: 'var(--font-sans)',
-              letterSpacing: '0.08em',
-              textTransform: 'uppercase',
-              transition: 'all 0.2s'
-            }} className={status === 'success' ? '' : 'newsletter-btn'}>
-              {status === 'loading' ? '...' : status === 'success' ? '✓' : 'Join'}
-            </button>
-          </form>
-          {status === 'error' && <p style={{ color: 'red', fontSize: '0.7rem', marginTop: '0.5rem' }}>Failed to subscribe. Please try again.</p>}
+                {status === 'loading' ? '...' : status === 'success' ? 'SUBSCRIBED ✓' : 'SIGN ME UP!'}
+              </button>
+            </form>
+            {status === 'error' && <p style={{ color: 'red', fontSize: '0.72rem', margin: '0.5rem 0 0 0' }}>Failed to subscribe. Please try again.</p>}
+          </div>
+
         </div>
       </div>
 
-      {/* Subfooter */}
-      <div className="container" style={{
-        borderTop: '1px solid var(--border-color)',
-        paddingTop: '1.5rem',
-        display: 'flex',
-        flexWrap: 'wrap',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        gap: '1rem'
+      {/* ===== LOWER SECTION (Black Links & Logo) ===== */}
+      <div style={{
+        backgroundColor: '#000000',
+        color: '#ffffff',
+        padding: '6rem 2rem 4rem 2rem'
       }}>
-        <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>© 2026 BLACK LOOM. All rights reserved.</p>
-        
-        {/* Payment Icons */}
-        <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
-          <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginRight: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>COD ACCEPTED</span>
-          <div style={{ width: '38px', height: '22px', backgroundColor: '#fff', border: '1px solid var(--border-color)', borderRadius: '0px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.5rem', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '0.05em' }}>COD</div>
-          <div style={{ width: '38px', height: '22px', backgroundColor: '#fff', border: '1px solid var(--border-color)', borderRadius: '0px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.5rem', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '0.05em' }}>VISA</div>
-          <div style={{ width: '38px', height: '22px', backgroundColor: '#fff', border: '1px solid var(--border-color)', borderRadius: '0px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.5rem', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '0.05em' }}>MC</div>
+        <div className="container" style={{
+          display: 'flex',
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '4rem',
+          maxWidth: '1200px',
+          margin: '0 auto',
+          position: 'relative'
+        }} className="footer-lower-container">
+          
+          {/* Logo on the left */}
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <Link to="/" style={{ textDecoration: 'none', color: '#ffffff' }}>
+              <span style={{ 
+                fontFamily: '"Didot", "Bodoni MT", "Georgia", serif', 
+                fontWeight: 900, 
+                letterSpacing: '0.02em', 
+                textTransform: 'uppercase',
+                fontSize: '2.75rem',
+                display: 'block'
+              }}>
+                BLACK LOOM
+              </span>
+            </Link>
+          </div>
+
+          {/* Right Link Columns */}
+          <div style={{
+            display: 'flex',
+            gap: '5rem',
+            textAlign: 'right'
+          }} className="footer-links-wrapper">
+            
+            {/* Column 1 */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <Link to="/privacy-policy" style={linkStyle}>Shopping Guide</Link>
+              <Link to="/account" style={linkStyle}>Log In/Sign Up</Link>
+              
+              <a 
+                href="#refund-policy" 
+                onClick={(e) => { e.preventDefault(); window.dispatchEvent(new Event('open-return-policy-modal')); }} 
+                style={linkStyle}
+              >
+                Exchange & Returns
+              </a>
+
+              <a 
+                href="#shipping-policy" 
+                onClick={(e) => { e.preventDefault(); window.dispatchEvent(new Event('open-shipping-modal')); }} 
+                style={linkStyle}
+              >
+                Shipping & Deliveries
+              </a>
+
+              <Link to="/privacy-policy" style={linkStyle}>How To Buy</Link>
+              <Link to="/privacy-policy" style={linkStyle}>Payment</Link>
+            </div>
+
+            {/* Column 2 */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <a href="#about-brand" style={linkStyle} onClick={() => {
+                const element = document.getElementById('about-brand');
+                if (element) {
+                  element.scrollIntoView({ behavior: 'smooth' });
+                }
+              }}>About Us</a>
+              <a href="#contact" onClick={handleContactClick} style={linkStyle}>Contact Us</a>
+            </div>
+
+          </div>
+
+          {/* Copyright at the bottom right */}
+          <div style={{
+            width: '100%',
+            textAlign: 'right',
+            marginTop: '4rem',
+            borderTop: '1px solid #222',
+            paddingTop: '2rem'
+          }}>
+            <p style={{
+              fontSize: '0.68rem',
+              color: '#888888',
+              margin: 0,
+              letterSpacing: '0.05em'
+            }}>
+              @ Copyrights Reserved by Black Loom 2026
+            </p>
+          </div>
+
         </div>
       </div>
 
       <style dangerouslySetInnerHTML={{__html: `
-        .footer-link {
-          transition: color 0.2s;
+        .footer-upper-grid {
+          grid-template-columns: 1fr;
         }
-        .footer-link:hover {
-          color: var(--text-primary) !important;
+        @media (min-width: 768px) {
+          .footer-upper-grid {
+            grid-template-columns: 1fr 1.2fr;
+          }
         }
-        .social-link:hover {
-          color: var(--text-primary) !important;
+        .footer-lower-container {
+          flex-direction: column;
         }
-        .newsletter-btn:hover {
-          background-color: #333 !important;
-          border-color: #333 !important;
+        .footer-links-wrapper {
+          justify-content: flex-start;
+          text-align: left;
+        }
+        @media (min-width: 768px) {
+          .footer-lower-container {
+            flex-direction: row;
+          }
+          .footer-links-wrapper {
+            justify-content: flex-end;
+            text-align: right;
+          }
+        }
+        .newsletter-input:focus {
+          border-color: #000000 !important;
+        }
+        .newsletter-input::placeholder {
+          color: #8a8d91;
+          font-weight: 500;
         }
       `}} />
+
     </footer>
   );
 };
 
+const linkStyle = {
+  color: '#ffffff',
+  textDecoration: 'none',
+  fontSize: '0.82rem',
+  fontWeight: 400,
+  letterSpacing: '0.03em',
+  transition: 'opacity 0.2s',
+  opacity: 0.85,
+  cursor: 'pointer'
+};
+
+// Add hover effect
+const addHoverEffect = () => {
+  const links = document.querySelectorAll('footer a');
+  links.forEach(link => {
+    link.addEventListener('mouseover', () => link.style.opacity = '1');
+    link.addEventListener('mouseout', () => link.style.opacity = '0.85');
+  });
+};
+
 export default Footer;
+
