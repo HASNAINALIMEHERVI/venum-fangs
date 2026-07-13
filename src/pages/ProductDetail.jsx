@@ -521,7 +521,7 @@ const ProductDetail = ({ products, onAddToCart }) => {
                   {activeAccordion === 2 && (
                     <div style={{ padding: '0 0 1.25rem 0', color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: 1.6 }}>
                       <p style={{ marginBottom: '0.75rem' }}><strong>Shipping in Pakistan:</strong></p>
-                      <p style={{ marginBottom: '1rem' }}>All orders placed in Pakistan are delivered via Leopards/TCS Courier within 3 to 5 working days. Shipping is entirely free.</p>
+                      <p style={{ marginBottom: '1rem' }}>All orders placed in Pakistan are delivered via Leopards/TCS Courier within 3 to 5 working days. Shipping charges are 299 PKR.</p>
                       <p style={{ marginBottom: '0.75rem' }}><strong>Returns Policy:</strong></p>
                       <p>We offer an easy 7-day hassle-free exchange or refund for any unworn items in original packaging. Simply contact us via email with your order number.</p>
                     </div>

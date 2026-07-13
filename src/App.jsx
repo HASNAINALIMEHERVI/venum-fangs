@@ -417,7 +417,7 @@ function App() {
       date: new Date().toISOString(),
       customer: customerDetails,
       items: [...cartItems],
-      total: subtotal,
+      total: subtotal + 299,
       paymentMethod: paymentMethod,
       notes: cartNotes,
       status: 'PENDING'

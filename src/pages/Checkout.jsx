@@ -56,7 +56,8 @@ const Checkout = ({ cartItems, onClearCart, onPlaceOrder, currentUser }) => {
     const price = item.salePrice || item.price;
     return acc + price * item.qty;
   }, 0);
-  const total = subtotal; // Free shipping
+  const shippingCost = 299;
+  const total = subtotal + shippingCost;
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -388,7 +389,7 @@ const Checkout = ({ cartItems, onClearCart, onPlaceOrder, currentUser }) => {
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#374151' }}>
                   <span>Shipping</span>
-                  <span style={{ fontWeight: 500, color: '#16a34a' }}>FREE</span>
+                  <span style={{ fontWeight: 500 }}>Rs {shippingCost}</span>
                 </div>
               </div>
 
