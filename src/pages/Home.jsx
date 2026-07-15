@@ -1,5 +1,8 @@
 import React from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
+import { Clock, Bell } from 'lucide-react';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../firebase';
 import ProductCard from '../components/ProductCard';
 
 const Home = ({ products, onQuickAdd }) => {
@@ -8,6 +11,8 @@ const Home = ({ products, onQuickAdd }) => {
   const navigate = useNavigate();
   const [showManifesto, setShowManifesto] = React.useState(false);
   const [selectedDrop, setSelectedDrop] = React.useState('all');
+  const [notifyEmail, setNotifyEmail] = React.useState('');
+  const [notifyStatus, setNotifyStatus] = React.useState('idle');
 
   // Flatten products by color so each color variant has its own card
   const flattenedProducts = React.useMemo(() => {
@@ -93,7 +98,7 @@ const Home = ({ products, onQuickAdd }) => {
                   justifyContent: 'center',
                   marginBottom: '1.5rem'
                 }}>
-                  <span style={{ fontSize: '1.5rem' }}>✦</span>
+                  <Clock size={28} strokeWidth={1.5} style={{ color: 'var(--text-muted)' }} />
                 </div>
                 <h2 style={{
                   fontFamily: 'var(--font-sans)',
@@ -116,19 +121,79 @@ const Home = ({ products, onQuickAdd }) => {
                 }}>
                   We're working on something special for this collection. Stay tuned for the drop.
                 </p>
+
+                {/* Email Notify Form */}
+                <div style={{ width: '100%', maxWidth: '340px', marginBottom: '2rem' }}>
+                  <p style={{ fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>
+                    <Bell size={13} strokeWidth={1.5} style={{ verticalAlign: 'middle', marginRight: '0.35rem' }} />
+                    Get notified when this drops
+                  </p>
+                  {notifyStatus === 'success' ? (
+                    <p style={{ fontSize: '0.8rem', color: '#16a34a', fontWeight: 600 }}>You're on the list! We'll notify you.</p>
+                  ) : (
+                    <form onSubmit={async (e) => {
+                      e.preventDefault();
+                      if (!notifyEmail || !notifyEmail.includes('@')) return;
+                      setNotifyStatus('loading');
+                      try {
+                        await addDoc(collection(db, 'drop_notifications'), {
+                          email: notifyEmail,
+                          category: categoryFilter,
+                          createdAt: serverTimestamp()
+                        });
+                        setNotifyStatus('success');
+                        setNotifyEmail('');
+                      } catch (err) {
+                        console.error('Notification signup error:', err);
+                        setNotifyStatus('idle');
+                      }
+                    }} style={{ display: 'flex', gap: '0' }}>
+                      <input
+                        type="email"
+                        placeholder="Enter your email"
+                        value={notifyEmail}
+                        onChange={(e) => setNotifyEmail(e.target.value)}
+                        required
+                        style={{
+                          flex: 1,
+                          padding: '0.75rem 1rem',
+                          border: '1px solid var(--border-color)',
+                          borderRight: 'none',
+                          fontSize: '0.8rem',
+                          fontFamily: 'var(--font-sans)',
+                          outline: 'none'
+                        }}
+                      />
+                      <button type="submit" disabled={notifyStatus === 'loading'} style={{
+                        backgroundColor: '#000',
+                        color: '#fff',
+                        border: 'none',
+                        padding: '0.75rem 1.25rem',
+                        fontSize: '0.7rem',
+                        fontWeight: 700,
+                        letterSpacing: '0.08em',
+                        textTransform: 'uppercase',
+                        cursor: 'pointer',
+                        fontFamily: 'var(--font-sans)',
+                        opacity: notifyStatus === 'loading' ? 0.6 : 1
+                      }}>
+                        {notifyStatus === 'loading' ? '...' : 'NOTIFY ME'}
+                      </button>
+                    </form>
+                  )}
+                </div>
+
                 <Link to="/" style={{
                   fontFamily: 'var(--font-sans)',
                   fontSize: '0.7rem',
                   fontWeight: 600,
                   letterSpacing: '0.1em',
                   textTransform: 'uppercase',
-                  color: '#fff',
-                  backgroundColor: '#000',
-                  padding: '0.75rem 2rem',
+                  color: 'var(--text-secondary)',
                   textDecoration: 'none',
-                  transition: 'opacity 0.2s'
+                  transition: 'color 0.2s'
                 }}>
-                  EXPLORE OTHER COLLECTIONS
+                  ← EXPLORE OTHER COLLECTIONS
                 </Link>
               </div>
             )}
@@ -176,6 +241,8 @@ const Home = ({ products, onQuickAdd }) => {
           muted={true}
           playsInline={true}
           defaultMuted={true}
+          preload="metadata"
+          poster="/images/banner-poster.webp"
           style={{
             position: 'absolute',
             top: 0, left: 0, width: '100%', height: '100%',
@@ -207,7 +274,7 @@ const Home = ({ products, onQuickAdd }) => {
           }}>
             DROP I: BLACK LOOM
           </span>
-          <h2 style={{
+          <h1 style={{
             fontFamily: 'var(--font-sans)',
             fontSize: 'clamp(2rem, 5vw, 3.5rem)',
             fontWeight: 700,
@@ -218,7 +285,7 @@ const Home = ({ products, onQuickAdd }) => {
             textTransform: 'uppercase'
           }}>
             PREMIUM WEAVES
-          </h2>
+          </h1>
           <p style={{
             fontSize: '0.8rem',
             color: 'rgba(255,255,255,0.55)',
@@ -308,6 +375,8 @@ const Home = ({ products, onQuickAdd }) => {
           muted={true}
           playsInline={true}
           defaultMuted={true}
+          preload="metadata"
+          poster="/images/smoke-poster.webp"
           style={{
             position: 'absolute',
             top: 0, left: 0, width: '100%', height: '100%',
@@ -499,7 +568,7 @@ const Home = ({ products, onQuickAdd }) => {
             }}>
               Brand Manifesto
             </span>
-            <h1 style={{
+            <h2 style={{
               fontFamily: '"Didot", "Bodoni MT", "Georgia", serif',
               fontSize: '1.8rem',
               fontWeight: 900,
@@ -510,8 +579,8 @@ const Home = ({ products, onQuickAdd }) => {
               lineHeight: '1.2'
             }}>
               BLACK LOOM: The Apex of Streetwear in Pakistan
-            </h1>
-            <h2 style={{
+            </h2>
+            <h3 style={{
               fontSize: '0.95rem',
               fontWeight: 600,
               color: 'var(--text-secondary)',
@@ -520,7 +589,7 @@ const Home = ({ products, onQuickAdd }) => {
               margin: '0 0 2rem 0'
             }}>
               Premium Weaves: Apparel in Its Most Extreme Form
-            </h2>
+            </h3>
           </div>
 
           <div className="brand-seo-content" style={{

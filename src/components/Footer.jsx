@@ -11,7 +11,8 @@ const Footer = ({ currentUser }) => {
   const handleSubscribe = async (e) => {
     e.preventDefault();
     if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
-      alert("Please enter a valid email address.");
+      setStatus('invalid');
+      setTimeout(() => setStatus('idle'), 3000);
       return;
     }
 
@@ -31,10 +32,7 @@ const Footer = ({ currentUser }) => {
     }
   };
 
-  const handleContactClick = (e) => {
-    e.preventDefault();
-    alert("Contact Us:\nEmail: support@wearblackloom.com\nWhatsApp: 03709539945");
-  };
+
 
   return (
     <footer style={{ marginTop: '4rem', fontFamily: 'var(--font-sans)' }}>
@@ -46,14 +44,14 @@ const Footer = ({ currentUser }) => {
         borderBottom: '1px solid var(--border-color)',
         padding: '5rem 2rem'
       }}>
-        <div className="container" style={{
+        <div className="footer-upper-grid" style={{
           display: 'grid',
           gridTemplateColumns: '1fr',
           gap: '2.5rem',
           alignItems: 'start',
           maxWidth: '1200px',
           margin: '0 auto'
-        }} className="footer-upper-grid">
+        }}>
           
           {/* Left Title */}
           <div>
@@ -131,7 +129,8 @@ const Footer = ({ currentUser }) => {
                 {status === 'loading' ? '...' : status === 'success' ? 'SUBSCRIBED ✓' : 'SIGN ME UP!'}
               </button>
             </form>
-            {status === 'error' && <p style={{ color: 'red', fontSize: '0.72rem', margin: '0.5rem 0 0 0' }}>Failed to subscribe. Please try again.</p>}
+            {status === 'invalid' && <p style={{ color: '#dc2626', fontSize: '0.72rem', margin: '0.5rem 0 0 0' }}>Please enter a valid email address.</p>}
+            {status === 'error' && <p style={{ color: '#dc2626', fontSize: '0.72rem', margin: '0.5rem 0 0 0' }}>Failed to subscribe. Please try again.</p>}
           </div>
 
         </div>
@@ -143,7 +142,7 @@ const Footer = ({ currentUser }) => {
         color: '#ffffff',
         padding: '6rem 2rem 4rem 2rem'
       }}>
-        <div className="container" style={{
+        <div className="footer-lower-container" style={{
           display: 'flex',
           flexDirection: 'row',
           justifyContent: 'space-between',
@@ -152,7 +151,7 @@ const Footer = ({ currentUser }) => {
           maxWidth: '1200px',
           margin: '0 auto',
           position: 'relative'
-        }} className="footer-lower-container">
+        }}>
           
           {/* Logo on the left */}
           <div style={{ display: 'flex', alignItems: 'center' }}>
@@ -259,25 +258,44 @@ const Footer = ({ currentUser }) => {
               >
                 Contact Us
               </a>
+              <a 
+                href="https://www.instagram.com/wearblackloom" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                style={linkStyle}
+              >
+                Instagram
+              </a>
             </div>
 
           </div>
 
-          {/* Copyright at the bottom right */}
+          {/* Contact Info + Copyright at the bottom */}
           <div style={{
             width: '100%',
-            textAlign: 'right',
             marginTop: '4rem',
             borderTop: '1px solid #222',
-            paddingTop: '2rem'
+            paddingTop: '2rem',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.75rem'
           }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem', justifyContent: 'flex-end' }}>
+              <span style={{ fontSize: '0.68rem', color: '#888888', letterSpacing: '0.04em' }}>
+                ✉ support@wearblackloom.com
+              </span>
+              <span style={{ fontSize: '0.68rem', color: '#888888', letterSpacing: '0.04em' }}>
+                WhatsApp: 0370-9539945
+              </span>
+            </div>
             <p style={{
               fontSize: '0.68rem',
               color: '#888888',
               margin: 0,
-              letterSpacing: '0.05em'
+              letterSpacing: '0.05em',
+              textAlign: 'right'
             }}>
-              @ Copyrights Reserved by Black Loom 2026
+              © Copyrights Reserved by Black Loom 2026
             </p>
           </div>
 
@@ -333,14 +351,4 @@ const linkStyle = {
   cursor: 'pointer'
 };
 
-// Add hover effect
-const addHoverEffect = () => {
-  const links = document.querySelectorAll('footer a');
-  links.forEach(link => {
-    link.addEventListener('mouseover', () => link.style.opacity = '1');
-    link.addEventListener('mouseout', () => link.style.opacity = '0.85');
-  });
-};
-
 export default Footer;
-

@@ -48,6 +48,7 @@ const Header = ({ cartCount, onCartClick, products, currentUser, onLogout }) => 
               className="md-hidden"
               onClick={() => setMobileMenuOpen(true)}
               style={{ background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', display: 'block', padding: 0 }}
+              aria-label="Menu"
             >
               <Menu size={20} strokeWidth={1.5} />
             </button>
@@ -79,6 +80,7 @@ const Header = ({ cartCount, onCartClick, products, currentUser, onLogout }) => 
               onClick={() => setSearchOpen(!searchOpen)} 
               style={{ background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center', transition: 'opacity 0.2s' }}
               className="icon-btn"
+              aria-label="Search"
             >
               <Search size={18} strokeWidth={1.5} />
             </button>
@@ -87,6 +89,7 @@ const Header = ({ cartCount, onCartClick, products, currentUser, onLogout }) => 
               to="/account"
               style={{ background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center', transition: 'opacity 0.2s', textDecoration: 'none' }}
               className="icon-btn"
+              aria-label="Account"
             >
               <User size={18} strokeWidth={1.5} />
             </Link>
@@ -95,6 +98,7 @@ const Header = ({ cartCount, onCartClick, products, currentUser, onLogout }) => 
               onClick={onCartClick} 
               style={{ background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', position: 'relative', display: 'flex', alignItems: 'center', padding: '2px', transition: 'opacity 0.2s' }}
               className="icon-btn"
+              aria-label={`Cart (${cartCount} ${cartCount === 1 ? 'item' : 'items'})`}
             >
               <ShoppingBag size={18} strokeWidth={1.5} />
               {cartCount > 0 && (

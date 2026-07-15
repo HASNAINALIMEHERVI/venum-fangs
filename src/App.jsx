@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { formatCurrency } from './utils/formatCurrency';
 import AnnouncementBar from './components/AnnouncementBar';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -388,7 +389,7 @@ function App() {
       console.log('--- SIMULATED EMAIL NOTIFICATION TO ADMIN ---');
       console.log(`To: ${adminEmail}`);
       console.log(`Subject: New Order Received #${order.id}`);
-      console.log(`Body: Customer ${order.customer.firstName} placed order #${order.id} totaling Rs. ${order.total.toLocaleString()}. Items: ${itemsText}`);
+      console.log(`Body: Customer ${order.customer.firstName} placed order #${order.id} totaling ${formatCurrency(order.total)}. Items: ${itemsText}`);
       console.log('Configure EmailJS keys in the Admin Settings tab to send real emails!');
       return;
     }
@@ -408,7 +409,7 @@ function App() {
           customer_name: `${order.customer.firstName} ${order.customer.lastName}`,
           customer_email: order.customer.email,
           customer_phone: order.customer.phone,
-          order_total: `Rs. ${order.total.toLocaleString()}`,
+          order_total: formatCurrency(order.total),
           order_items: itemsText,
           shipping_address: addressText,
           payment_method: order.paymentMethod === 'cod' ? 'COD' : 'CARD'

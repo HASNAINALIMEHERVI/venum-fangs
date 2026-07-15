@@ -1,8 +1,21 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { X, Plus, Minus, Trash2, ShoppingBag } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { formatCurrency } from '../utils/formatCurrency';
 
 const CartDrawer = ({ isOpen, onClose, cartItems, onUpdateQty, onRemoveItem, cartNotes, onNotesChange }) => {
+  const closeRef = useRef(null);
+
+  useEffect(() => {
+    const handleEsc = (e) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', handleEsc);
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, [onClose]);
+
+  useEffect(() => {
+    if (closeRef.current) closeRef.current.focus();
+  }, []);
+
   if (!isOpen) return null;
 
   const subtotal = cartItems.reduce((acc, item) => {
@@ -30,6 +43,9 @@ const CartDrawer = ({ isOpen, onClose, cartItems, onUpdateQty, onRemoveItem, car
       {/* Drawer */}
       <div 
         className="slide-in-right"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Shopping cart"
         style={{
           position: 'fixed',
           top: 0,
@@ -58,7 +74,9 @@ const CartDrawer = ({ isOpen, onClose, cartItems, onUpdateQty, onRemoveItem, car
             <span style={{ fontSize: '0.875rem', fontWeight: 600, letterSpacing: '0.02em' }}>Your Bag ({cartItems.length})</span>
           </div>
           <button 
+            ref={closeRef}
             onClick={onClose}
+            aria-label="Close cart"
             style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }}
             className="cart-close-btn"
           >
@@ -116,6 +134,7 @@ const CartDrawer = ({ isOpen, onClose, cartItems, onUpdateQty, onRemoveItem, car
                     </h4>
                     <button 
                       onClick={() => onRemoveItem(item.id, item.selectedSize, item.selectedColor)}
+                      aria-label="Remove item"
                       style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '2px', flexShrink: 0 }}
                       className="remove-btn"
                     >
@@ -149,7 +168,7 @@ const CartDrawer = ({ isOpen, onClose, cartItems, onUpdateQty, onRemoveItem, car
                     </div>
 
                     <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>
-                      Rs. {((item.salePrice || item.price) * item.qty).toLocaleString()}
+                      {formatCurrency((item.salePrice || item.price) * item.qty)}
                     </span>
                   </div>
                 </div>
@@ -191,7 +210,7 @@ const CartDrawer = ({ isOpen, onClose, cartItems, onUpdateQty, onRemoveItem, car
             {/* Subtotal */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
               <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Subtotal</span>
-              <span style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--accent)' }}>Rs. {subtotal.toLocaleString()}</span>
+              <span style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--accent)' }}>{formatCurrency(subtotal)}</span>
             </div>
 
             <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textAlign: 'center', marginBottom: '0.875rem' }}>

@@ -4,13 +4,13 @@ const AnnouncementBar = () => {
   return (
     <div className="ticker-wrap">
       <div className="ticker-content">
-        <span className="ticker-item">Drop I: <span>Corrosive Fangs</span> is now live</span>
+        <span className="ticker-item">Drop I is now live — Shop the collection</span>
         <span className="ticker-item">100% Heavyweight Combed Cotton (240 GSM)</span>
         <span className="ticker-item">Flat Shipping Rate: 299 PKR</span>
         <span className="ticker-item"><span>Limited Drop</span> — No Restocks</span>
         
         {/* Repeat for seamless scroll */}
-        <span className="ticker-item">Drop I: <span>Corrosive Fangs</span> is now live</span>
+        <span className="ticker-item">Drop I is now live — Shop the collection</span>
         <span className="ticker-item">100% Heavyweight Combed Cotton (240 GSM)</span>
         <span className="ticker-item">Flat Shipping Rate: 299 PKR</span>
         <span className="ticker-item"><span>Limited Drop</span> — No Restocks</span>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ShoppingBag } from 'lucide-react';
+import { formatCurrency } from '../utils/formatCurrency';
 
 const getColorHex = (colorName) => {
   const name = colorName.toLowerCase().trim();
@@ -74,18 +75,24 @@ const ProductCard = ({ product, onQuickAdd }) => {
   };
 
   return (
-    <div 
+    <Link 
+      to={`/product/${product.originalId || product.id}${activeColor ? `?color=${encodeURIComponent(activeColor)}` : ''}`}
       className="fade-in"
       style={{
         display: 'flex',
         flexDirection: 'column',
         position: 'relative',
         cursor: 'pointer',
-        textAlign: 'left'
+        textAlign: 'left',
+        textDecoration: 'none',
+        color: 'inherit'
       }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      onClick={handleCardClick}
+      onClick={(e) => {
+        e.preventDefault();
+        handleCardClick();
+      }}
     >
       {/* Image Container */}
       <div style={{ 
@@ -120,7 +127,10 @@ const ProductCard = ({ product, onQuickAdd }) => {
         {primaryImg && (
           <img 
             src={primaryImg} 
-            alt={product.title} 
+            alt={product.title}
+            loading="lazy"
+            width="400"
+            height="533"
             style={{
               width: '100%',
               height: '100%',
@@ -139,7 +149,10 @@ const ProductCard = ({ product, onQuickAdd }) => {
         {secondaryImg && (
           <img 
             src={secondaryImg} 
-            alt={`${product.title} alternate`} 
+            alt={`${product.title} alternate`}
+            loading="lazy"
+            width="400"
+            height="533"
             style={{
               width: '100%',
               height: '100%',
@@ -231,10 +244,10 @@ const ProductCard = ({ product, onQuickAdd }) => {
           {hasSale ? (
             <>
               <span style={{ fontSize: '0.85rem', color: '#000', textDecoration: 'line-through', fontFamily: 'var(--font-sans)', fontWeight: 400 }}>
-                PKR {Number(product.price).toLocaleString()}
+                {formatCurrency(product.price)}
               </span>
               <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#000', fontFamily: 'var(--font-sans)' }}>
-                PKR {Number(product.salePrice).toLocaleString()}
+                {formatCurrency(product.salePrice)}
               </span>
               <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#000', fontFamily: 'var(--font-sans)' }}>
                 -{discountPercent}%
@@ -242,7 +255,7 @@ const ProductCard = ({ product, onQuickAdd }) => {
             </>
           ) : (
             <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#000', fontFamily: 'var(--font-sans)' }}>
-              PKR {Number(product.price).toLocaleString()}
+              {formatCurrency(product.price)}
             </span>
           )}
         </div>
@@ -254,22 +267,32 @@ const ProductCard = ({ product, onQuickAdd }) => {
               const isActive = activeColor === color;
               const isWhite = color.toLowerCase().trim() === 'white';
               return (
-                <div 
+                <button 
                   key={index}
-                  onClick={(e) => { e.stopPropagation(); setActiveColor(color); }}
+                  aria-label={color}
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); setActiveColor(color); }}
                   style={{
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
-                    gap: '4px'
+                    gap: '4px',
+                    background: 'none',
+                    padding: 0,
+                    border: 'none',
+                    cursor: 'pointer'
                   }}
                 >
                   <div style={{
                     width: '14px',
                     height: '14px',
                     backgroundColor: getColorHex(color),
-                    border: isWhite ? '1px solid #ccc' : '1px solid #222',
-                    cursor: 'pointer'
+                    border: isActive
+                      ? '2px solid #000'
+                      : isWhite
+                        ? '1px solid #ccc'
+                        : '1px solid #222',
+                    boxShadow: isActive ? '0 0 0 2px #fff, 0 0 0 3px #000' : 'none',
+                    borderRadius: '1px'
                   }} />
                   {/* Underline for active state */}
                   {isActive ? (
@@ -285,7 +308,7 @@ const ProductCard = ({ product, onQuickAdd }) => {
                       backgroundColor: 'transparent'
                     }} />
                   )}
-                </div>
+                </button>
               );
             })}
           </div>
@@ -303,7 +326,7 @@ const ProductCard = ({ product, onQuickAdd }) => {
           }
         }
       `}} />
-    </div>
+    </Link>
   );
 };
 

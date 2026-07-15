@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { CheckCircle, ShoppingBag } from 'lucide-react';
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../firebase";
+import { formatCurrency } from '../utils/formatCurrency';
 
 const PROVINCES = ['Punjab', 'Sindh', 'KPK', 'Balochistan', 'Islamabad', 'AJK', 'Gilgit-Baltistan'];
 
@@ -384,7 +385,7 @@ const Checkout = ({ cartItems, onClearCart, onPlaceOrder, currentUser }) => {
                     </div>
 
                     <span style={{ fontSize: '0.88rem', fontWeight: 500, color: '#111', whiteSpace: 'nowrap' }}>
-                      Rs {((item.salePrice || item.price) * item.qty).toLocaleString()}
+                      {formatCurrency((item.salePrice || item.price) * item.qty)}
                     </span>
                   </div>
                 ))}
@@ -397,11 +398,11 @@ const Checkout = ({ cartItems, onClearCart, onPlaceOrder, currentUser }) => {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#374151' }}>
                   <span>Subtotal</span>
-                  <span style={{ fontWeight: 500 }}>Rs {subtotal.toLocaleString()}</span>
+                  <span style={{ fontWeight: 500 }}>{formatCurrency(subtotal)}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#374151' }}>
                   <span>Shipping</span>
-                  <span style={{ fontWeight: 500 }}>Rs {shippingCost}</span>
+                  <span style={{ fontWeight: 500 }}>{formatCurrency(shippingCost)}</span>
                 </div>
               </div>
 
@@ -413,7 +414,7 @@ const Checkout = ({ cartItems, onClearCart, onPlaceOrder, currentUser }) => {
                 <span style={{ fontSize: '1rem', fontWeight: 600, color: '#111' }}>Total</span>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem' }}>
                   <span style={{ fontSize: '0.72rem', color: '#6b7280' }}>PKR</span>
-                  <span style={{ fontSize: '1.35rem', fontWeight: 700, color: '#111' }}>Rs {total.toLocaleString()}</span>
+                  <span style={{ fontSize: '1.35rem', fontWeight: 700, color: '#111' }}>{formatCurrency(total)}</span>
                 </div>
               </div>
 

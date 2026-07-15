@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { ShoppingBag, ChevronDown, Check, ArrowLeft } from 'lucide-react';
+import { ShoppingBag, ChevronDown, Check, ArrowLeft, CreditCard, RefreshCw, Truck } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
+import { formatCurrency } from '../utils/formatCurrency';
 
 const getColorHex = (colorName) => {
   const name = colorName.toLowerCase().trim();
@@ -32,10 +33,11 @@ const ProductDetail = ({ products, onAddToCart }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [product, setProduct] = useState(null);
-  const [selectedSize, setSelectedSize] = useState('M');
+  const [selectedSize, setSelectedSize] = useState(null);
   const [selectedColor, setSelectedColor] = useState('');
   const [activeAccordion, setActiveAccordion] = useState(null);
   const [addedMessage, setAddedMessage] = useState(false);
+  const [sizeError, setSizeError] = useState(false);
 
   useEffect(() => {
     const found = products.find(p => p.id === id);
@@ -56,6 +58,30 @@ const ProductDetail = ({ products, onAddToCart }) => {
 
     }
   }, [id, products, location.search]);
+
+  // Product JSON-LD structured data
+  useEffect(() => {
+    if (!product) return;
+    const script = document.createElement('script');
+    script.type = 'application/ld+json';
+    script.text = JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'Product',
+      name: product.title,
+      image: product.images?.[0] ? `https://www.wearblackloom.com${product.images[0]}` : undefined,
+      description: product.description?.substring(0, 200),
+      brand: { '@type': 'Brand', name: 'Black Loom' },
+      offers: {
+        '@type': 'Offer',
+        price: product.salePrice || product.price,
+        priceCurrency: 'PKR',
+        availability: 'https://schema.org/InStock',
+        url: `https://www.wearblackloom.com/product/${product.id}`
+      }
+    });
+    document.head.appendChild(script);
+    return () => { if (script.parentNode) script.parentNode.removeChild(script); };
+  }, [product]);
 
   const recommendations = React.useMemo(() => {
     if (!product || !products) return [];
@@ -102,6 +128,11 @@ const ProductDetail = ({ products, onAddToCart }) => {
   const hasSale = product.salePrice && Number(product.salePrice) < Number(product.price);
 
   const handleAddToCart = () => {
+    if (!selectedSize) {
+      setSizeError(true);
+      return;
+    }
+    setSizeError(false);
     onAddToCart(product, selectedSize, selectedColor);
     setAddedMessage(true);
     setTimeout(() => setAddedMessage(false), 3000);
@@ -189,8 +220,8 @@ const ProductDetail = ({ products, onAddToCart }) => {
                   key={idx} 
                   className="gallery-image-wrapper"
                   style={{
-                    aspectRatio: '4 / 5',
-                    backgroundColor: 'var(--bg-secondary)',
+                    aspectRatio: '3 / 4',
+                    backgroundColor: '#f5f5f5',
                     borderRadius: '12px',
                     overflow: 'hidden'
                   }}
@@ -198,6 +229,9 @@ const ProductDetail = ({ products, onAddToCart }) => {
                   <img 
                     src={img} 
                     alt={`${product.title} view ${idx + 1}`} 
+                    width="896"
+                    height="1194"
+                    {...(idx > 0 ? { loading: 'lazy' } : {})}
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
                   />
                 </div>
@@ -270,10 +304,10 @@ const ProductDetail = ({ products, onAddToCart }) => {
                 {hasSale ? (
                   <>
                     <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textDecoration: 'line-through', fontWeight: 700 }}>
-                      PKR {Number(product.price).toLocaleString()}
+                      {formatCurrency(product.price)}
                     </span>
                     <span style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                      PKR {Number(product.salePrice).toLocaleString()}
+                      {formatCurrency(product.salePrice)}
                     </span>
                     <span style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)' }}>
                       -{Math.round(((product.price - product.salePrice) / product.price) * 100)}%
@@ -281,7 +315,7 @@ const ProductDetail = ({ products, onAddToCart }) => {
                   </>
                 ) : (
                   <span style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                    PKR {Number(product.price).toLocaleString()}
+                    {formatCurrency(product.price)}
                   </span>
                 )}
               </div>
@@ -301,6 +335,7 @@ const ProductDetail = ({ products, onAddToCart }) => {
                         <button
                           type="button"
                           onClick={() => handleColorChange(color)}
+                          aria-label={color}
                           style={{
                             width: '26px',
                             height: '26px',
@@ -322,9 +357,9 @@ const ProductDetail = ({ products, onAddToCart }) => {
               )}
 
               {/* Size Selector Header */}
-              <div>
+              <div style={{ border: sizeError ? '1px solid #dc2626' : '1px solid transparent', borderRadius: '6px', padding: sizeError ? '0.5rem' : '0', transition: 'all 0.2s' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                  <span style={{ fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.05em', color: 'var(--text-primary)', textTransform: 'uppercase' }}>
+                  <span style={{ fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.05em', color: sizeError ? '#dc2626' : 'var(--text-primary)', textTransform: 'uppercase' }}>
                     SELECT SIZE
                   </span>
                   <a 
@@ -343,8 +378,14 @@ const ProductDetail = ({ products, onAddToCart }) => {
                     return (
                       <button
                         key={size}
-                        onClick={() => available && setSelectedSize(size)}
+                        onClick={() => {
+                          if (available) {
+                            setSelectedSize(size);
+                            setSizeError(false);
+                          }
+                        }}
                         disabled={!available}
+                        title={!available ? 'Out of stock' : undefined}
                         style={{
                           background: 'none',
                           border: 'none',
@@ -356,7 +397,8 @@ const ProductDetail = ({ products, onAddToCart }) => {
                           padding: '4px 0px',
                           fontFamily: 'var(--font-sans)',
                           transition: 'all 0.2s',
-                          opacity: available ? 1 : 0.4
+                          opacity: available ? 1 : 0.4,
+                          position: 'relative'
                         }}
                       >
                         {size}
@@ -364,6 +406,9 @@ const ProductDetail = ({ products, onAddToCart }) => {
                     );
                   })}
                 </div>
+                {sizeError && (
+                  <p style={{ color: '#dc2626', fontSize: '0.78rem', fontWeight: 500, marginTop: '0.5rem', marginBottom: 0 }}>Please select a size</p>
+                )}
               </div>
 
               {/* Add to Cart Action Button */}
@@ -394,6 +439,22 @@ const ProductDetail = ({ products, onAddToCart }) => {
                   <span>{addedMessage ? 'ADDED TO BAG' : 'ADD TO CART'}</span>
                   <ShoppingBag size={18} strokeWidth={1.5} style={{ position: 'absolute', right: '1.5rem' }} />
                 </button>
+
+                {/* Trust Badges */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '1.25rem', paddingTop: '1.25rem', borderTop: '1px solid var(--border-color)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                    <CreditCard size={14} strokeWidth={1.5} />
+                    <span>Cash on Delivery available</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                    <RefreshCw size={14} strokeWidth={1.5} />
+                    <span>14-day easy exchange</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                    <Truck size={14} strokeWidth={1.5} />
+                    <span>Flat shipping: PKR 299</span>
+                  </div>
+                </div>
               </div>
 
               {/* Product Description Section */}
@@ -401,15 +462,30 @@ const ProductDetail = ({ products, onAddToCart }) => {
                 <h3 style={{ fontSize: '0.85rem', fontWeight: 800, letterSpacing: '0.05em', color: 'var(--text-primary)', textTransform: 'uppercase', marginBottom: '0.75rem' }}>
                   PRODUCT DESCRIPTION
                 </h3>
-                <p style={{ 
-                  fontSize: '0.85rem', 
-                  color: 'var(--text-secondary)', 
-                  lineHeight: 1.6, 
-                  whiteSpace: 'pre-wrap',
-                  marginBottom: '1rem'
-                }}>
-                  {product.description}
-                </p>
+                {(() => {
+                  const desc = product.description || '';
+                  // Extract main fit/style description (before Composition/Care sections)
+                  const compIdx = desc.search(/Composition|Care/i);
+                  const mainDesc = compIdx > 0 ? desc.substring(0, compIdx).trim() : desc;
+                  // Remove duplicate "Model Details" line from description text
+                  const cleanedDesc = mainDesc.replace(/Model Details[^\n]*/gi, '').trim();
+                  return (
+                    <>
+                      <p style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.04em', color: 'var(--text-primary)', textTransform: 'uppercase', marginBottom: '0.35rem' }}>
+                        FIT
+                      </p>
+                      <p style={{ 
+                        fontSize: '0.85rem', 
+                        color: 'var(--text-secondary)', 
+                        lineHeight: 1.6, 
+                        whiteSpace: 'pre-wrap',
+                        marginBottom: '1rem'
+                      }}>
+                        {cleanedDesc}
+                      </p>
+                    </>
+                  );
+                })()}
                 
                 {/* Dynamic Model Details */}
                 <p style={{ fontSize: '0.85rem', color: 'var(--text-primary)', fontWeight: 500 }}>
@@ -456,6 +532,7 @@ const ProductDetail = ({ products, onAddToCart }) => {
                             <th style={{ padding: '10px', border: '1px solid var(--border-color)' }}>Size</th>
                             <th style={{ padding: '10px', border: '1px solid var(--border-color)' }}>Chest (in)</th>
                             <th style={{ padding: '10px', border: '1px solid var(--border-color)' }}>Length (in)</th>
+                            <th style={{ padding: '10px', border: '1px solid var(--border-color)' }}>Shoulder (in)</th>
                             <th style={{ padding: '10px', border: '1px solid var(--border-color)' }}>Sleeve (in)</th>
                           </tr>
                         </thead>
@@ -464,25 +541,36 @@ const ProductDetail = ({ products, onAddToCart }) => {
                             <td style={{ padding: '10px', border: '1px solid var(--border-color)', fontWeight: 600 }}>S</td>
                             <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>23.0</td>
                             <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>28.5</td>
+                            <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>20.5</td>
                             <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>9.0</td>
                           </tr>
                           <tr style={{ backgroundColor: 'var(--bg-secondary)' }}>
                             <td style={{ padding: '10px', border: '1px solid var(--border-color)', fontWeight: 600 }}>M</td>
                             <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>24.5</td>
                             <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>29.5</td>
+                            <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>21.5</td>
                             <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>9.5</td>
                           </tr>
                           <tr>
                             <td style={{ padding: '10px', border: '1px solid var(--border-color)', fontWeight: 600 }}>L</td>
                             <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>26.0</td>
                             <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>30.5</td>
+                            <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>22.5</td>
                             <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>10.0</td>
                           </tr>
                           <tr style={{ backgroundColor: 'var(--bg-secondary)' }}>
                             <td style={{ padding: '10px', border: '1px solid var(--border-color)', fontWeight: 600 }}>XL</td>
                             <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>27.5</td>
                             <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>31.5</td>
+                            <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>23.5</td>
                             <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>10.5</td>
+                          </tr>
+                          <tr>
+                            <td style={{ padding: '10px', border: '1px solid var(--border-color)', fontWeight: 600 }}>XXL</td>
+                            <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>29.0</td>
+                            <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>32.5</td>
+                            <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>24.5</td>
+                            <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>11.0</td>
                           </tr>
                         </tbody>
                       </table>
