@@ -31,7 +31,8 @@ const Admin = ({
     imageColors: ['', '', '', ''],
     drop: 'drop1',
     showInNewIn: true,
-    colorsString: ''
+    colorsString: '',
+    subCategory: ''
   });
   // Track raw File objects selected by the user for upload
   const [pendingFiles, setPendingFiles] = useState([null, null, null, null]);
@@ -351,7 +352,8 @@ const Admin = ({
         imageColors: ['', '', '', ''],
         drop: 'drop1',
         showInNewIn: true,
-        colorsString: ''
+        colorsString: '',
+        subCategory: ''
       });
       setPendingFiles([null, null, null, null]);
     } catch (err) {
@@ -386,7 +388,8 @@ const Admin = ({
       imageColors: imageColorList,
       drop: product.drop || 'drop1',
       showInNewIn: product.showInNewIn !== false,
-      colorsString: product.colors ? product.colors.join(', ') : ''
+      colorsString: product.colors ? product.colors.join(', ') : '',
+      subCategory: product.subCategory || ''
     });
     setPendingFiles(new Array(imageList.length).fill(null));
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -719,6 +722,32 @@ const Admin = ({
                       <option value="Old Money">OLD MONEY</option>
                     </select>
                   </div>
+
+                  {formData.category === 'T-Shirts' && (
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.1em', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>T-SHIRT SUBCATEGORY (OPTIONAL)</label>
+                      <select 
+                        name="subCategory"
+                        value={formData.subCategory || ''}
+                        onChange={handleTextChange}
+                        style={{
+                          width: '100%',
+                          background: 'var(--bg-primary)',
+                          border: '1px solid var(--border-color)',
+                          color: 'var(--text-primary)',
+                          padding: '0.8rem',
+                          fontSize: '0.85rem',
+                          fontFamily: 'var(--font-sans)',
+                          outline: 'none',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <option value="">ALL T-SHIRTS (NO SUBCATEGORY)</option>
+                        <option value="Graphic Tees">GRAPHIC TEES</option>
+                        <option value="Plain Tees">PLAIN TEES</option>
+                      </select>
+                    </div>
+                  )}
 
                   <div>
                     <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.1em', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>SIZES AVAILABLE</label>
@@ -1218,7 +1247,7 @@ const Admin = ({
                     
                     <div style={{ flexGrow: 1 }}>
                       <span style={{ fontSize: '0.6rem', color: 'var(--accent)', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                        {p.category} {p.drop ? `| ${p.drop === 'none' ? 'Basics' : p.drop === 'drop1' ? 'Drop I' : 'Drop II'}` : ''}
+                        {p.category} {p.subCategory ? `(${p.subCategory})` : ''} {p.drop ? `| ${p.drop === 'none' ? 'Basics' : p.drop === 'drop1' ? 'Drop I' : 'Drop II'}` : ''}
                       </span>
                       <h4 style={{ textTransform: 'uppercase', fontSize: '0.85rem', fontWeight: 800, margin: '2px 0 4px 0', color: 'var(--text-primary)' }}>{p.title}</h4>
                       <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
