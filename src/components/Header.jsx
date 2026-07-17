@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Menu, X, ShoppingBag, Search, User } from 'lucide-react';
 
 const Header = ({ cartCount, onCartClick, products, currentUser, onLogout }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [tshirtMenuOpen, setTshirtMenuOpen] = useState(false);
+  const location = useLocation();
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
@@ -66,9 +69,38 @@ const Header = ({ cartCount, onCartClick, products, currentUser, onLogout }) => 
           </div>
 
           {/* Center: Navigation (Desktop) */}
-          <nav className="desktop-nav" style={{ display: 'none', alignItems: 'center', gap: '1.75rem', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}>
+          <nav className="desktop-nav" style={{ display: 'none', alignItems: 'center', gap: '1.75rem', position: 'absolute', left: '50%', transform: 'translateX(-50%)', height: '100%' }}>
             <Link to="/" className="nav-link" style={{ color: 'var(--text-primary)', textDecoration: 'none', fontSize: '0.68rem', fontWeight: 400, letterSpacing: '0.08em', textTransform: 'uppercase', transition: 'opacity 0.2s' }}>NEW IN</Link>
-            <Link to="/?category=T-Shirts" className="nav-link" style={{ color: 'var(--text-primary)', textDecoration: 'none', fontSize: '0.68rem', fontWeight: 400, letterSpacing: '0.08em', textTransform: 'uppercase', transition: 'opacity 0.2s' }}>T-SHIRTS</Link>
+            
+            <div 
+              className="nav-dropdown-container" 
+              style={{ position: 'relative', display: 'flex', alignItems: 'center', height: '100%' }}
+              onMouseEnter={() => setTshirtMenuOpen(true)}
+              onMouseLeave={() => setTshirtMenuOpen(false)}
+            >
+              <Link to="/?category=T-Shirts" className="nav-link" style={{ color: 'var(--text-primary)', textDecoration: 'none', fontSize: '0.68rem', fontWeight: 400, letterSpacing: '0.08em', textTransform: 'uppercase', transition: 'opacity 0.2s', padding: '1.5rem 0' }}>T-SHIRTS</Link>
+              {tshirtMenuOpen && (
+                <div style={{ 
+                  position: 'absolute', 
+                  top: '100%', 
+                  left: '50%', 
+                  transform: 'translateX(-50%)',
+                  background: 'var(--bg-primary)', 
+                  border: '1px solid var(--border-color)', 
+                  padding: '1.25rem', 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  gap: '1rem', 
+                  zIndex: 50, 
+                  minWidth: '160px',
+                  boxShadow: 'var(--shadow-md)'
+                }}>
+                  <Link to="/?category=Graphic Tees" className="nav-link" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.65rem', fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase', transition: 'color 0.2s' }} onClick={() => setTshirtMenuOpen(false)}>GRAPHIC TEES</Link>
+                  <Link to="/?category=Plain Tees" className="nav-link" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.65rem', fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase', transition: 'color 0.2s' }} onClick={() => setTshirtMenuOpen(false)}>PLAIN TEES</Link>
+                </div>
+              )}
+            </div>
+
             <Link to="/?category=Hoodies" className="nav-link" style={{ color: 'var(--text-primary)', textDecoration: 'none', fontSize: '0.68rem', fontWeight: 400, letterSpacing: '0.08em', textTransform: 'uppercase', transition: 'opacity 0.2s' }}>HOODIES</Link>
             <Link to="/?category=Sweatshirts" className="nav-link" style={{ color: 'var(--text-primary)', textDecoration: 'none', fontSize: '0.68rem', fontWeight: 400, letterSpacing: '0.08em', textTransform: 'uppercase', transition: 'opacity 0.2s' }}>SWEATSHIRTS</Link>
             <Link to="/?category=Old Money" className="nav-link" style={{ color: 'var(--text-primary)', textDecoration: 'none', fontSize: '0.68rem', fontWeight: 400, letterSpacing: '0.08em', textTransform: 'uppercase', transition: 'opacity 0.2s' }}>OLD MONEY</Link>
@@ -287,6 +319,10 @@ const Header = ({ cartCount, onCartClick, products, currentUser, onLogout }) => 
             <nav style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
               <Link to="/" onClick={() => setMobileMenuOpen(false)} style={{ color: 'var(--text-primary)', textDecoration: 'none', fontSize: '0.8rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase' }}>NEW IN</Link>
               <Link to="/?category=T-Shirts" onClick={() => setMobileMenuOpen(false)} style={{ color: 'var(--text-primary)', textDecoration: 'none', fontSize: '0.8rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase' }}>T-SHIRTS</Link>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', paddingLeft: '1rem', marginTop: '-0.5rem' }}>
+                <Link to="/?category=Graphic Tees" onClick={() => setMobileMenuOpen(false)} style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.75rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase' }}>GRAPHIC TEES</Link>
+                <Link to="/?category=Plain Tees" onClick={() => setMobileMenuOpen(false)} style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.75rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase' }}>PLAIN TEES</Link>
+              </div>
               <Link to="/?category=Hoodies" onClick={() => setMobileMenuOpen(false)} style={{ color: 'var(--text-primary)', textDecoration: 'none', fontSize: '0.8rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase' }}>HOODIES</Link>
               <Link to="/?category=Sweatshirts" onClick={() => setMobileMenuOpen(false)} style={{ color: 'var(--text-primary)', textDecoration: 'none', fontSize: '0.8rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase' }}>SWEATSHIRTS</Link>
               <Link to="/?category=Old Money" onClick={() => setMobileMenuOpen(false)} style={{ color: 'var(--text-primary)', textDecoration: 'none', fontSize: '0.8rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase' }}>OLD MONEY</Link>

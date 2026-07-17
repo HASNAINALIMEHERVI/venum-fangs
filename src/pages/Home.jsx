@@ -30,7 +30,15 @@ const Home = ({ products, onQuickAdd }) => {
   }, [products]);
 
   const filteredProducts = categoryFilter 
-    ? flattenedProducts.filter(p => p.category.toLowerCase() === categoryFilter.toLowerCase())
+    ? flattenedProducts.filter(p => {
+        const cat = p.category.toLowerCase();
+        const subCat = p.subCategory ? p.subCategory.toLowerCase() : '';
+        const filter = categoryFilter.toLowerCase();
+        if (filter === 't-shirts') {
+          return cat === 't-shirts';
+        }
+        return cat === filter || subCat === filter;
+      })
     : flattenedProducts;
 
   // Category view layout
