@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { formatCurrency } from './utils/formatCurrency';
 import AnnouncementBar from './components/AnnouncementBar';
 import Header from './components/Header';
@@ -26,6 +26,27 @@ import ScrollToTop from './components/ScrollToTop';
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc, setDoc, collection, getDocs, deleteDoc, addDoc } from "firebase/firestore";
 import { auth, db } from "./firebase";
+
+// Component to dynamically update canonical tags for SEO
+const CanonicalUpdater = () => {
+  const location = useLocation();
+
+  useEffect(() => {
+    const canonicalLink = document.querySelector('link[rel="canonical"]');
+    const fullUrl = `https://www.wearblackloom.com${location.pathname === '/' && location.search === '' ? '' : location.pathname + location.search}`;
+    
+    if (canonicalLink) {
+      canonicalLink.setAttribute('href', fullUrl);
+    } else {
+      const link = document.createElement('link');
+      link.rel = 'canonical';
+      link.href = fullUrl;
+      document.head.appendChild(link);
+    }
+  }, [location]);
+
+  return null;
+};
 
 // Default seeded products (Black Loom premium streetwear)
 const DEFAULT_PRODUCTS = [
@@ -548,6 +569,7 @@ function App() {
   return (
     <Router>
       <ScrollToTop />
+      <CanonicalUpdater />
       <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', position: 'relative' }}>
         
         {/* Login Modal (only shown when triggered) */}
