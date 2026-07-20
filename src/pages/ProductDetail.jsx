@@ -539,38 +539,38 @@ const ProductDetail = ({ products, onAddToCart }) => {
                         <tbody>
                           <tr>
                             <td style={{ padding: '10px', border: '1px solid var(--border-color)', fontWeight: 600 }}>S</td>
-                            <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>23.0</td>
-                            <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>28.5</td>
-                            <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>20.5</td>
-                            <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>9.0</td>
+                            <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>21.0</td>
+                            <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>27.0</td>
+                            <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>23.5</td>
+                            <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>8.0</td>
                           </tr>
                           <tr style={{ backgroundColor: 'var(--bg-secondary)' }}>
                             <td style={{ padding: '10px', border: '1px solid var(--border-color)', fontWeight: 600 }}>M</td>
+                            <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>22.0</td>
+                            <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>28.0</td>
                             <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>24.5</td>
-                            <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>29.5</td>
-                            <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>21.5</td>
-                            <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>9.5</td>
+                            <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>9.0</td>
                           </tr>
                           <tr>
                             <td style={{ padding: '10px', border: '1px solid var(--border-color)', fontWeight: 600 }}>L</td>
-                            <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>26.0</td>
-                            <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>30.5</td>
-                            <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>22.5</td>
-                            <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>10.0</td>
+                            <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>23.0</td>
+                            <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>29.0</td>
+                            <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>25.5</td>
+                            <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>9.5</td>
                           </tr>
                           <tr style={{ backgroundColor: 'var(--bg-secondary)' }}>
                             <td style={{ padding: '10px', border: '1px solid var(--border-color)', fontWeight: 600 }}>XL</td>
-                            <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>27.5</td>
-                            <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>31.5</td>
-                            <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>23.5</td>
-                            <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>10.5</td>
+                            <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>24.0</td>
+                            <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>30.0</td>
+                            <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>26.5</td>
+                            <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>10.0</td>
                           </tr>
                           <tr>
                             <td style={{ padding: '10px', border: '1px solid var(--border-color)', fontWeight: 600 }}>XXL</td>
-                            <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>29.0</td>
-                            <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>32.5</td>
-                            <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>24.5</td>
-                            <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>11.0</td>
+                            <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>25.0</td>
+                            <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>31.0</td>
+                            <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>27.5</td>
+                            <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>10.5</td>
                           </tr>
                         </tbody>
                       </table>
