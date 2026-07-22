@@ -231,7 +231,9 @@ const ProductDetail = ({ products, onAddToCart }) => {
                     alt={`${product.title} view ${idx + 1}`} 
                     width="896"
                     height="1194"
-                    {...(idx > 0 ? { loading: 'lazy' } : {})}
+                    loading={idx === 0 ? "eager" : "lazy"}
+                    {...(idx === 0 ? { fetchpriority: "high" } : {})}
+                    decoding="async"
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
                   />
                 </div>

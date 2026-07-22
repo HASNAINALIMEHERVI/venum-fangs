@@ -4,8 +4,9 @@ import { Clock, Bell } from 'lucide-react';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import ProductCard from '../components/ProductCard';
+import ProductSkeleton from '../components/ProductSkeleton';
 
-const Home = ({ products, onQuickAdd }) => {
+const Home = ({ products, productsLoading = false, onQuickAdd }) => {
   const [searchParams] = useSearchParams();
   const categoryFilter = searchParams.get('category');
   const navigate = useNavigate();
@@ -77,13 +78,18 @@ const Home = ({ products, onQuickAdd }) => {
 
         <section style={{ padding: '0 0 4rem 0' }}>
           <div style={{ padding: '0 0.5rem' }}>
-            {filteredProducts.length > 0 ? (
+            {productsLoading ? (
               <div className="product-grid-tight">
-                {filteredProducts.map(product => (
+                <ProductSkeleton count={4} />
+              </div>
+            ) : filteredProducts.length > 0 ? (
+              <div className="product-grid-tight">
+                {filteredProducts.map((product, idx) => (
                   <ProductCard 
                     key={product.id} 
                     product={product} 
                     onQuickAdd={onQuickAdd} 
+                    isAboveTheFold={idx < 4}
                   />
                 ))}
               </div>
@@ -349,16 +355,21 @@ const Home = ({ products, onQuickAdd }) => {
       <section style={{ padding: '0 0 1rem 0' }}>
         <div style={{ padding: '0 0.5rem' }}>
           <div className="product-grid-tight">
-            {(flattenedProducts.filter(p => p.showInNewIn === true).length > 0
-              ? flattenedProducts.filter(p => p.showInNewIn === true).slice(0, 4)
-              : flattenedProducts.slice(0, 4)
-            ).map(product => (
-              <ProductCard 
-                key={product.id} 
-                product={product} 
-                onQuickAdd={onQuickAdd} 
-              />
-            ))}
+            {productsLoading ? (
+              <ProductSkeleton count={4} />
+            ) : (
+              (flattenedProducts.filter(p => p.showInNewIn === true).length > 0
+                ? flattenedProducts.filter(p => p.showInNewIn === true).slice(0, 4)
+                : flattenedProducts.slice(0, 4)
+              ).map((product, idx) => (
+                <ProductCard 
+                  key={product.id} 
+                  product={product} 
+                  onQuickAdd={onQuickAdd} 
+                  isAboveTheFold={idx < 4}
+                />
+              ))
+            )}
           </div>
         </div>
       </section>
@@ -517,16 +528,20 @@ const Home = ({ products, onQuickAdd }) => {
       <section style={{ padding: '0 0 1.5rem 0' }}>
         <div style={{ padding: '0 0.5rem' }}>
           <div className="product-grid-tight">
-            {(selectedDrop === 'all' 
-              ? flattenedProducts 
-              : flattenedProducts.filter(p => (p.drop || 'drop1') === selectedDrop)
-            ).map(product => (
-              <ProductCard 
-                key={product.id} 
-                product={product} 
-                onQuickAdd={onQuickAdd} 
-              />
-            ))}
+            {productsLoading ? (
+              <ProductSkeleton count={4} />
+            ) : (
+              (selectedDrop === 'all' 
+                ? flattenedProducts 
+                : flattenedProducts.filter(p => (p.drop || 'drop1') === selectedDrop)
+              ).map(product => (
+                <ProductCard 
+                  key={product.id} 
+                  product={product} 
+                  onQuickAdd={onQuickAdd} 
+                />
+              ))
+            )}
           </div>
         </div>
       </section>

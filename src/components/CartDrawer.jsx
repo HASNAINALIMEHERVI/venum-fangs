@@ -124,6 +124,10 @@ const CartDrawer = ({ isOpen, onClose, cartItems, onUpdateQty, onRemoveItem, car
                 <img 
                   src={item.images?.[0] || 'https://via.placeholder.com/100'} 
                   alt={item.title} 
+                  loading="lazy"
+                  decoding="async"
+                  width="76"
+                  height="95"
                   style={{ width: '76px', height: '95px', objectFit: 'cover', borderRadius: '8px', border: '1px solid var(--border-color)' }}
                 />
 

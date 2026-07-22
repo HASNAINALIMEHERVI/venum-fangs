@@ -201,7 +201,22 @@ const DEFAULT_ORDERS = [
 ];
 
 function App() {
-  const [products, setProducts] = useState([]);
+  const [products, setProducts] = useState(() => {
+    try {
+      const stored = localStorage.getItem('black_loom_products');
+      return stored ? JSON.parse(stored) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+  const [productsLoading, setProductsLoading] = useState(() => {
+    try {
+      const stored = localStorage.getItem('black_loom_products');
+      return !stored || JSON.parse(stored).length === 0;
+    } catch (e) {
+      return true;
+    }
+  });
   const [cartItems, setCartItems] = useState([]);
   const [orders, setOrders] = useState([]);
   const [cartNotes, setCartNotes] = useState('');
@@ -221,9 +236,20 @@ function App() {
     setCurrentUser(null);
   };
 
-  // Initialize products from Firestore (with localStorage fallback)
+  // Initialize products from Firestore with 5-minute TTL client-side caching
   useEffect(() => {
     const loadProducts = async () => {
+      const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+      const lastFetch = localStorage.getItem('black_loom_products_timestamp');
+      const hasCachedProducts = products.length > 0;
+      const isFresh = lastFetch && (Date.now() - Number(lastFetch) < CACHE_TTL_MS);
+
+      // If cache is fresh and we already have products loaded, skip hitting Firestore!
+      if (hasCachedProducts && isFresh) {
+        setProductsLoading(false);
+        return;
+      }
+
       try {
         const productsSnap = await getDocs(collection(db, "products"));
         if (!productsSnap.empty) {
@@ -233,20 +259,20 @@ function App() {
           });
           setProducts(firestoreProducts);
           localStorage.setItem('black_loom_products', JSON.stringify(firestoreProducts));
+          localStorage.setItem('black_loom_products_timestamp', Date.now().toString());
         } else {
-          // If database is empty, leave it empty (no more auto-seeding zombie products!)
           setProducts([]);
           localStorage.setItem('black_loom_products', JSON.stringify([]));
+          localStorage.setItem('black_loom_products_timestamp', Date.now().toString());
         }
       } catch (err) {
         console.error("Error loading products from Firestore:", err);
-        // Fallback to localStorage
         const storedProds = localStorage.getItem('black_loom_products');
         if (storedProds) {
           setProducts(JSON.parse(storedProds));
-        } else {
-          setProducts([]);
         }
+      } finally {
+        setProductsLoading(false);
       }
     };
 
@@ -600,7 +626,7 @@ function App() {
           <Routes>
             <Route 
               path="/" 
-              element={<Home products={products} onQuickAdd={handleQuickAdd} />} 
+              element={<Home products={products} productsLoading={productsLoading} onQuickAdd={handleQuickAdd} />} 
             />
             
             <Route 

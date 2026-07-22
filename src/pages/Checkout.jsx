@@ -357,6 +357,10 @@ const Checkout = ({ cartItems, onClearCart, onPlaceOrder, currentUser }) => {
                       <img
                         src={item.images[0]}
                         alt={item.title}
+                        loading="lazy"
+                        decoding="async"
+                        width="64"
+                        height="64"
                         style={{ width: '64px', height: '64px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #e5e7eb' }}
                       />
                       <span style={{

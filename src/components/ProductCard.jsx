@@ -29,7 +29,7 @@ const getColorHex = (colorName) => {
   return colorMap[name] || name;
 };
 
-const ProductCard = ({ product, onQuickAdd }) => {
+const ProductCard = ({ product, onQuickAdd, isAboveTheFold = false }) => {
   const [hovered, setHovered] = useState(false);
   const navigate = useNavigate();
   const hasSale = product.salePrice && Number(product.salePrice) < Number(product.price);
@@ -128,7 +128,9 @@ const ProductCard = ({ product, onQuickAdd }) => {
           <img 
             src={primaryImg} 
             alt={product.title}
-            loading="lazy"
+            loading={isAboveTheFold ? "eager" : "lazy"}
+            {...(isAboveTheFold ? { fetchpriority: "high" } : {})}
+            decoding="async"
             width="400"
             height="533"
             style={{
@@ -151,6 +153,7 @@ const ProductCard = ({ product, onQuickAdd }) => {
             src={secondaryImg} 
             alt={`${product.title} alternate`}
             loading="lazy"
+            decoding="async"
             width="400"
             height="533"
             style={{
