@@ -288,21 +288,19 @@ const Admin = ({
             const uploadedUrl = await uploadToImgBB(pendingFiles[i], imgbbKey);
             finalImages[i] = uploadedUrl;
           } else {
-            // Fallback: compress image on-the-fly and save base64
-            const compressed = await compressImage(pendingFiles[i]);
-            finalImages[i] = compressed;
+            // Upload directly to Firebase Cloud Storage
+            const fileExt = pendingFiles[i].name.split('.').pop() || 'png';
+            const cleanFileName = `products/${Date.now()}_${i}_${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
+            const storageRef = ref(storage, cleanFileName);
+            const snapshot = await uploadBytes(storageRef, pendingFiles[i]);
+            const downloadUrl = await getDownloadURL(snapshot.ref);
+            finalImages[i] = downloadUrl;
           }
         } catch (err) {
-          console.error("Error processing image slot " + i, err);
-          alert("Error uploading image " + (i + 1) + ". Falling back to local compression.");
-          try {
-            const compressed = await compressImage(pendingFiles[i]);
-            finalImages[i] = compressed;
-          } catch (compressErr) {
-            alert("Could not process image " + (i + 1) + " at all. Please try another image.");
-            setIsUploading(false);
-            return;
-          }
+          console.error("Error uploading image slot " + i, err);
+          alert("Error uploading image " + (i + 1) + " online: " + err.message);
+          setIsUploading(false);
+          return;
         }
       }
     }
