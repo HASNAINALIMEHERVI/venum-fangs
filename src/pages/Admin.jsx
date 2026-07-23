@@ -209,6 +209,24 @@ const Admin = ({
     });
   };
 
+  // Helper function to convert base64 data URL to Blob for Firebase Storage
+  const dataURLtoBlob = (dataurl) => {
+    try {
+      const arr = dataurl.split(',');
+      const mime = arr[0].match(/:(.*?);/)[1];
+      const bstr = atob(arr[1]);
+      let n = bstr.length;
+      const u8arr = new Uint8Array(n);
+      while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+      }
+      return new Blob([u8arr], { type: mime });
+    } catch (e) {
+      console.error("dataURLtoBlob error:", e);
+      return null;
+    }
+  };
+
   // Helper function to upload image file to ImgBB
   const uploadToImgBB = async (file, apiKey) => {
     const formDataBody = new FormData();
@@ -301,6 +319,22 @@ const Admin = ({
           alert("Error uploading image " + (i + 1) + " online: " + err.message);
           setIsUploading(false);
           return;
+        }
+      } else if (finalImages[i] && finalImages[i].startsWith('data:image/')) {
+        // Automatically convert any legacy Base64 data strings to Firebase Storage URLs
+        try {
+          const blob = dataURLtoBlob(finalImages[i]);
+          if (blob) {
+            const mimeType = finalImages[i].match(/data:(.*?);/)?.[1] || 'image/jpeg';
+            const ext = mimeType.split('/')[1] || 'jpeg';
+            const cleanFileName = `products/${Date.now()}_converted_${i}.${ext}`;
+            const storageRef = ref(storage, cleanFileName);
+            const snapshot = await uploadBytes(storageRef, blob);
+            const downloadUrl = await getDownloadURL(snapshot.ref);
+            finalImages[i] = downloadUrl;
+          }
+        } catch (err) {
+          console.error("Error converting legacy base64 image slot " + i, err);
         }
       }
     }
