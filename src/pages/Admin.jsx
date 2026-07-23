@@ -299,18 +299,23 @@ const Admin = ({
 
     // Process all images
     for (let i = 0; i < finalImages.length; i++) {
-      if (pendingFiles[i]) {
+      let fileToUpload = pendingFiles[i];
+      if (!fileToUpload && finalImages[i] && finalImages[i].startsWith('data:image/')) {
+        fileToUpload = dataURLtoBlob(finalImages[i]);
+      }
+
+      if (fileToUpload) {
         try {
           if (imgbbKey) {
-            // Upload original full-resolution image to ImgBB
-            const uploadedUrl = await uploadToImgBB(pendingFiles[i], imgbbKey);
+            // Upload to ImgBB as configured in settings
+            const uploadedUrl = await uploadToImgBB(fileToUpload, imgbbKey);
             finalImages[i] = uploadedUrl;
           } else {
             // Upload directly to Firebase Cloud Storage
-            const fileExt = pendingFiles[i].name.split('.').pop() || 'png';
-            const cleanFileName = `products/${Date.now()}_${i}_${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
+            const ext = fileToUpload.type ? (fileToUpload.type.split('/')[1] || 'png') : 'png';
+            const cleanFileName = `products/${Date.now()}_${i}_${Math.random().toString(36).substring(2, 8)}.${ext}`;
             const storageRef = ref(storage, cleanFileName);
-            const snapshot = await uploadBytes(storageRef, pendingFiles[i]);
+            const snapshot = await uploadBytes(storageRef, fileToUpload);
             const downloadUrl = await getDownloadURL(snapshot.ref);
             finalImages[i] = downloadUrl;
           }
@@ -320,26 +325,12 @@ const Admin = ({
           setIsUploading(false);
           return;
         }
-      } else if (finalImages[i] && finalImages[i].startsWith('data:image/')) {
-        // Automatically convert any legacy Base64 data strings to Firebase Storage URLs
-        try {
-          const blob = dataURLtoBlob(finalImages[i]);
-          if (blob) {
-            const mimeType = finalImages[i].match(/data:(.*?);/)?.[1] || 'image/jpeg';
-            const ext = mimeType.split('/')[1] || 'jpeg';
-            const cleanFileName = `products/${Date.now()}_converted_${i}.${ext}`;
-            const storageRef = ref(storage, cleanFileName);
-            const snapshot = await uploadBytes(storageRef, blob);
-            const downloadUrl = await getDownloadURL(snapshot.ref);
-            finalImages[i] = downloadUrl;
-          }
-        } catch (err) {
-          console.error("Error converting legacy base64 image slot " + i, err);
-        }
       }
     }
 
-    const filteredImages = finalImages.filter(img => img.trim() !== '');
+    // Safety check: strip any raw base64 strings to guarantee Firestore 1MB limit is never exceeded
+    const safeImages = finalImages.map(img => (img && img.startsWith('data:image/')) ? '' : img);
+    const filteredImages = safeImages.filter(img => img.trim() !== '');
     const itemPrice = Number(formData.price);
     const itemSalePrice = formData.salePrice ? Number(formData.salePrice) : null;
     
