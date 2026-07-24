@@ -7,7 +7,7 @@ import { formatCurrency } from '../utils/formatCurrency';
 
 const PROVINCES = ['Punjab', 'Sindh', 'KPK', 'Balochistan', 'Islamabad', 'AJK', 'Gilgit-Baltistan'];
 
-const Checkout = ({ cartItems, onClearCart, onPlaceOrder, currentUser, promoCodes = [] }) => {
+const Checkout = ({ cartItems, orders = [], onClearCart, onPlaceOrder, currentUser, promoCodes = [] }) => {
   const navigate = useNavigate();
   const [completed, setCompleted] = useState(false);
   const [formData, setFormData] = useState({
@@ -96,6 +96,25 @@ const Checkout = ({ cartItems, onClearCart, onPlaceOrder, currentUser, promoCode
     if (found.minOrder && subtotal < found.minOrder) {
       setPromoError(`Minimum order amount of Rs. ${found.minOrder.toLocaleString()} required for code ${found.code}.`);
       return;
+    }
+
+    // Security Check: One-Time Usage Guard per Customer Email / Phone
+    const userEmail = formData.email.trim().toLowerCase();
+    const userPhone = formData.phone.replace(/[\s\-\(\)\+]/g, '');
+
+    if (orders && orders.length > 0) {
+      const alreadyUsed = orders.some(o => {
+        const orderEmail = o.customer?.email?.trim()?.toLowerCase();
+        const orderPhone = o.customer?.phone?.replace(/[\s\-\(\)\+]/g, '');
+        const sameUser = (userEmail && orderEmail === userEmail) || (userPhone && orderPhone === userPhone);
+        const usedCode = o.appliedPromoCode?.toUpperCase();
+        return sameUser && usedCode === cleanInput;
+      });
+
+      if (alreadyUsed) {
+        setPromoError(`You have already used promo code '${cleanInput}' on a previous order.`);
+        return;
+      }
     }
 
     setAppliedPromo(found);
@@ -203,6 +222,28 @@ const Checkout = ({ cartItems, onClearCart, onPlaceOrder, currentUser, promoCode
       const firstErrorMsg = errors[errorKeys[0]];
       alert(`PLEASE CORRECT THE FOLLOWING ERRORS BEFORE PLACING ORDER:\n\n• ${firstErrorMsg}`);
       return;
+    }
+
+    if (appliedPromo) {
+      const userEmail = formData.email.trim().toLowerCase();
+      const userPhone = formData.phone.replace(/[\s\-\(\)\+]/g, '');
+      const codeUpper = appliedPromo.code.toUpperCase();
+
+      if (orders && orders.length > 0) {
+        const alreadyUsed = orders.some(o => {
+          const orderEmail = o.customer?.email?.trim()?.toLowerCase();
+          const orderPhone = o.customer?.phone?.replace(/[\s\-\(\)\+]/g, '');
+          const sameUser = (userEmail && orderEmail === userEmail) || (userPhone && orderPhone === userPhone);
+          const usedCode = o.appliedPromoCode?.toUpperCase();
+          return sameUser && usedCode === codeUpper;
+        });
+
+        if (alreadyUsed) {
+          alert(`SECURITY NOTICE: You have already redeemed promo code '${codeUpper}' on a previous order.`);
+          setAppliedPromo(null);
+          return;
+        }
+      }
     }
 
     onPlaceOrder(formData, paymentMethod, appliedPromo);

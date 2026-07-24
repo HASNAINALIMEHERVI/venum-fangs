@@ -786,6 +786,7 @@ function App() {
               element={
                 <Checkout 
                   cartItems={cartItems} 
+                  orders={orders}
                   onClearCart={handleClearCart} 
                   onPlaceOrder={handlePlaceOrder}
                   currentUser={currentUser}
