@@ -23,6 +23,10 @@ const CartDrawer = ({ isOpen, onClose, cartItems, onUpdateQty, onRemoveItem, car
     return acc + price * item.qty;
   }, 0);
 
+  const FREE_SHIPPING_THRESHOLD = 5000;
+  const remainingForFreeShipping = Math.max(0, FREE_SHIPPING_THRESHOLD - subtotal);
+  const progressPercentage = Math.min(100, (subtotal / FREE_SHIPPING_THRESHOLD) * 100);
+
   return (
     <>
       {/* Backdrop */}
@@ -83,6 +87,41 @@ const CartDrawer = ({ isOpen, onClose, cartItems, onUpdateQty, onRemoveItem, car
             <X size={20} strokeWidth={1.5} />
           </button>
         </div>
+
+        {/* Free Shipping Progress Bar */}
+        {cartItems.length > 0 && (
+          <div style={{
+            padding: '1rem 1.5rem',
+            borderBottom: '1px solid var(--border-color)',
+            backgroundColor: 'var(--bg-primary)'
+          }}>
+            {subtotal >= FREE_SHIPPING_THRESHOLD ? (
+              <div style={{ color: '#16a34a', fontSize: '0.8rem', fontWeight: 600, textAlign: 'center' }}>
+                🎉 YOU'VE UNLOCKED FREE SHIPPING!
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-primary)', textAlign: 'center', fontWeight: 500 }}>
+                  Add <span style={{ fontWeight: 600, color: '#16a34a' }}>{formatCurrency(remainingForFreeShipping)}</span> more for FREE Shipping!
+                </span>
+                <div style={{ 
+                  width: '100%', 
+                  height: '4px', 
+                  backgroundColor: 'var(--bg-secondary)', 
+                  borderRadius: '2px',
+                  overflow: 'hidden'
+                }}>
+                  <div style={{
+                    height: '100%',
+                    width: `${progressPercentage}%`,
+                    backgroundColor: '#16a34a',
+                    transition: 'width 0.4s ease-in-out'
+                  }} />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Items */}
         <div style={{ flexGrow: 1, overflowY: 'auto', padding: '1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>

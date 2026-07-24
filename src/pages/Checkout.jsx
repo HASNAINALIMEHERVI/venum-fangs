@@ -62,7 +62,7 @@ const Checkout = ({ cartItems, orders = [], onClearCart, onPlaceOrder, currentUs
     const price = item.salePrice || item.price;
     return acc + price * item.qty;
   }, 0);
-  const shippingCost = 299;
+  const shippingCost = subtotal >= 5000 ? 0 : 299;
   const prepaidDiscount = paymentMethod === 'easypaisa' ? 100 : 0;
 
   let promoDiscountAmount = 0;
@@ -755,7 +755,7 @@ const Checkout = ({ cartItems, orders = [], onClearCart, onPlaceOrder, currentUs
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#374151' }}>
                   <span>Shipping</span>
-                  <span style={{ fontWeight: 500 }}>{formatCurrency(shippingCost)}</span>
+                  <span style={{ fontWeight: 600, color: shippingCost === 0 ? '#16a34a' : undefined }}>{shippingCost === 0 ? 'FREE' : formatCurrency(shippingCost)}</span>
                 </div>
                 {prepaidDiscount > 0 && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#16a34a', fontWeight: 600 }}>

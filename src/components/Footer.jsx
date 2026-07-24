@@ -299,6 +299,18 @@ const Footer = ({ currentUser }) => {
             </p>
           </div>
 
+          {/* Payment Methods */}
+          <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '2rem', gap: '0.75rem' }}>
+            <span style={{ fontSize: '0.6rem', color: '#888888', letterSpacing: '0.15em', textTransform: 'uppercase', fontWeight: 600 }}>SECURE PAYMENTS</span>
+            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center' }}>
+              <div style={{ background: '#222', color: '#fff', padding: '0.35rem 0.75rem', borderRadius: '3px', fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.05em', border: '1px solid #333', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>COD</div>
+              <div style={{ background: '#00c853', color: '#fff', padding: '0.35rem 0.75rem', borderRadius: '3px', fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.05em', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>EASYPAISA</div>
+              <div style={{ background: '#e4002b', color: '#fff', padding: '0.35rem 0.75rem', borderRadius: '3px', fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.05em', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>JAZZCASH</div>
+              <div style={{ background: '#1a1f71', color: '#fff', padding: '0.35rem 0.75rem', borderRadius: '3px', fontSize: '0.65rem', fontWeight: 800, fontStyle: 'italic', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>VISA</div>
+              <div style={{ background: 'linear-gradient(135deg, #eb001b, #f79e1b)', color: '#fff', padding: '0.35rem 0.75rem', borderRadius: '3px', fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.05em', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>MASTERCARD</div>
+            </div>
+          </div>
+
         </div>
       </div>
 

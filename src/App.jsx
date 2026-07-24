@@ -12,6 +12,7 @@ import Checkout from './pages/Checkout';
 import TrackOrder from './pages/TrackOrder';
 import Account from './pages/Account';
 import PrivacyPolicy from './pages/PrivacyPolicy';
+import NotFound from './pages/NotFound';
 import LoginGate from './components/LoginGate';
 import ShippingModal from './components/ShippingModal';
 import ReturnPolicyModal from './components/ReturnPolicyModal';
@@ -601,7 +602,9 @@ function App() {
       }
     }
 
-    const finalTotal = Math.max(0, subtotal + 299 - prepaidDiscount - promoDiscountAmount);
+    // Free shipping for orders Rs. 5,000+
+    const shippingCost = subtotal >= 5000 ? 0 : 299;
+    const finalTotal = Math.max(0, subtotal + shippingCost - prepaidDiscount - promoDiscountAmount);
 
     const newOrder = {
       id: orderId,
@@ -609,6 +612,8 @@ function App() {
       customer: customerDetails,
       items: [...cartItems],
       total: finalTotal,
+      subtotal: subtotal,
+      shippingCost: shippingCost,
       discountApplied: prepaidDiscount + promoDiscountAmount,
       appliedPromoCode: appliedPromo ? appliedPromo.code : null,
       paymentMethod: paymentMethod,
@@ -804,13 +809,15 @@ function App() {
               path="/account" 
               element={
                 <Account 
-                  currentUser={currentUser} 
+                  currentUser={currentUser}
+                  orders={orders}
                   onLogout={handleLogout}
                   onLoginClick={() => setShowLogin(true)}
                 />
               } 
             />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </main>
 
