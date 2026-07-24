@@ -666,6 +666,7 @@ function App() {
                 <Admin 
                   products={products} 
                   orders={orders}
+                  currentUser={currentUser}
                   onAddProduct={handleAddProduct} 
                   onDeleteProduct={handleDeleteProduct} 
                   onUpdateProduct={handleUpdateProduct} 

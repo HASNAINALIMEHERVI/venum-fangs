@@ -7,6 +7,7 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 const Admin = ({ 
   products, 
   orders = [], 
+  currentUser = null,
   onAddProduct, 
   onDeleteProduct, 
   onUpdateProduct,
@@ -519,24 +520,31 @@ const Admin = ({
     setNewsletterBody('');
   };
 
-  if (!isAuthenticated) {
+  const authorizedAdminEmails = ['zain8pie@gmail.com', 'abdullah8pie@gmail.com'];
+  const isAuthorizedEmail = currentUser && currentUser.email && authorizedAdminEmails.includes(currentUser.email.toLowerCase());
+  const storedAdminPassword = localStorage.getItem('admin_panel_password') || 'venum123';
+
+  if (!isAuthenticated && !isAuthorizedEmail) {
     return (
       <div style={{ padding: '5rem 0', minHeight: '65vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }} className="fade-in">
         <div style={{
           width: '100%',
-          maxWidth: '400px',
+          maxWidth: '420px',
           background: 'var(--bg-secondary)',
           border: '1px solid var(--border-color)',
           padding: '2.5rem',
           textAlign: 'center'
         }}>
           <ShieldCheck size={48} style={{ color: 'var(--accent)', marginBottom: '1rem' }} />
-          <h2 style={{ fontFamily: 'Outfit', fontSize: '1.25rem', fontWeight: 800, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '1.5rem', color: 'var(--text-primary)' }}>
+          <h2 style={{ fontFamily: 'Outfit', fontSize: '1.25rem', fontWeight: 800, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '0.75rem', color: 'var(--text-primary)' }}>
             ADMIN ACCESS SECURE
           </h2>
+          <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '1.5rem' }}>
+            Enter your secret Admin Password to authenticate, or log into the store with an authorized owner account (<strong>zain8pie@gmail.com</strong> / <strong>abdullah8pie@gmail.com</strong>).
+          </p>
           <form onSubmit={(e) => {
             e.preventDefault();
-            if (passwordInput === 'venum123') {
+            if (passwordInput === storedAdminPassword) {
               setIsAuthenticated(true);
               sessionStorage.setItem('admin_authenticated', 'true');
             } else {
@@ -1555,6 +1563,7 @@ const Admin = ({
               const imgbbKey = e.target.imgbb_api_key.value.trim();
               const whatsappPhone = e.target.admin_whatsapp_phone.value.trim();
               const whatsappApiKey = e.target.admin_whatsapp_apikey.value.trim();
+              const newAdminPassword = e.target.admin_panel_password ? e.target.admin_panel_password.value.trim() : '';
 
               localStorage.setItem('admin_notify_email', notifyEmail);
               localStorage.setItem('emailjs_service_id', serviceId || 'YOUR_SERVICE_ID');
@@ -1565,9 +1574,30 @@ const Admin = ({
               localStorage.setItem('imgbb_api_key', imgbbKey);
               localStorage.setItem('admin_whatsapp_phone', whatsappPhone);
               localStorage.setItem('admin_whatsapp_apikey', whatsappApiKey);
+              if (newAdminPassword) {
+                localStorage.setItem('admin_panel_password', newAdminPassword);
+              }
 
               alert('STORE SETTINGS UPDATED SUCCESSFULLY!');
             }} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              
+              {/* ADMIN PANEL SECURITY PASSWORD SECTION */}
+              <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '1.5rem', marginBottom: '0.5rem' }}>
+                <h3 style={{ fontFamily: 'Outfit', fontSize: '1.05rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
+                  🔒 ADMIN PANEL SECURITY PASSWORD
+                </h3>
+                <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '1rem' }}>
+                  Set your custom secret Admin Password used to authenticate at <code>/admin</code>.
+                </p>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.15em', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>SECRET ADMIN PASSWORD</label>
+                <input 
+                  type="text" 
+                  name="admin_panel_password"
+                  placeholder="Set your secret admin password"
+                  defaultValue={localStorage.getItem('admin_panel_password') || 'venum123'}
+                  style={inputStyle}
+                />
+              </div>
               
               {/* INSTANT WHATSAPP ALERTS SECTION */}
               <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '1.5rem', marginBottom: '0.5rem' }}>
