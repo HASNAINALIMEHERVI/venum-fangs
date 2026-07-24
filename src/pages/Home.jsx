@@ -1,6 +1,6 @@
 import React from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
-import { Clock, Bell } from 'lucide-react';
+import { Clock, Bell, Truck, CreditCard, RefreshCw, CheckCircle } from 'lucide-react';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import ProductCard from '../components/ProductCard';
@@ -14,6 +14,8 @@ const Home = ({ products, productsLoading = false, onQuickAdd }) => {
   const [selectedDrop, setSelectedDrop] = React.useState('all');
   const [notifyEmail, setNotifyEmail] = React.useState('');
   const [notifyStatus, setNotifyStatus] = React.useState('idle');
+  const [sortBy, setSortBy] = React.useState('default');
+  const [filterSize, setFilterSize] = React.useState('ALL');
 
   // Flatten products by color so each color variant has its own card
   const flattenedProducts = React.useMemo(() => {
@@ -41,6 +43,26 @@ const Home = ({ products, productsLoading = false, onQuickAdd }) => {
         return cat === filter || subCat === filter;
       })
     : flattenedProducts;
+
+  const allProductsGrid = React.useMemo(() => {
+    let list = selectedDrop === 'all' 
+      ? flattenedProducts 
+      : flattenedProducts.filter(p => (p.drop || 'drop1') === selectedDrop);
+
+    if (filterSize !== 'ALL') {
+      list = list.filter(p => p.sizes && p.sizes.includes(filterSize));
+    }
+
+    if (sortBy === 'price-asc') {
+      list = [...list].sort((a, b) => a.price - b.price);
+    } else if (sortBy === 'price-desc') {
+      list = [...list].sort((a, b) => b.price - a.price);
+    } else if (sortBy === 'newest') {
+      list = [...list].sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+    }
+
+    return list;
+  }, [flattenedProducts, selectedDrop, filterSize, sortBy]);
 
   // Category view layout
   if (categoryFilter) {
@@ -320,6 +342,49 @@ const Home = ({ products, productsLoading = false, onQuickAdd }) => {
         </div>
       </section>
 
+      {/* Trust Badges Bar */}
+      <section style={{
+        borderTop: '1px solid var(--border-color)',
+        borderBottom: '1px solid var(--border-color)',
+        backgroundColor: 'var(--bg-secondary)',
+        padding: '1rem 0'
+      }}>
+        <div className="container trust-badges-grid" style={{ 
+          maxWidth: '1200px', 
+          margin: '0 auto',
+          padding: '0 0.5rem'
+        }}>
+          {[
+            { icon: <Truck size={18} />, text: "FREE DELIVERY OVER RS. 5,000" },
+            { icon: <CreditCard size={18} />, text: "COD AVAILABLE NATIONWIDE" },
+            { icon: <RefreshCw size={18} />, text: "14-DAY EASY EXCHANGE" },
+            { icon: <CheckCircle size={18} />, text: "PREMIUM 220 GSM QUALITY" }
+          ].map((badge, i) => (
+            <div key={i} style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.5rem',
+              textAlign: 'center',
+              color: 'var(--text-secondary)'
+            }}>
+              <div style={{ color: 'var(--text-primary)' }}>
+                {badge.icon}
+              </div>
+              <span style={{
+                fontSize: '0.7rem',
+                fontWeight: 700,
+                letterSpacing: '0.05em',
+                textTransform: 'uppercase'
+              }}>
+                {badge.text}
+              </span>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* NEW IN Section Header */}
       <section style={{ padding: '2.5rem 0 0.5rem 0' }}>
         <div style={{ 
@@ -524,6 +589,52 @@ const Home = ({ products, productsLoading = false, onQuickAdd }) => {
         })}
       </section>
 
+      {/* Sort & Filter Toolbar */}
+      <section style={{ padding: '0 0.5rem 1rem 0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+        <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+          {['ALL', 'S', 'M', 'L', 'XL', 'XXL'].map(size => (
+            <button
+              key={size}
+              onClick={() => setFilterSize(size)}
+              style={{
+                backgroundColor: filterSize === size ? 'var(--accent)' : 'var(--bg-secondary)',
+                color: filterSize === size ? '#000' : 'var(--text-primary)',
+                border: `1px solid ${filterSize === size ? 'var(--accent)' : 'var(--border-color)'}`,
+                padding: '0.3rem 0.75rem',
+                fontSize: '0.65rem',
+                fontWeight: 700,
+                borderRadius: '4px',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                fontFamily: 'var(--font-sans)',
+              }}
+            >
+              {size}
+            </button>
+          ))}
+        </div>
+        <select 
+          value={sortBy} 
+          onChange={(e) => setSortBy(e.target.value)}
+          style={{
+            backgroundColor: 'var(--bg-secondary)',
+            color: 'var(--text-primary)',
+            border: '1px solid var(--border-color)',
+            padding: '0.4rem 0.75rem',
+            fontSize: '0.7rem',
+            fontFamily: 'var(--font-sans)',
+            borderRadius: '4px',
+            outline: 'none',
+            cursor: 'pointer'
+          }}
+        >
+          <option value="default">Default</option>
+          <option value="price-asc">Price: Low to High</option>
+          <option value="price-desc">Price: High to Low</option>
+          <option value="newest">Newest First</option>
+        </select>
+      </section>
+
       {/* ALL PRODUCTS Grid */}
       <section style={{ padding: '0 0 1.5rem 0' }}>
         <div style={{ padding: '0 0.5rem' }}>
@@ -531,10 +642,7 @@ const Home = ({ products, productsLoading = false, onQuickAdd }) => {
             {productsLoading ? (
               <ProductSkeleton count={4} />
             ) : (
-              (selectedDrop === 'all' 
-                ? flattenedProducts 
-                : flattenedProducts.filter(p => (p.drop || 'drop1') === selectedDrop)
-              ).map(product => (
+              allProductsGrid.map(product => (
                 <ProductCard 
                   key={product.id} 
                   product={product} 
@@ -762,6 +870,16 @@ const Home = ({ products, productsLoading = false, onQuickAdd }) => {
           .product-grid-tight {
             grid-template-columns: repeat(4, 1fr);
             gap: 2px;
+          }
+        }
+        .trust-badges-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 1.5rem 1rem;
+        }
+        @media (min-width: 768px) {
+          .trust-badges-grid {
+            grid-template-columns: repeat(4, 1fr);
           }
         }
         .experience-btn:hover {

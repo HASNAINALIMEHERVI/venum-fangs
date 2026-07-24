@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { ShoppingBag, ChevronDown, Check, ArrowLeft, CreditCard, RefreshCw, Truck } from 'lucide-react';
+import { ShoppingBag, ChevronDown, Check, ArrowLeft, CreditCard, RefreshCw, Truck, X, ChevronLeft, ChevronRight, Star } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
 import { formatCurrency } from '../utils/formatCurrency';
+import { collection, getDocs, addDoc, Timestamp, query, where } from 'firebase/firestore';
+import { db } from '../firebase';
 
 const getColorHex = (colorName) => {
   const name = colorName.toLowerCase().trim();
@@ -39,6 +41,19 @@ const ProductDetail = ({ products, onAddToCart }) => {
   const [addedMessage, setAddedMessage] = useState(false);
   const [sizeError, setSizeError] = useState(false);
 
+  // New features state
+  const [zoomedImageIndex, setZoomedImageIndex] = useState(null);
+  const [showMobileSticky, setShowMobileSticky] = useState(false);
+  const [reviews, setReviews] = useState([]);
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [reviewName, setReviewName] = useState('');
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewText, setReviewText] = useState('');
+  const [notifyEmail, setNotifyEmail] = useState('');
+  const [notifySuccess, setNotifySuccess] = useState(false);
+  
+  const atcRef = useRef(null);
+
   useEffect(() => {
     const found = products.find(p => p.id === id);
     if (found) {
@@ -58,6 +73,54 @@ const ProductDetail = ({ products, onAddToCart }) => {
 
     }
   }, [id, products, location.search]);
+
+  // Fetch reviews
+  useEffect(() => {
+    if (product) {
+      const fetchReviews = async () => {
+        try {
+          const q = query(collection(db, 'reviews'), where('productId', '==', product.id));
+          const querySnapshot = await getDocs(q);
+          const revs = [];
+          querySnapshot.forEach((doc) => {
+            revs.push({ id: doc.id, ...doc.data() });
+          });
+          revs.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+          setReviews(revs);
+        } catch (error) {
+          console.error("Error fetching reviews:", error);
+        }
+      };
+      fetchReviews();
+    }
+  }, [product]);
+
+  // Sticky mobile bar on scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.innerWidth <= 768 && atcRef.current) {
+        const atcRect = atcRef.current.getBoundingClientRect();
+        if (atcRect.bottom < 0) {
+          setShowMobileSticky(true);
+        } else {
+          setShowMobileSticky(false);
+        }
+      } else {
+        setShowMobileSticky(false);
+      }
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // ESC key for modal
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') setZoomedImageIndex(null);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Product JSON-LD structured data
   useEffect(() => {
@@ -140,6 +203,46 @@ const ProductDetail = ({ products, onAddToCart }) => {
 
   const handleColorChange = (color) => {
     setSelectedColor(color);
+  };
+
+  const handleSubmitReview = async (e) => {
+    e.preventDefault();
+    if (!reviewName || !reviewText) return;
+    try {
+      const newReview = {
+        productId: product.id,
+        name: reviewName,
+        rating: reviewRating,
+        text: reviewText,
+        createdAt: Timestamp.now()
+      };
+      const docRef = await addDoc(collection(db, 'reviews'), newReview);
+      setReviews([{ id: docRef.id, ...newReview }, ...reviews]);
+      setShowReviewForm(false);
+      setReviewName('');
+      setReviewText('');
+      setReviewRating(5);
+    } catch (error) {
+      console.error("Error adding review:", error);
+    }
+  };
+
+  const handleNotifySubmit = async (e) => {
+    e.preventDefault();
+    if (!notifyEmail) return;
+    try {
+      await addDoc(collection(db, 'restock_notifications'), {
+        productId: product.id,
+        size: selectedSize,
+        email: notifyEmail,
+        createdAt: Timestamp.now()
+      });
+      setNotifySuccess(true);
+      setTimeout(() => setNotifySuccess(false), 3000);
+      setNotifyEmail('');
+    } catch (error) {
+      console.error("Error saving restock notification:", error);
+    }
   };
 
   const toggleAccordion = (index) => {
@@ -234,7 +337,8 @@ const ProductDetail = ({ products, onAddToCart }) => {
                     loading={idx === 0 ? "eager" : "lazy"}
                     {...(idx === 0 ? { fetchpriority: "high" } : {})}
                     decoding="async"
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', cursor: 'zoom-in' }} 
+                    onClick={() => setZoomedImageIndex(idx)}
                   />
                 </div>
               ))}
@@ -377,29 +481,26 @@ const ProductDetail = ({ products, onAddToCart }) => {
                 <div style={{ display: 'flex', gap: '1.25rem', flexWrap: 'wrap', alignItems: 'center' }}>
                   {['S', 'M', 'L', 'XL', 'XXL'].map(size => {
                     const available = product.sizes ? product.sizes.includes(size) : true;
+                    const stock = product.stock ? product.stock[size] : undefined;
+                    const isOutOfStock = stock === 0 || !available;
                     return (
                       <button
                         key={size}
                         onClick={() => {
-                          if (available) {
-                            setSelectedSize(size);
-                            setSizeError(false);
-                          }
+                          setSelectedSize(size);
+                          setSizeError(false);
                         }}
-                        disabled={!available}
-                        title={!available ? 'Out of stock' : undefined}
                         style={{
                           background: 'none',
                           border: 'none',
-                          color: selectedSize === size ? '#000' : (available ? 'var(--text-secondary)' : '#ccc'),
+                          color: selectedSize === size ? '#000' : (isOutOfStock ? '#ccc' : 'var(--text-secondary)'),
                           fontWeight: selectedSize === size ? 800 : 500,
                           fontSize: '0.8rem',
-                          cursor: available ? 'pointer' : 'not-allowed',
-                          textDecoration: !available ? 'line-through' : 'none',
+                          cursor: 'pointer',
+                          textDecoration: isOutOfStock ? 'line-through' : 'none',
                           padding: '4px 0px',
                           fontFamily: 'var(--font-sans)',
                           transition: 'all 0.2s',
-                          opacity: available ? 1 : 0.4,
                           position: 'relative'
                         }}
                       >
@@ -414,33 +515,62 @@ const ProductDetail = ({ products, onAddToCart }) => {
               </div>
 
               {/* Add to Cart Action Button */}
-              <div style={{ marginTop: '0.5rem' }}>
-                <button 
-                  onClick={handleAddToCart}
-                  style={{
-                    backgroundColor: '#000000',
-                    color: '#ffffff',
-                    border: 'none',
-                    width: '100%',
-                    padding: '1.1rem',
-                    fontWeight: 700,
-                    fontSize: '0.85rem',
-                    letterSpacing: '0.08em',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    position: 'relative',
-                    borderRadius: '0px',
-                    fontFamily: 'var(--font-sans)',
-                    textTransform: 'uppercase',
-                    transition: 'opacity 0.2s'
-                  }}
-                  className="atc-btn-black"
-                >
-                  <span>{addedMessage ? 'ADDED TO BAG' : 'ADD TO CART'}</span>
-                  <ShoppingBag size={18} strokeWidth={1.5} style={{ position: 'absolute', right: '1.5rem' }} />
-                </button>
+              <div style={{ marginTop: '0.5rem' }} ref={atcRef}>
+                {selectedSize && product.stock && product.stock[selectedSize] > 0 && product.stock[selectedSize] <= 5 && (
+                  <p style={{ color: '#f59e0b', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.75rem', marginTop: 0 }}>
+                    Only {product.stock[selectedSize]} left in size {selectedSize}!
+                  </p>
+                )}
+
+                {selectedSize && (product.stock ? product.stock[selectedSize] === 0 : (!product.sizes || !product.sizes.includes(selectedSize))) ? (
+                  <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '1.25rem', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                    <h4 style={{ margin: '0 0 0.75rem', fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-primary)' }}>NOTIFY ME WHEN BACK IN STOCK</h4>
+                    {notifySuccess ? (
+                      <p style={{ color: '#10b981', fontSize: '0.85rem', margin: 0, fontWeight: 500 }}>We'll notify you when it's back!</p>
+                    ) : (
+                      <form onSubmit={handleNotifySubmit} style={{ display: 'flex', gap: '0.5rem' }}>
+                        <input 
+                          type="email" 
+                          placeholder="Email address" 
+                          value={notifyEmail}
+                          onChange={(e) => setNotifyEmail(e.target.value)}
+                          required
+                          style={{ flex: 1, padding: '0.75rem', fontSize: '0.85rem', backgroundColor: 'var(--bg-primary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }}
+                        />
+                        <button type="submit" style={{ backgroundColor: '#000', color: '#fff', border: 'none', padding: '0 1.5rem', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}>
+                          NOTIFY ME
+                        </button>
+                      </form>
+                    )}
+                  </div>
+                ) : (
+                  <button 
+                    onClick={handleAddToCart}
+                    style={{
+                      backgroundColor: '#000000',
+                      color: '#ffffff',
+                      border: 'none',
+                      width: '100%',
+                      padding: '1.1rem',
+                      fontWeight: 700,
+                      fontSize: '0.85rem',
+                      letterSpacing: '0.08em',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      position: 'relative',
+                      borderRadius: '0px',
+                      fontFamily: 'var(--font-sans)',
+                      textTransform: 'uppercase',
+                      transition: 'opacity 0.2s'
+                    }}
+                    className="atc-btn-black"
+                  >
+                    <span>{addedMessage ? 'ADDED TO BAG' : 'ADD TO CART'}</span>
+                    <ShoppingBag size={18} strokeWidth={1.5} style={{ position: 'absolute', right: '1.5rem' }} />
+                  </button>
+                )}
 
                 {/* Trust Badges */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '1.25rem', paddingTop: '1.25rem', borderTop: '1px solid var(--border-color)' }}>
@@ -660,6 +790,104 @@ const ProductDetail = ({ products, onAddToCart }) => {
 
         </div>
 
+        {/* Reviews Section */}
+        <div style={{ marginTop: '4rem', paddingTop: '3rem', borderTop: '1px solid var(--border-color)' }}>
+          <h3 style={{ fontSize: '1.2rem', fontWeight: 800, letterSpacing: '0.05em', color: 'var(--text-primary)', textTransform: 'uppercase', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            Customer Reviews
+            <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
+              ({reviews.length})
+            </span>
+          </h3>
+          
+          {reviews.length > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', marginBottom: '1.5rem' }}>
+              <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                {(reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1)}
+              </div>
+              <div style={{ display: 'flex', color: '#f59e0b', marginLeft: '0.5rem' }}>
+                {[1, 2, 3, 4, 5].map(star => (
+                  <Star key={star} size={20} fill={star <= Math.round(reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length) ? 'currentColor' : 'none'} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          <button 
+            onClick={() => setShowReviewForm(!showReviewForm)}
+            style={{
+              backgroundColor: 'transparent',
+              color: 'var(--text-primary)',
+              border: '1px solid var(--border-color)',
+              padding: '0.75rem 1.5rem',
+              fontWeight: 700,
+              fontSize: '0.8rem',
+              cursor: 'pointer',
+              textTransform: 'uppercase',
+              marginBottom: '2rem'
+            }}
+          >
+            {showReviewForm ? 'CANCEL' : 'WRITE A REVIEW'}
+          </button>
+
+          {showReviewForm && (
+            <form onSubmit={handleSubmitReview} style={{ backgroundColor: 'var(--bg-secondary)', padding: '1.5rem', borderRadius: '8px', marginBottom: '2rem', border: '1px solid var(--border-color)' }}>
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text-primary)' }}>RATING</label>
+                <div style={{ display: 'flex', gap: '0.25rem' }}>
+                  {[1, 2, 3, 4, 5].map(star => (
+                    <Star 
+                      key={star} 
+                      size={24} 
+                      style={{ cursor: 'pointer', color: '#f59e0b' }}
+                      fill={star <= reviewRating ? 'currentColor' : 'none'}
+                      onClick={() => setReviewRating(star)}
+                    />
+                  ))}
+                </div>
+              </div>
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text-primary)' }}>NAME</label>
+                <input type="text" required value={reviewName} onChange={(e) => setReviewName(e.target.value)} style={{ width: '100%', padding: '0.75rem', backgroundColor: 'var(--bg-primary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }} />
+              </div>
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text-primary)' }}>REVIEW</label>
+                <textarea required rows="4" value={reviewText} onChange={(e) => setReviewText(e.target.value)} style={{ width: '100%', padding: '0.75rem', backgroundColor: 'var(--bg-primary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }} />
+              </div>
+              <button type="submit" style={{ backgroundColor: '#000', color: '#fff', border: 'none', padding: '0.75rem 2rem', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer' }}>
+                SUBMIT REVIEW
+              </button>
+            </form>
+          )}
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {reviews.map(review => (
+              <div key={review.id} style={{ padding: '1.5rem', backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '0.25rem', color: 'var(--text-primary)' }}>{review.name}</div>
+                    <div style={{ display: 'flex', color: '#f59e0b', gap: '2px' }}>
+                      {[1, 2, 3, 4, 5].map(star => (
+                        <Star key={star} size={14} fill={star <= review.rating ? 'currentColor' : 'none'} />
+                      ))}
+                    </div>
+                  </div>
+                  {review.createdAt && (
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                      {new Date(review.createdAt.seconds * 1000).toLocaleDateString()}
+                    </div>
+                  )}
+                </div>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.6 }}>
+                  {review.text}
+                </p>
+              </div>
+            ))}
+            {reviews.length === 0 && (
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No reviews yet. Be the first to review this product!</p>
+            )}
+          </div>
+        </div>
+
       </div>
 
       {/* Recommended Products Section */}
@@ -685,6 +913,88 @@ const ProductDetail = ({ products, onAddToCart }) => {
               />
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Zoom Modal */}
+      {zoomedImageIndex !== null && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.95)',
+          zIndex: 9999,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center'
+        }} onClick={() => setZoomedImageIndex(null)}>
+          <button 
+            onClick={() => setZoomedImageIndex(null)}
+            style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', background: 'none', border: 'none', color: '#fff', cursor: 'pointer', zIndex: 10000 }}
+          >
+            <X size={32} />
+          </button>
+          
+          <button 
+            onClick={(e) => { e.stopPropagation(); setZoomedImageIndex((prev) => prev > 0 ? prev - 1 : activeImages.length - 1); }}
+            style={{ position: 'absolute', left: '1rem', background: 'none', border: 'none', color: '#fff', cursor: 'pointer', zIndex: 10000 }}
+          >
+            <ChevronLeft size={48} />
+          </button>
+          
+          <button 
+            onClick={(e) => { e.stopPropagation(); setZoomedImageIndex((prev) => prev < activeImages.length - 1 ? prev + 1 : 0); }}
+            style={{ position: 'absolute', right: '1rem', background: 'none', border: 'none', color: '#fff', cursor: 'pointer', zIndex: 10000 }}
+          >
+            <ChevronRight size={48} />
+          </button>
+          
+          <div onClick={() => setZoomedImageIndex(null)} style={{ width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '2rem' }}>
+            <img 
+              src={activeImages[zoomedImageIndex]} 
+              alt="Zoomed product"
+              style={{ maxHeight: '90vh', maxWidth: '90vw', objectFit: 'contain', touchAction: 'pinch-zoom', transform: 'scale(1)' }}
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Mobile Sticky Add to Cart */}
+      {showMobileSticky && (
+        <div style={{
+          position: 'fixed',
+          bottom: 0, left: 0, right: 0,
+          backgroundColor: 'var(--bg-primary)',
+          borderTop: '1px solid var(--border-color)',
+          padding: '1rem',
+          zIndex: 998,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '1rem',
+          boxShadow: '0 -4px 12px rgba(0,0,0,0.3)'
+        }}>
+          <div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>{product.title}</div>
+            <div style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+              {hasSale ? formatCurrency(product.salePrice) : formatCurrency(product.price)}
+            </div>
+          </div>
+          <button 
+            onClick={() => {
+              if (selectedSize) {
+                handleAddToCart();
+              } else {
+                window.scrollTo({ top: atcRef.current?.offsetTop - 150, behavior: 'smooth' });
+                setSizeError(true);
+              }
+            }}
+            style={{
+              backgroundColor: '#000', color: '#fff', border: 'none', padding: '0.75rem 1.5rem', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', cursor: 'pointer'
+            }}
+          >
+            {addedMessage ? 'ADDED' : (selectedSize ? 'ADD TO CART' : 'SELECT SIZE')}
+          </button>
         </div>
       )}
 

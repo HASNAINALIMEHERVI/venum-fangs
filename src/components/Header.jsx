@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Menu, X, ShoppingBag, Search, User } from 'lucide-react';
+import { Menu, X, ShoppingBag, Search, User, Heart } from 'lucide-react';
 
-const Header = ({ cartCount, onCartClick, products, currentUser, onLogout }) => {
+const Header = ({ cartCount, onCartClick, products, currentUser, onLogout, wishlistCount = 0 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [tshirtMenuOpen, setTshirtMenuOpen] = useState(false);
@@ -124,6 +124,34 @@ const Header = ({ cartCount, onCartClick, products, currentUser, onLogout }) => 
               aria-label="Account"
             >
               <User size={18} strokeWidth={1.5} />
+            </Link>
+
+            <Link
+              to="/account"
+              style={{ background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', position: 'relative', display: 'flex', alignItems: 'center', padding: '2px', transition: 'opacity 0.2s', textDecoration: 'none' }}
+              className="icon-btn"
+              aria-label={`Wishlist (${wishlistCount} ${wishlistCount === 1 ? 'item' : 'items'})`}
+            >
+              <Heart size={18} strokeWidth={1.5} />
+              {wishlistCount > 0 && (
+                <span style={{
+                  position: 'absolute',
+                  top: '-4px',
+                  right: '-6px',
+                  backgroundColor: 'var(--accent)',
+                  color: '#fff',
+                  fontSize: '0.5rem',
+                  fontWeight: '700',
+                  borderRadius: '50%',
+                  width: '15px',
+                  height: '15px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  {wishlistCount}
+                </span>
+              )}
             </Link>
 
             <button 
@@ -326,6 +354,7 @@ const Header = ({ cartCount, onCartClick, products, currentUser, onLogout }) => 
               <Link to="/?category=Hoodies" onClick={() => setMobileMenuOpen(false)} style={{ color: 'var(--text-primary)', textDecoration: 'none', fontSize: '0.8rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase' }}>HOODIES</Link>
               <Link to="/?category=Sweatshirts" onClick={() => setMobileMenuOpen(false)} style={{ color: 'var(--text-primary)', textDecoration: 'none', fontSize: '0.8rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase' }}>SWEATSHIRTS</Link>
               <Link to="/?category=Old Money" onClick={() => setMobileMenuOpen(false)} style={{ color: 'var(--text-primary)', textDecoration: 'none', fontSize: '0.8rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase' }}>OLD MONEY</Link>
+              <Link to="/account" onClick={() => setMobileMenuOpen(false)} style={{ color: 'var(--text-primary)', textDecoration: 'none', fontSize: '0.8rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase' }}>WISHLIST</Link>
               <Link to="/account" onClick={() => setMobileMenuOpen(false)} style={{ color: 'var(--text-primary)', textDecoration: 'none', fontSize: '0.8rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase' }}>MY ACCOUNT</Link>
             </nav>
             

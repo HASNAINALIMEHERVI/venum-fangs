@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Upload, Trash2, Edit2, Plus, Check, ShoppingBag, User, MapPin, Phone, Mail, Clock, ShieldCheck, Send, ExternalLink } from 'lucide-react';
-import { collection, getDocs, orderBy, query } from "firebase/firestore";
+import { Upload, Trash2, Edit2, Plus, Check, ShoppingBag, User, MapPin, Phone, Mail, Clock, ShieldCheck, Send, ExternalLink, Download, TrendingUp, BarChart2, RefreshCw } from 'lucide-react';
+import { collection, getDocs, orderBy, query, doc, getDoc, setDoc } from "firebase/firestore";
 import { db, storage } from "../firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { formatCurrency } from '../utils/formatCurrency';
 
 const Admin = ({ 
   products, 
@@ -31,6 +32,8 @@ const Admin = ({
   });
   const [editingId, setEditingId] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [restockNotifications, setRestockNotifications] = useState([]);
+  const [announcementText, setAnnouncementText] = useState('NO RESTOCKS — ONCE SOLD OUT, GONE FOREVER. FLAT RS. 299 SHIPPING ACROSS PAKISTAN. DROP II: THE ECLIPSE COLLECTION NOW LIVE.');
   const [formData, setFormData] = useState({
     title: '',
     category: 'T-Shirts',
@@ -43,10 +46,44 @@ const Admin = ({
     drop: 'drop1',
     showInNewIn: true,
     colorsString: '',
-    subCategory: ''
+    subCategory: '',
+    stock: { S: 0, M: 0, L: 0, XL: 0, XXL: 0 }
   });
   // Track raw File objects selected by the user for upload
   const [pendingFiles, setPendingFiles] = useState([null, null, null, null]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      // Load restock notifications
+      const loadRestocks = async () => {
+        try {
+          const snapshot = await getDocs(collection(db, 'restock_notifications'));
+          const notifs = [];
+          snapshot.forEach(d => {
+            notifs.push({ id: d.id, ...d.data() });
+          });
+          setRestockNotifications(notifs);
+        } catch (err) {
+          console.error("Failed to load restock notifications:", err);
+        }
+      };
+      
+      const loadAnnouncement = async () => {
+        try {
+          const docRef = doc(db, 'settings', 'announcement_bar');
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists() && docSnap.data().text) {
+            setAnnouncementText(docSnap.data().text);
+          }
+        } catch (err) {
+          console.error("Failed to load announcement bar:", err);
+        }
+      };
+      
+      loadRestocks();
+      loadAnnouncement();
+    }
+  }, [isAuthenticated]);
 
   // Bulk Product Management States
   const [selectedProductIds, setSelectedProductIds] = useState([]);
@@ -387,7 +424,8 @@ const Admin = ({
         drop: 'drop1',
         showInNewIn: true,
         colorsString: '',
-        subCategory: ''
+        subCategory: '',
+        stock: { S: 0, M: 0, L: 0, XL: 0, XXL: 0 }
       });
       setPendingFiles([null, null, null, null]);
     } catch (err) {
@@ -423,7 +461,8 @@ const Admin = ({
       drop: product.drop || 'drop1',
       showInNewIn: product.showInNewIn !== false,
       colorsString: product.colors ? product.colors.join(', ') : '',
-      subCategory: product.subCategory || ''
+      subCategory: product.subCategory || '',
+      stock: product.stock || { S: 0, M: 0, L: 0, XL: 0, XXL: 0 }
     });
     setPendingFiles(new Array(imageList.length).fill(null));
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -438,6 +477,41 @@ const Admin = ({
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  const exportOrdersToCSV = () => {
+    const headers = ['Order ID', 'Date', 'Customer Name', 'Phone', 'Email', 'Address', 'City', 'Province', 'COD Amount', 'Payment Method', 'Items', 'Status', 'Courier', 'Tracking Number'];
+    
+    const rows = orders.map(order => {
+      const itemsStr = (order.items || []).map(i => `${i.title} (${i.selectedSize} - x${i.qty})`).join('; ');
+      return [
+        order.id,
+        formatDate(order.date),
+        `${order.customer?.firstName || ''} ${order.customer?.lastName || ''}`,
+        order.customer?.phone || '',
+        order.customer?.email || '',
+        order.customer?.address || '',
+        order.customer?.city || '',
+        order.customer?.province || '',
+        order.total || 0,
+        order.paymentMethod || 'COD',
+        itemsStr,
+        order.status || '',
+        order.courier || '',
+        order.trackingNumber || ''
+      ].map(val => `"${String(val).replace(/"/g, '""')}"`).join(',');
+    });
+    
+    const csvContent = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const d = new Date();
+    link.setAttribute('href', url);
+    link.setAttribute('download', `blackloom_orders_${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   // --- NEWSLETTER LOGIC ---
@@ -607,6 +681,23 @@ const Admin = ({
 
           {/* Tab buttons */}
           <div style={{ display: 'flex', gap: '0.5rem', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', padding: '4px' }}>
+            <button 
+              onClick={() => setActiveTab('analytics')} 
+              style={{
+                background: activeTab === 'analytics' ? 'var(--bg-primary)' : 'transparent',
+                color: activeTab === 'analytics' ? 'var(--accent)' : 'var(--text-secondary)',
+                border: 'none',
+                padding: '0.6rem 1.25rem',
+                fontSize: '0.75rem',
+                fontWeight: 800,
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+            >
+              ANALYTICS
+            </button>
             <button 
               onClick={() => setActiveTab('products')} 
               style={{
@@ -834,6 +925,31 @@ const Admin = ({
                         );
                       })}
                     </div>
+                  </div>
+                </div>
+
+                {/* Stock per Size */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.1em', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>STOCK QUANTITIES</label>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(60px, 1fr))', gap: '1rem' }}>
+                    {formData.sizes.map(size => (
+                      <div key={size}>
+                        <label style={{ display: 'block', fontSize: '0.65rem', marginBottom: '0.25rem', color: 'var(--text-secondary)', textAlign: 'center' }}>{size}</label>
+                        <input 
+                          type="number" 
+                          min="0"
+                          value={formData.stock?.[size] || 0}
+                          onChange={(e) => {
+                            const val = parseInt(e.target.value) || 0;
+                            setFormData(prev => ({
+                              ...prev,
+                              stock: { ...(prev.stock || {}), [size]: val }
+                            }));
+                          }}
+                          style={{...inputStyle, padding: '0.5rem', textAlign: 'center'}}
+                        />
+                      </div>
+                    ))}
                   </div>
                 </div>
 
@@ -1338,6 +1454,29 @@ const Admin = ({
         {/* Tab 2: Orders Dashboard */}
         {activeTab === 'orders' && (
           <div className="fade-in">
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
+              <button
+                onClick={exportOrdersToCSV}
+                style={{
+                  background: 'var(--accent)',
+                  color: '#000',
+                  border: 'none',
+                  padding: '0.6rem 1.25rem',
+                  fontSize: '0.75rem',
+                  fontWeight: 800,
+                  letterSpacing: '0.1em',
+                  textTransform: 'uppercase',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}
+              >
+                <Download size={16} />
+                EXPORT ORDERS CSV
+              </button>
+            </div>
             {orders.length === 0 ? (
               <div style={{
                 textAlign: 'center',
@@ -1555,6 +1694,183 @@ const Admin = ({
           </div>
         )}
 
+        {/* Tab Analytics Dashboard */}
+        {activeTab === 'analytics' && (
+          <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+            
+            {/* Summary Cards */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+              <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)' }}>
+                  <TrendingUp size={16} />
+                  <span style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.1em' }}>TOTAL REVENUE</span>
+                </div>
+                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--accent)' }}>
+                  {formatCurrency(orders.reduce((sum, order) => sum + (order.total || 0), 0))}
+                </div>
+              </div>
+              
+              <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)' }}>
+                  <ShoppingBag size={16} />
+                  <span style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.1em' }}>TOTAL ORDERS</span>
+                </div>
+                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                  {orders.length}
+                </div>
+              </div>
+              
+              <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)' }}>
+                  <BarChart2 size={16} />
+                  <span style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.1em' }}>AVG ORDER VALUE</span>
+                </div>
+                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                  {formatCurrency(orders.length > 0 ? orders.reduce((sum, order) => sum + (order.total || 0), 0) / orders.length : 0)}
+                </div>
+              </div>
+
+              <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)' }}>
+                  <RefreshCw size={16} />
+                  <span style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.1em' }}>PENDING ORDERS</span>
+                </div>
+                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#e6a23c' }}>
+                  {orders.filter(o => o.status === 'PENDING').length}
+                </div>
+              </div>
+            </div>
+
+            {/* Charts & Tables Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', alignItems: 'start' }} className="admin-grid">
+              
+              {/* Monthly Revenue Chart */}
+              <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', padding: '2rem' }}>
+                <h3 style={{ fontFamily: 'Outfit', fontSize: '1.1rem', fontWeight: 800, letterSpacing: '0.1em', marginBottom: '2rem', color: 'var(--text-primary)' }}>MONTHLY REVENUE</h3>
+                {(() => {
+                  const last6Months = Array.from({ length: 6 }, (_, i) => {
+                    const d = new Date();
+                    d.setMonth(d.getMonth() - i);
+                    return {
+                      label: d.toLocaleString('default', { month: 'short' }).toUpperCase(),
+                      month: d.getMonth(),
+                      year: d.getFullYear(),
+                      revenue: 0
+                    };
+                  }).reverse();
+                
+                  orders.forEach(order => {
+                    const d = new Date(order.date);
+                    const m = d.getMonth();
+                    const y = d.getFullYear();
+                    const bucket = last6Months.find(b => b.month === m && b.year === y);
+                    if (bucket) {
+                      bucket.revenue += (order.total || 0);
+                    }
+                  });
+                
+                  const maxRevenue = Math.max(...last6Months.map(m => m.revenue), 1);
+
+                  return (
+                    <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', height: '200px', gap: '1rem', paddingTop: '20px' }}>
+                      {last6Months.map((data, i) => (
+                        <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', flex: 1 }}>
+                          <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                            {data.revenue > 0 ? `Rs. ${(data.revenue/1000).toFixed(1)}k` : ''}
+                          </div>
+                          <div style={{ 
+                            width: '100%', 
+                            maxWidth: '40px',
+                            height: `${Math.max((data.revenue / maxRevenue) * 150, 4)}px`, 
+                            background: 'var(--accent)', 
+                            transition: 'height 0.3s' 
+                          }}></div>
+                          <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: '0.25rem' }}>
+                            {data.label}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {/* Status Breakdown */}
+              <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', padding: '2rem' }}>
+                <h3 style={{ fontFamily: 'Outfit', fontSize: '1.1rem', fontWeight: 800, letterSpacing: '0.1em', marginBottom: '1.5rem', color: 'var(--text-primary)' }}>ORDERS BY STATUS</h3>
+                {(() => {
+                  const statusCounts = orders.reduce((acc, order) => {
+                    acc[order.status] = (acc[order.status] || 0) + 1;
+                    return acc;
+                  }, { PENDING: 0, PROCESSING: 0, DISPATCHED: 0, DELIVERED: 0, CANCELLED: 0 });
+
+                  const colors = {
+                    PENDING: '#e6a23c',
+                    PROCESSING: '#409eff',
+                    DISPATCHED: 'var(--accent)',
+                    DELIVERED: '#16a34a',
+                    CANCELLED: '#f56c6c'
+                  };
+
+                  return (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                      {Object.entries(statusCounts).map(([status, count]) => (
+                        <div key={status} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem', background: 'var(--bg-primary)', borderLeft: `3px solid ${colors[status] || 'var(--text-secondary)'}` }}>
+                          <span style={{ fontSize: '0.8rem', fontWeight: 800, letterSpacing: '0.1em', color: 'var(--text-primary)' }}>{status}</span>
+                          <span style={{ fontSize: '1rem', fontWeight: 800, color: colors[status] || 'var(--text-primary)' }}>{count}</span>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {/* Top Products */}
+              <div style={{ gridColumn: '1 / -1', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', padding: '2rem' }}>
+                <h3 style={{ fontFamily: 'Outfit', fontSize: '1.1rem', fontWeight: 800, letterSpacing: '0.1em', marginBottom: '1.5rem', color: 'var(--text-primary)' }}>TOP 5 BEST-SELLING PRODUCTS</h3>
+                {(() => {
+                  const productSales = {};
+                  orders.forEach(order => {
+                    (order.items || []).forEach(item => {
+                      if (!productSales[item.title]) {
+                        productSales[item.title] = { name: item.title, units: 0, revenue: 0 };
+                      }
+                      productSales[item.title].units += item.qty;
+                      productSales[item.title].revenue += ((item.salePrice || item.price) * item.qty);
+                    });
+                  });
+                  const topProducts = Object.values(productSales)
+                    .sort((a, b) => b.units - a.units)
+                    .slice(0, 5);
+                  
+                  return (
+                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                      <thead>
+                        <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+                          <th style={{ padding: '0.75rem 0', fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.1em', color: 'var(--text-secondary)' }}>RANK</th>
+                          <th style={{ padding: '0.75rem 0', fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.1em', color: 'var(--text-secondary)' }}>PRODUCT NAME</th>
+                          <th style={{ padding: '0.75rem 0', fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.1em', color: 'var(--text-secondary)' }}>UNITS SOLD</th>
+                          <th style={{ padding: '0.75rem 0', fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.1em', color: 'var(--text-secondary)' }}>REVENUE GENERATED</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {topProducts.map((p, idx) => (
+                          <tr key={p.name} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                            <td style={{ padding: '1rem 0', fontSize: '0.85rem', color: 'var(--accent)', fontWeight: 800 }}>#{idx + 1}</td>
+                            <td style={{ padding: '1rem 0', fontSize: '0.85rem', color: 'var(--text-primary)', textTransform: 'uppercase' }}>{p.name}</td>
+                            <td style={{ padding: '1rem 0', fontSize: '0.85rem', color: 'var(--text-primary)' }}>{p.units}</td>
+                            <td style={{ padding: '1rem 0', fontSize: '0.85rem', color: 'var(--accent)', fontWeight: 700 }}>{formatCurrency(p.revenue)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  );
+                })()}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Tab 3: Store Settings */}
         {activeTab === 'settings' && (
           <div className="fade-in" style={{
@@ -1608,6 +1924,83 @@ const Admin = ({
 
               alert('STORE SETTINGS UPDATED SUCCESSFULLY!');
             }} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              
+              {/* ANNOUNCEMENT BAR & RESTOCKS SECTION */}
+              <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '1.5rem', marginBottom: '0.5rem' }}>
+                <h3 style={{ fontFamily: 'Outfit', fontSize: '1.05rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
+                  📢 ANNOUNCEMENT BAR TEXT
+                </h3>
+                <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '1rem' }}>
+                  Update the scrolling marquee text at the top of the storefront.
+                </p>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <input 
+                    type="text" 
+                    value={announcementText}
+                    onChange={(e) => setAnnouncementText(e.target.value)}
+                    placeholder="Enter announcement text..."
+                    style={{...inputStyle, flexGrow: 1}}
+                  />
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        await setDoc(doc(db, 'settings', 'announcement_bar'), { text: announcementText });
+                        alert("Announcement bar updated successfully!");
+                      } catch (err) {
+                        alert("Failed to update announcement bar.");
+                        console.error(err);
+                      }
+                    }}
+                    style={{
+                      background: 'var(--accent)',
+                      color: 'var(--bg-primary)',
+                      border: 'none',
+                      padding: '0 1.25rem',
+                      fontSize: '0.75rem',
+                      fontWeight: 800,
+                      letterSpacing: '0.1em',
+                      textTransform: 'uppercase',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    SAVE
+                  </button>
+                </div>
+              </div>
+
+              <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '1.5rem', marginBottom: '0.5rem' }}>
+                <h3 style={{ fontFamily: 'Outfit', fontSize: '1.05rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
+                  🔄 BACK-IN-STOCK NOTIFICATIONS
+                </h3>
+                <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '1rem' }}>
+                  Customers waiting for out-of-stock items.
+                </p>
+                <div style={{ maxHeight: '200px', overflowY: 'auto', border: '1px solid var(--border-color)', padding: '1rem', background: 'var(--bg-primary)' }}>
+                  {restockNotifications.length === 0 ? (
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>No customers waiting.</span>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                      {Object.entries(
+                        restockNotifications.reduce((acc, n) => {
+                          const key = `${n.productId}-${n.size}`;
+                          if (!acc[key]) acc[key] = { productId: n.productId, size: n.size, emails: [] };
+                          if (n.email && !acc[key].emails.includes(n.email)) {
+                            acc[key].emails.push(n.email);
+                          }
+                          return acc;
+                        }, {})
+                      ).map(([key, group]) => (
+                        <div key={key} style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>
+                          <strong style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>Product ID: {group.productId} | Size: {group.size}</strong>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--accent)', margin: '4px 0' }}>{group.emails.length} customer(s) waiting</div>
+                          <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{group.emails.join(', ')}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
               
               {/* ADMIN PANEL SECURITY PASSWORD SECTION */}
               <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '1.5rem', marginBottom: '0.5rem' }}>
