@@ -1615,7 +1615,7 @@ const Admin = ({
                   type="email" 
                   name="admin_notify_email"
                   placeholder="your-store-email@gmail.com"
-                  defaultValue={localStorage.getItem('admin_notify_email') || 'zain8pie@gmail.com'}
+                  defaultValue={localStorage.getItem('admin_notify_email') || 'abdullah8pie@gmail.com'}
                   style={inputStyle}
                   required
                 />

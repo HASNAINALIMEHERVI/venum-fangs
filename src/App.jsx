@@ -435,12 +435,12 @@ function App() {
     const serviceId = localStorage.getItem('emailjs_service_id') || 'service_ogwr908';
     const templateId = localStorage.getItem('emailjs_template_id') || 'template_1olu24i';
     const publicKey = localStorage.getItem('emailjs_public_key') || 'd3g91DuUMjmyg7_dQ';
-    const adminEmail = localStorage.getItem('admin_notify_email') || 'zain8pie@gmail.com';
+    const adminEmail = localStorage.getItem('admin_notify_email') || 'abdullah8pie@gmail.com';
 
     if (serviceId === 'YOUR_SERVICE_ID' || templateId === 'YOUR_TEMPLATE_ID' || publicKey === 'YOUR_PUBLIC_KEY') {
       console.log('--- SIMULATED EMAIL NOTIFICATION TO ADMIN ---');
       console.log(`To: ${adminEmail}`);
-      console.log(`Subject: New Order Received #${order.id}`);
+      console.log(`Subject: 🚨 URGENT: NEW ORDER RECEIVED #${order.id}`);
       console.log(`Body: Customer ${order.customer.firstName} placed order #${order.id} totaling ${formatCurrency(order.total)}. Items: ${itemsText}`);
       console.log('Configure EmailJS keys in the Admin Settings tab to send real emails!');
       return;
@@ -457,6 +457,7 @@ function App() {
         user_id: publicKey,
         template_params: {
           to_email: adminEmail,
+          email_title: `🚨 URGENT: NEW ORDER RECEIVED #${order.id}`,
           order_id: order.id,
           customer_name: `${order.customer.firstName} ${order.customer.lastName}`,
           customer_email: order.customer.email,
