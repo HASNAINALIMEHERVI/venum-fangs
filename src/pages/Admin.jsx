@@ -8,17 +8,27 @@ const Admin = ({
   products, 
   orders = [], 
   currentUser = null,
+  promoCodes = [],
   onAddProduct, 
   onDeleteProduct, 
   onUpdateProduct,
   onUpdateOrderStatus,
-  onDeleteOrder
+  onDeleteOrder,
+  onAddPromoCode,
+  onDeletePromoCode,
+  onTogglePromoCode
 }) => {
   const [passwordInput, setPasswordInput] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     return sessionStorage.getItem('admin_authenticated') === 'true';
   });
-  const [activeTab, setActiveTab] = useState('products'); // 'products', 'orders', 'settings', 'newsletter'
+  const [activeTab, setActiveTab] = useState('products'); // 'products', 'orders', 'settings', 'newsletter', 'promocodes'
+  const [newPromoData, setNewPromoData] = useState({
+    code: '',
+    type: 'percent',
+    value: '',
+    minOrder: ''
+  });
   const [editingId, setEditingId] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const [formData, setFormData] = useState({
@@ -630,6 +640,23 @@ const Admin = ({
               }}
             >
               CUSTOMER ORDERS ({orders.length})
+            </button>
+            <button 
+              onClick={() => setActiveTab('promocodes')} 
+              style={{
+                background: activeTab === 'promocodes' ? 'var(--bg-primary)' : 'transparent',
+                color: activeTab === 'promocodes' ? 'var(--accent)' : 'var(--text-secondary)',
+                border: 'none',
+                padding: '0.6rem 1.25rem',
+                fontSize: '0.75rem',
+                fontWeight: 800,
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+            >
+              PROMO CODES ({promoCodes.length})
             </button>
             <button 
               onClick={() => setActiveTab('settings')} 
@@ -1891,6 +1918,120 @@ const Admin = ({
                   ))}
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* TAB: PROMO CODES */}
+        {activeTab === 'promocodes' && (
+          <div className="fade-in" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2rem' }}>
+            {/* Left: Create New Promo Code */}
+            <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', padding: '2rem' }}>
+              <h2 style={{ fontFamily: 'Outfit', fontSize: '1.2rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '1.5rem', color: 'var(--text-primary)' }}>
+                🏷️ CREATE NEW PROMO CODE
+              </h2>
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                if (!newPromoData.code || !newPromoData.value) {
+                  alert('PLEASE FILL IN PROMO CODE NAME AND VALUE');
+                  return;
+                }
+                onAddPromoCode(newPromoData);
+                setNewPromoData({ code: '', type: 'percent', value: '', minOrder: '' });
+                alert(`PROMO CODE CREATED SUCCESSFULLY!`);
+              }} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.1em', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>PROMO CODE NAME *</label>
+                  <input 
+                    type="text" 
+                    placeholder="E.G. LOOM10 OR SUMMER500"
+                    value={newPromoData.code}
+                    onChange={e => setNewPromoData(prev => ({ ...prev, code: e.target.value.toUpperCase() }))}
+                    required
+                    style={{ ...inputStyle, textTransform: 'uppercase' }}
+                  />
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.1em', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>DISCOUNT TYPE *</label>
+                    <select 
+                      value={newPromoData.type}
+                      onChange={e => setNewPromoData(prev => ({ ...prev, type: e.target.value }))}
+                      style={inputStyle}
+                    >
+                      <option value="percent">PERCENTAGE (%)</option>
+                      <option value="fixed">FIXED AMOUNT (PKR)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.1em', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>VALUE *</label>
+                    <input 
+                      type="number" 
+                      placeholder={newPromoData.type === 'percent' ? "E.G. 10 FOR 10%" : "E.G. 500 FOR RS 500"}
+                      value={newPromoData.value}
+                      onChange={e => setNewPromoData(prev => ({ ...prev, value: e.target.value }))}
+                      required
+                      style={inputStyle}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.1em', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>MINIMUM ORDER VALUE (PKR)</label>
+                  <input 
+                    type="number" 
+                    placeholder="E.G. 2000 (OR 0 FOR NO MINIMUM)"
+                    value={newPromoData.minOrder}
+                    onChange={e => setNewPromoData(prev => ({ ...prev, minOrder: e.target.value }))}
+                    style={inputStyle}
+                  />
+                </div>
+                <button type="submit" className="btn-primary" style={{ padding: '1rem', marginTop: '0.5rem' }}>
+                  CREATE PROMO CODE
+                </button>
+              </form>
+            </div>
+
+            {/* Right: Existing Promo Codes List */}
+            <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', padding: '2rem' }}>
+              <h2 style={{ fontFamily: 'Outfit', fontSize: '1.2rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '1.5rem', color: 'var(--text-primary)' }}>
+                ACTIVE PROMO CODES ({promoCodes.length})
+              </h2>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {promoCodes.length === 0 ? (
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>No promo codes created yet.</p>
+                ) : (
+                  promoCodes.map(pc => (
+                    <div key={pc.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-primary)', border: '1px solid var(--border-color)', padding: '1rem' }}>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <strong style={{ fontSize: '1rem', fontFamily: 'monospace', color: 'var(--accent)', letterSpacing: '0.05em' }}>{pc.code}</strong>
+                          <span style={{ fontSize: '0.65rem', fontWeight: 800, padding: '2px 6px', background: pc.active ? '#16a34a' : '#6b7280', color: '#fff', borderRadius: '4px' }}>
+                            {pc.active ? 'ACTIVE' : 'DISABLED'}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+                          Discount: <strong>{pc.type === 'percent' ? `${pc.value}% OFF` : `Rs. ${pc.value} OFF`}</strong>
+                          {pc.minOrder > 0 ? ` (Min. Order Rs. ${pc.minOrder.toLocaleString()})` : ''}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button 
+                          onClick={() => onTogglePromoCode(pc.id)}
+                          style={{ background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '6px 10px', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer' }}
+                        >
+                          {pc.active ? 'DISABLE' : 'ENABLE'}
+                        </button>
+                        <button 
+                          onClick={() => onDeletePromoCode(pc.id)}
+                          style={{ background: '#900', border: 'none', color: '#fff', padding: '6px 10px', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer' }}
+                        >
+                          DELETE
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           </div>
         )}

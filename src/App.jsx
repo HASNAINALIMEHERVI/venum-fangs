@@ -236,6 +236,20 @@ function App() {
     setCurrentUser(null);
   };
 
+  const DEFAULT_PROMO_CODES = [
+    { id: 'BLACK10', code: 'BLACK10', type: 'percent', value: 10, minOrder: 0, active: true },
+    { id: 'LOOM500', code: 'LOOM500', type: 'fixed', value: 500, minOrder: 3000, active: true }
+  ];
+
+  const [promoCodes, setPromoCodes] = useState(() => {
+    try {
+      const saved = localStorage.getItem('black_loom_promocodes');
+      return saved ? JSON.parse(saved) : DEFAULT_PROMO_CODES;
+    } catch (e) {
+      return DEFAULT_PROMO_CODES;
+    }
+  });
+
   // Initialize products from Firestore with 5-minute TTL client-side caching
   useEffect(() => {
     const loadProducts = async () => {
@@ -300,9 +314,81 @@ function App() {
       }
     };
 
+    const loadPromoCodes = async () => {
+      try {
+        const promoSnap = await getDocs(collection(db, "promocodes"));
+        if (!promoSnap.empty) {
+          const codes = [];
+          promoSnap.forEach(docSnap => {
+            codes.push({ id: docSnap.id, ...docSnap.data() });
+          });
+          setPromoCodes(codes);
+          localStorage.setItem('black_loom_promocodes', JSON.stringify(codes));
+        } else {
+          for (const pc of DEFAULT_PROMO_CODES) {
+            await setDoc(doc(db, "promocodes", pc.id), pc);
+          }
+          setPromoCodes(DEFAULT_PROMO_CODES);
+          localStorage.setItem('black_loom_promocodes', JSON.stringify(DEFAULT_PROMO_CODES));
+        }
+      } catch (err) {
+        console.error("Error loading promo codes from Firestore:", err);
+      }
+    };
+
     loadProducts();
     loadOrders();
+    loadPromoCodes();
   }, []);
+
+  const handleAddPromoCode = async (newCode) => {
+    const id = newCode.code.toUpperCase().trim();
+    const formattedCode = {
+      id,
+      code: id,
+      type: newCode.type || 'percent',
+      value: Number(newCode.value) || 0,
+      minOrder: Number(newCode.minOrder) || 0,
+      active: true
+    };
+
+    const updated = [formattedCode, ...promoCodes.filter(c => c.id !== id)];
+    setPromoCodes(updated);
+    localStorage.setItem('black_loom_promocodes', JSON.stringify(updated));
+
+    try {
+      await setDoc(doc(db, "promocodes", id), formattedCode);
+    } catch (err) {
+      console.error("Error saving promo code to Firestore:", err);
+    }
+  };
+
+  const handleDeletePromoCode = async (codeId) => {
+    const updated = promoCodes.filter(c => c.id !== codeId);
+    setPromoCodes(updated);
+    localStorage.setItem('black_loom_promocodes', JSON.stringify(updated));
+
+    try {
+      await deleteDoc(doc(db, "promocodes", codeId));
+    } catch (err) {
+      console.error("Error deleting promo code from Firestore:", err);
+    }
+  };
+
+  const handleTogglePromoCode = async (codeId) => {
+    const updated = promoCodes.map(c => c.id === codeId ? { ...c, active: !c.active } : c);
+    setPromoCodes(updated);
+    localStorage.setItem('black_loom_promocodes', JSON.stringify(updated));
+
+    try {
+      const target = updated.find(c => c.id === codeId);
+      if (target) {
+        await setDoc(doc(db, "promocodes", codeId), target);
+      }
+    } catch (err) {
+      console.error("Error updating promo code status in Firestore:", err);
+    }
+  };
 
   // Listen to Firebase Auth state change and sync cloud cart
   useEffect(() => {
@@ -501,11 +587,21 @@ function App() {
   };
 
   // Order Operations
-  const handlePlaceOrder = async (customerDetails, paymentMethod) => {
+  const handlePlaceOrder = async (customerDetails, paymentMethod, appliedPromo = null) => {
     const subtotal = cartItems.reduce((acc, item) => acc + (item.salePrice || item.price) * item.qty, 0);
     const orderId = `BL-${Math.floor(1000 + Math.random() * 9000)}`;
     const prepaidDiscount = paymentMethod === 'easypaisa' ? 100 : 0;
-    const finalTotal = Math.max(0, subtotal + 299 - prepaidDiscount);
+    
+    let promoDiscountAmount = 0;
+    if (appliedPromo) {
+      if (appliedPromo.type === 'percent') {
+        promoDiscountAmount = Math.round(subtotal * (appliedPromo.value / 100));
+      } else {
+        promoDiscountAmount = appliedPromo.value;
+      }
+    }
+
+    const finalTotal = Math.max(0, subtotal + 299 - prepaidDiscount - promoDiscountAmount);
 
     const newOrder = {
       id: orderId,
@@ -513,7 +609,8 @@ function App() {
       customer: customerDetails,
       items: [...cartItems],
       total: finalTotal,
-      discountApplied: prepaidDiscount,
+      discountApplied: prepaidDiscount + promoDiscountAmount,
+      appliedPromoCode: appliedPromo ? appliedPromo.code : null,
       paymentMethod: paymentMethod,
       notes: cartNotes,
       status: 'PENDING'
@@ -671,11 +768,15 @@ function App() {
                   products={products} 
                   orders={orders}
                   currentUser={currentUser}
+                  promoCodes={promoCodes}
                   onAddProduct={handleAddProduct} 
                   onDeleteProduct={handleDeleteProduct} 
                   onUpdateProduct={handleUpdateProduct} 
                   onUpdateOrderStatus={handleUpdateOrderStatus}
                   onDeleteOrder={handleDeleteOrder}
+                  onAddPromoCode={handleAddPromoCode}
+                  onDeletePromoCode={handleDeletePromoCode}
+                  onTogglePromoCode={handleTogglePromoCode}
                 />
               } 
             />
@@ -688,6 +789,7 @@ function App() {
                   onClearCart={handleClearCart} 
                   onPlaceOrder={handlePlaceOrder}
                   currentUser={currentUser}
+                  promoCodes={promoCodes}
                 />
               } 
             />

@@ -7,7 +7,7 @@ import { formatCurrency } from '../utils/formatCurrency';
 
 const PROVINCES = ['Punjab', 'Sindh', 'KPK', 'Balochistan', 'Islamabad', 'AJK', 'Gilgit-Baltistan'];
 
-const Checkout = ({ cartItems, onClearCart, onPlaceOrder, currentUser }) => {
+const Checkout = ({ cartItems, onClearCart, onPlaceOrder, currentUser, promoCodes = [] }) => {
   const navigate = useNavigate();
   const [completed, setCompleted] = useState(false);
   const [formData, setFormData] = useState({
@@ -54,6 +54,9 @@ const Checkout = ({ cartItems, onClearCart, onPlaceOrder, currentUser }) => {
   }, [currentUser]);
 
   const [paymentMethod, setPaymentMethod] = useState('cod'); // 'cod' or 'easypaisa'
+  const [promoCodeInput, setPromoCodeInput] = useState('');
+  const [appliedPromo, setAppliedPromo] = useState(null);
+  const [promoError, setPromoError] = useState('');
 
   const subtotal = cartItems.reduce((acc, item) => {
     const price = item.salePrice || item.price;
@@ -61,7 +64,49 @@ const Checkout = ({ cartItems, onClearCart, onPlaceOrder, currentUser }) => {
   }, 0);
   const shippingCost = 299;
   const prepaidDiscount = paymentMethod === 'easypaisa' ? 100 : 0;
-  const total = Math.max(0, subtotal + shippingCost - prepaidDiscount);
+
+  let promoDiscountAmount = 0;
+  if (appliedPromo) {
+    if (appliedPromo.type === 'percent') {
+      promoDiscountAmount = Math.round(subtotal * (appliedPromo.value / 100));
+    } else {
+      promoDiscountAmount = appliedPromo.value;
+    }
+  }
+
+  const total = Math.max(0, subtotal + shippingCost - prepaidDiscount - promoDiscountAmount);
+
+  const handleApplyPromoCode = () => {
+    setPromoError('');
+    const cleanInput = promoCodeInput.trim().toUpperCase();
+    if (!cleanInput) {
+      setPromoError('Please enter a promo code.');
+      return;
+    }
+
+    const found = promoCodes.find(pc => pc.code.toUpperCase() === cleanInput);
+    if (!found) {
+      setPromoError('Invalid promo code.');
+      return;
+    }
+    if (!found.active) {
+      setPromoError('This promo code is no longer active.');
+      return;
+    }
+    if (found.minOrder && subtotal < found.minOrder) {
+      setPromoError(`Minimum order amount of Rs. ${found.minOrder.toLocaleString()} required for code ${found.code}.`);
+      return;
+    }
+
+    setAppliedPromo(found);
+    setPromoError('');
+  };
+
+  const handleRemovePromoCode = () => {
+    setAppliedPromo(null);
+    setPromoCodeInput('');
+    setPromoError('');
+  };
 
   const [formErrors, setFormErrors] = useState({});
 
@@ -160,7 +205,7 @@ const Checkout = ({ cartItems, onClearCart, onPlaceOrder, currentUser }) => {
       return;
     }
 
-    onPlaceOrder(formData, paymentMethod);
+    onPlaceOrder(formData, paymentMethod, appliedPromo);
     onClearCart();
     setCompleted(true);
   };
@@ -585,6 +630,79 @@ const Checkout = ({ cartItems, onClearCart, onPlaceOrder, currentUser }) => {
                 ))}
               </div>
 
+              {/* Promo Code Box */}
+              <div style={{ margin: '1.25rem 0' }}>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <input 
+                    type="text" 
+                    placeholder="Discount code or promo code"
+                    value={promoCodeInput}
+                    onChange={(e) => setPromoCodeInput(e.target.value.toUpperCase())}
+                    disabled={!!appliedPromo}
+                    style={{
+                      flexGrow: 1,
+                      padding: '0.75rem 0.85rem',
+                      fontSize: '0.82rem',
+                      fontFamily: 'var(--font-sans)',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
+                      outline: 'none',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                      background: appliedPromo ? '#f3f4f6' : '#fff'
+                    }}
+                  />
+                  {appliedPromo ? (
+                    <button 
+                      type="button" 
+                      onClick={handleRemovePromoCode}
+                      style={{
+                        padding: '0.75rem 1rem',
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        fontFamily: 'var(--font-sans)',
+                        backgroundColor: '#ef4444',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Remove
+                    </button>
+                  ) : (
+                    <button 
+                      type="button" 
+                      onClick={handleApplyPromoCode}
+                      style={{
+                        padding: '0.75rem 1.25rem',
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        fontFamily: 'var(--font-sans)',
+                        backgroundColor: '#111',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Apply
+                    </button>
+                  )}
+                </div>
+                {promoError && (
+                  <span style={{ fontSize: '0.72rem', color: '#ef4444', marginTop: '0.35rem', display: 'block', fontWeight: 500 }}>
+                    {promoError}
+                  </span>
+                )}
+                {appliedPromo && (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#ecfdf5', border: '1px solid #a7f3d0', padding: '0.5rem 0.75rem', borderRadius: '6px', marginTop: '0.5rem', fontSize: '0.75rem', color: '#047857', fontWeight: 600 }}>
+                    <span>PROMO ({appliedPromo.code}): {appliedPromo.type === 'percent' ? `${appliedPromo.value}% OFF` : `Rs. ${appliedPromo.value} OFF`}</span>
+                    <span>-{formatCurrency(promoDiscountAmount)}</span>
+                  </div>
+                )}
+              </div>
+
               {/* Divider */}
               <div style={{ borderTop: '1px solid #e5e7eb', margin: '1rem 0' }} />
 
@@ -602,6 +720,12 @@ const Checkout = ({ cartItems, onClearCart, onPlaceOrder, currentUser }) => {
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#16a34a', fontWeight: 600 }}>
                     <span>Prepaid Discount (Easypaisa)</span>
                     <span>-{formatCurrency(prepaidDiscount)}</span>
+                  </div>
+                )}
+                {promoDiscountAmount > 0 && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#047857', fontWeight: 600 }}>
+                    <span>Promo Code ({appliedPromo?.code})</span>
+                    <span>-{formatCurrency(promoDiscountAmount)}</span>
                   </div>
                 )}
               </div>
