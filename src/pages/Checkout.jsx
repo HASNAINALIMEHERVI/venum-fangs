@@ -60,17 +60,103 @@ const Checkout = ({ cartItems, onClearCart, onPlaceOrder, currentUser }) => {
   const shippingCost = 299;
   const total = subtotal + shippingCost;
 
+  const [formErrors, setFormErrors] = useState({});
+
+  const validateCheckoutData = (data) => {
+    const errors = {};
+
+    // 1. First Name Check
+    const cleanFirstName = data.firstName.trim();
+    if (!cleanFirstName || cleanFirstName.length < 2) {
+      errors.firstName = "Please enter a valid first name (at least 2 letters).";
+    } else if (!/^[a-zA-Z\s'-]+$/.test(cleanFirstName)) {
+      errors.firstName = "First name should only contain letters.";
+    }
+
+    // Last Name Check
+    const cleanLastName = data.lastName.trim();
+    if (cleanLastName && !/^[a-zA-Z\s'-]+$/.test(cleanLastName)) {
+      errors.lastName = "Last name should only contain letters.";
+    }
+
+    // 2. Strict Email & Domain Typo Check
+    const cleanEmail = data.email.trim().toLowerCase();
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!cleanEmail || !emailRegex.test(cleanEmail)) {
+      errors.email = "Please enter a valid email address (e.g. name@gmail.com).";
+    } else {
+      if (/@gmai+\.com$/.test(cleanEmail) || /@gmaill+\.com$/.test(cleanEmail) || /@gmal+\.com$/.test(cleanEmail) || /@gmial+\.com$/.test(cleanEmail)) {
+        errors.email = "Invalid email domain. Did you mean @gmail.com?";
+      } else if (/@yaho+\.com$/.test(cleanEmail) || /@yahou+\.com$/.test(cleanEmail)) {
+        errors.email = "Invalid email domain. Did you mean @yahoo.com?";
+      } else if (/@outlok+\.com$/.test(cleanEmail) || /@hotmal+\.com$/.test(cleanEmail)) {
+        errors.email = "Invalid email domain. Please check your spelling.";
+      }
+    }
+
+    // 3. Address Check
+    const cleanAddress = data.address.trim();
+    if (!cleanAddress || cleanAddress.length < 5) {
+      errors.address = "Please enter a complete street address (house #, street, area).";
+    } else if (/^(test|home|house|address|xyz|none|null)$/i.test(cleanAddress)) {
+      errors.address = "Please provide a valid complete address for courier delivery.";
+    }
+
+    // 4. City Check
+    const cleanCity = data.city.trim();
+    if (!cleanCity || cleanCity.length < 2) {
+      errors.city = "Please enter your city name.";
+    }
+
+    // 5. Pakistani Mobile Phone Check (03xxxxxxxxx or +923xxxxxxxxx)
+    const cleanPhone = data.phone.replace(/[\s\-\(\)\+]/g, '');
+    if (!cleanPhone) {
+      errors.phone = "Please enter your Pakistani mobile number.";
+    } else if (cleanPhone.startsWith('92')) {
+      if (cleanPhone.length !== 12 || !cleanPhone.startsWith('923')) {
+        errors.phone = "Please enter a valid Pakistani mobile number (e.g. 03001234567 or +923001234567).";
+      }
+    } else if (cleanPhone.startsWith('03')) {
+      if (cleanPhone.length !== 11) {
+        errors.phone = "Pakistani mobile numbers must be 11 digits (e.g. 03001234567).";
+      }
+    } else {
+      errors.phone = "Pakistani mobile numbers must start with 03 (e.g. 03001234567).";
+    }
+
+    // 6. Pakistani Postal/ZIP Code Check (Strict 5 Digits)
+    const cleanPostal = data.postalCode.trim();
+    if (cleanPostal) {
+      if (!/^\d{5}$/.test(cleanPostal)) {
+        errors.postalCode = "Pakistani Postal Code must be 5 digits (e.g. 54000 for Lahore, 75500 for Karachi, 44000 for Islamabad).";
+      } else if (/^(00000|12345|99999)$/.test(cleanPostal)) {
+        errors.postalCode = "Please enter a valid 5-digit Pakistani postal code for your area.";
+      }
+    }
+
+    return errors;
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    if (formErrors[name]) {
+      setFormErrors(prev => ({ ...prev, [name]: null }));
+    }
   };
 
   const handlePlaceOrder = (e) => {
     e.preventDefault();
-    if (!formData.email || !formData.address || !formData.firstName || !formData.city || !formData.phone) {
-      alert('Please fill out all required shipping details.');
+    const errors = validateCheckoutData(formData);
+    setFormErrors(errors);
+
+    const errorKeys = Object.keys(errors);
+    if (errorKeys.length > 0) {
+      const firstErrorMsg = errors[errorKeys[0]];
+      alert(`PLEASE CORRECT THE FOLLOWING ERRORS BEFORE PLACING ORDER:\n\n• ${firstErrorMsg}`);
       return;
     }
+
     onPlaceOrder(formData, 'cod');
     onClearCart();
     setCompleted(true);
@@ -92,7 +178,7 @@ const Checkout = ({ cartItems, onClearCart, onPlaceOrder, currentUser }) => {
   }
 
   // Floating label input component
-  const FloatingInput = ({ label, name, type = 'text', value, onChange, required = false, disabled = false }) => (
+  const FloatingInput = ({ label, name, type = 'text', value, onChange, required = false, disabled = false, error = null }) => (
     <div style={{ position: 'relative', width: '100%' }}>
       <input
         type={type}
@@ -107,7 +193,7 @@ const Checkout = ({ cartItems, onClearCart, onPlaceOrder, currentUser }) => {
           padding: '1.1rem 0.85rem 0.45rem',
           fontSize: '0.85rem',
           fontFamily: 'var(--font-sans)',
-          border: '1px solid #d1d5db',
+          border: error ? '1.5px solid #ef4444' : '1px solid #d1d5db',
           borderRadius: '6px',
           outline: 'none',
           background: disabled ? '#f9fafb' : '#fff',
@@ -115,19 +201,24 @@ const Checkout = ({ cartItems, onClearCart, onPlaceOrder, currentUser }) => {
           boxSizing: 'border-box',
           transition: 'border-color 0.2s'
         }}
-        onFocus={(e) => e.target.style.borderColor = '#2563eb'}
-        onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+        onFocus={(e) => e.target.style.borderColor = error ? '#ef4444' : '#2563eb'}
+        onBlur={(e) => e.target.style.borderColor = error ? '#ef4444' : '#d1d5db'}
       />
       <label style={{
         position: 'absolute',
         left: '0.85rem',
         top: value ? '0.3rem' : '0.78rem',
         fontSize: value ? '0.6rem' : '0.82rem',
-        color: '#6b7280',
+        color: error ? '#ef4444' : '#6b7280',
         pointerEvents: 'none',
         transition: 'all 0.15s ease',
         fontFamily: 'var(--font-sans)'
       }}>{label}</label>
+      {error && (
+        <span style={{ fontSize: '0.72rem', color: '#ef4444', marginTop: '0.35rem', display: 'block', fontWeight: 500, fontFamily: 'var(--font-sans)' }}>
+          {error}
+        </span>
+      )}
     </div>
   );
 
@@ -214,7 +305,7 @@ const Checkout = ({ cartItems, onClearCart, onPlaceOrder, currentUser }) => {
               {/* Contact */}
               <div style={{ marginBottom: '2rem' }}>
                 <h2 style={{ fontSize: '1.05rem', fontWeight: 600, color: '#111', margin: '0 0 1rem' }}>Contact</h2>
-                <FloatingInput label="Email" name="email" type="email" value={formData.email} onChange={handleInputChange} required />
+                <FloatingInput label="Email" name="email" type="email" value={formData.email} onChange={handleInputChange} error={formErrors.email} required />
               </div>
 
               {/* Delivery */}
@@ -225,20 +316,20 @@ const Checkout = ({ cartItems, onClearCart, onPlaceOrder, currentUser }) => {
                   <FloatingSelect label="Country/Region" name="country" value={formData.country} onChange={handleInputChange} options={['Pakistan']} required />
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                    <FloatingInput label="First name" name="firstName" value={formData.firstName} onChange={handleInputChange} required />
-                    <FloatingInput label="Last name" name="lastName" value={formData.lastName} onChange={handleInputChange} />
+                    <FloatingInput label="First name" name="firstName" value={formData.firstName} onChange={handleInputChange} error={formErrors.firstName} required />
+                    <FloatingInput label="Last name" name="lastName" value={formData.lastName} onChange={handleInputChange} error={formErrors.lastName} />
                   </div>
 
-                  <FloatingInput label="Address" name="address" value={formData.address} onChange={handleInputChange} required />
+                  <FloatingInput label="Address" name="address" value={formData.address} onChange={handleInputChange} error={formErrors.address} required />
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                    <FloatingInput label="City" name="city" value={formData.city} onChange={handleInputChange} required />
-                    <FloatingInput label="Postal code (optional)" name="postalCode" value={formData.postalCode} onChange={handleInputChange} />
+                    <FloatingInput label="City" name="city" value={formData.city} onChange={handleInputChange} error={formErrors.city} required />
+                    <FloatingInput label="Postal code (optional)" name="postalCode" value={formData.postalCode} onChange={handleInputChange} error={formErrors.postalCode} />
                   </div>
 
                   <FloatingSelect label="Province" name="province" value={formData.province} onChange={handleInputChange} options={PROVINCES} required />
 
-                  <FloatingInput label="Phone" name="phone" type="tel" value={formData.phone} onChange={handleInputChange} required />
+                  <FloatingInput label="Phone" name="phone" type="tel" value={formData.phone} onChange={handleInputChange} error={formErrors.phone} required />
                 </div>
               </div>
 
