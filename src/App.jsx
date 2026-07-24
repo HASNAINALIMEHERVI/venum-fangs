@@ -504,12 +504,16 @@ function App() {
   const handlePlaceOrder = async (customerDetails, paymentMethod) => {
     const subtotal = cartItems.reduce((acc, item) => acc + (item.salePrice || item.price) * item.qty, 0);
     const orderId = `BL-${Math.floor(1000 + Math.random() * 9000)}`;
+    const prepaidDiscount = paymentMethod === 'easypaisa' ? 100 : 0;
+    const finalTotal = Math.max(0, subtotal + 299 - prepaidDiscount);
+
     const newOrder = {
       id: orderId,
       date: new Date().toISOString(),
       customer: customerDetails,
       items: [...cartItems],
-      total: subtotal + 299,
+      total: finalTotal,
+      discountApplied: prepaidDiscount,
       paymentMethod: paymentMethod,
       notes: cartNotes,
       status: 'PENDING'

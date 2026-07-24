@@ -53,12 +53,15 @@ const Checkout = ({ cartItems, onClearCart, onPlaceOrder, currentUser }) => {
     loadProfile();
   }, [currentUser]);
 
+  const [paymentMethod, setPaymentMethod] = useState('cod'); // 'cod' or 'easypaisa'
+
   const subtotal = cartItems.reduce((acc, item) => {
     const price = item.salePrice || item.price;
     return acc + price * item.qty;
   }, 0);
   const shippingCost = 299;
-  const total = subtotal + shippingCost;
+  const prepaidDiscount = paymentMethod === 'easypaisa' ? 100 : 0;
+  const total = Math.max(0, subtotal + shippingCost - prepaidDiscount);
 
   const [formErrors, setFormErrors] = useState({});
 
@@ -157,7 +160,7 @@ const Checkout = ({ cartItems, onClearCart, onPlaceOrder, currentUser }) => {
       return;
     }
 
-    onPlaceOrder(formData, 'cod');
+    onPlaceOrder(formData, paymentMethod);
     onClearCart();
     setCompleted(true);
   };
@@ -338,38 +341,134 @@ const Checkout = ({ cartItems, onClearCart, onPlaceOrder, currentUser }) => {
                 <h2 style={{ fontSize: '1.05rem', fontWeight: 600, color: '#111', margin: '0 0 0.25rem' }}>Payment</h2>
                 <p style={{ fontSize: '0.78rem', color: '#6b7280', margin: '0 0 1rem' }}>All transactions are secure and encrypted.</p>
 
+                <p style={{ fontSize: '0.78rem', color: '#6b7280', margin: '0 0 1rem' }}>All transactions are secure and encrypted.</p>
+
                 <div style={{
-                  border: '2px solid #2563eb',
+                  border: '1px solid #d1d5db',
                   borderRadius: '8px',
                   overflow: 'hidden'
                 }}>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.6rem',
-                    padding: '0.9rem 1rem',
-                    backgroundColor: '#eff6ff',
-                    cursor: 'pointer'
-                  }}>
+                  {/* Option 1: Cash on Delivery (COD) */}
+                  <div 
+                    onClick={() => setPaymentMethod('cod')}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.6rem',
+                      padding: '0.9rem 1rem',
+                      backgroundColor: paymentMethod === 'cod' ? '#eff6ff' : '#fff',
+                      borderBottom: '1px solid #e5e7eb',
+                      cursor: 'pointer'
+                    }}
+                  >
                     <div style={{
                       width: '18px',
                       height: '18px',
                       borderRadius: '50%',
-                      border: '2px solid #2563eb',
+                      border: `2px solid ${paymentMethod === 'cod' ? '#2563eb' : '#9ca3af'}`,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       flexShrink: 0
                     }}>
-                      <div style={{
-                        width: '9px',
-                        height: '9px',
-                        borderRadius: '50%',
-                        backgroundColor: '#2563eb'
-                      }} />
+                      {paymentMethod === 'cod' && (
+                        <div style={{ width: '9px', height: '9px', borderRadius: '50%', backgroundColor: '#2563eb' }} />
+                      )}
                     </div>
                     <span style={{ fontSize: '0.88rem', fontWeight: 500, color: '#111' }}>Cash on Delivery (COD)</span>
                   </div>
+
+                  {/* Option 2: Easypaisa Prepaid (Save Rs. 100) */}
+                  <div 
+                    onClick={() => setPaymentMethod('easypaisa')}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '0.9rem 1rem',
+                      backgroundColor: paymentMethod === 'easypaisa' ? '#f0fdf4' : '#fff',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                      <div style={{
+                        width: '18px',
+                        height: '18px',
+                        borderRadius: '50%',
+                        border: `2px solid ${paymentMethod === 'easypaisa' ? '#16a34a' : '#9ca3af'}`,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0
+                      }}>
+                        {paymentMethod === 'easypaisa' && (
+                          <div style={{ width: '9px', height: '9px', borderRadius: '50%', backgroundColor: '#16a34a' }} />
+                        )}
+                      </div>
+                      <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#111' }}>
+                        Easypaisa (Prepaid)
+                      </span>
+                    </div>
+                    <span style={{
+                      backgroundColor: '#dcfce7',
+                      color: '#15803d',
+                      fontSize: '0.68rem',
+                      fontWeight: 700,
+                      padding: '3px 8px',
+                      borderRadius: '4px',
+                      letterSpacing: '0.02em'
+                    }}>
+                      SAVE RS. 100
+                    </span>
+                  </div>
+
+                  {/* Easypaisa Payment Instructions Panel */}
+                  {paymentMethod === 'easypaisa' && (
+                    <div style={{
+                      padding: '1.1rem 1rem',
+                      backgroundColor: '#f0fdf4',
+                      borderTop: '1px solid #bbf7d0',
+                      fontSize: '0.8rem',
+                      lineHeight: 1.6
+                    }}>
+                      <div style={{ background: '#fff', padding: '0.85rem', borderRadius: '6px', border: '1px solid #bbf7d0', marginBottom: '0.85rem' }}>
+                        <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#16a34a', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.35rem' }}>
+                          ⚡ PREPAID DISCOUNT APPLIED (SAVE RS. 100)
+                        </div>
+                        <div style={{ fontSize: '0.85rem', color: '#111' }}>
+                          <strong>Account Number:</strong> <span style={{ fontFamily: 'monospace', fontSize: '0.95rem', fontWeight: 700 }}>03276935910</span>
+                        </div>
+                        <div style={{ fontSize: '0.85rem', color: '#111' }}>
+                          <strong>Account Title:</strong> <span style={{ fontWeight: 700 }}>Zain Abdullah</span>
+                        </div>
+                      </div>
+
+                      <p style={{ margin: '0 0 0.75rem 0', color: '#15803d', fontSize: '0.78rem' }}>
+                        📲 <strong>Instructions:</strong> Please transfer the total amount via Easypaisa to the account above, then send a screenshot of your payment receipt to <strong>03709539945 (Black Loom Official WhatsApp)</strong> for fast order verification & dispatch!
+                      </p>
+
+                      <a 
+                        href="https://wa.me/923709539945?text=Hello%20Black%20Loom!%20Here%20is%20my%20Easypaisa%20payment%20screenshot%20for%20my%20order." 
+                        target="_blank" 
+                        rel="noreferrer"
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.4rem',
+                          backgroundColor: '#25d366',
+                          color: '#fff',
+                          textDecoration: 'none',
+                          padding: '0.5rem 0.9rem',
+                          borderRadius: '6px',
+                          fontSize: '0.75rem',
+                          fontWeight: 700,
+                          fontFamily: 'var(--font-sans)'
+                        }}
+                      >
+                        💬 Open Official WhatsApp (03709539945)
+                      </a>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -499,6 +598,12 @@ const Checkout = ({ cartItems, onClearCart, onPlaceOrder, currentUser }) => {
                   <span>Shipping</span>
                   <span style={{ fontWeight: 500 }}>{formatCurrency(shippingCost)}</span>
                 </div>
+                {prepaidDiscount > 0 && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#16a34a', fontWeight: 600 }}>
+                    <span>Prepaid Discount (Easypaisa)</span>
+                    <span>-{formatCurrency(prepaidDiscount)}</span>
+                  </div>
+                )}
               </div>
 
               {/* Divider */}

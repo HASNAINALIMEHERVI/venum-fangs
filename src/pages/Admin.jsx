@@ -1427,17 +1427,18 @@ const Admin = ({
                           <h4 style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '0.05em', marginBottom: '1rem', textTransform: 'uppercase' }}>PAYMENT METHOD</h4>
                           <span style={{
                             display: 'inline-block',
-                            fontSize: '0.75rem',
-                            fontWeight: 800,
-                            letterSpacing: '0.15em',
+                            fontSize: '0.72rem',
+                            fontWeight: 900,
+                            letterSpacing: '0.1em',
                             textTransform: 'uppercase',
-                            background: 'var(--bg-secondary)',
+                            background: order.paymentMethod === 'easypaisa' ? '#16a34a' : 'var(--bg-secondary)',
+                            color: order.paymentMethod === 'easypaisa' ? '#fff' : 'var(--accent)',
                             padding: '6px 12px',
                             border: '1px solid var(--border-color)',
                             marginBottom: '1.5rem',
-                            color: 'var(--accent)'
+                            borderRadius: '4px'
                           }}>
-                            {order.paymentMethod === 'cod' ? 'CASH ON DELIVERY (COD)' : 'CREDIT/DEBIT CARD'}
+                            {order.paymentMethod === 'easypaisa' ? 'EASYPAISA (PREPAID - RS. 100 DISCOUNT)' : (order.paymentMethod === 'cod' ? 'CASH ON DELIVERY (COD)' : 'CREDIT/DEBIT CARD')}
                           </span>
                           
                           <div style={{ fontSize: '0.85rem', marginBottom: '1.5rem' }}>
