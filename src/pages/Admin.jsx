@@ -1553,6 +1553,8 @@ const Admin = ({
               const newsletterTemplateId = e.target.emailjs_newsletter_template_id.value.trim();
               const publicKey = e.target.emailjs_public_key.value.trim();
               const imgbbKey = e.target.imgbb_api_key.value.trim();
+              const whatsappPhone = e.target.admin_whatsapp_phone.value.trim();
+              const whatsappApiKey = e.target.admin_whatsapp_apikey.value.trim();
 
               localStorage.setItem('admin_notify_email', notifyEmail);
               localStorage.setItem('emailjs_service_id', serviceId || 'YOUR_SERVICE_ID');
@@ -1561,10 +1563,52 @@ const Admin = ({
               localStorage.setItem('emailjs_newsletter_template_id', newsletterTemplateId || '');
               localStorage.setItem('emailjs_public_key', publicKey || 'YOUR_PUBLIC_KEY');
               localStorage.setItem('imgbb_api_key', imgbbKey);
+              localStorage.setItem('admin_whatsapp_phone', whatsappPhone);
+              localStorage.setItem('admin_whatsapp_apikey', whatsappApiKey);
 
               alert('STORE SETTINGS UPDATED SUCCESSFULLY!');
             }} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
               
+              {/* INSTANT WHATSAPP ALERTS SECTION */}
+              <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '1.5rem', marginBottom: '0.5rem' }}>
+                <h3 style={{ fontFamily: 'Outfit', fontSize: '1.05rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
+                  💬 INSTANT WHATSAPP ORDER ALERTS (CALLMEBOT)
+                </h3>
+                <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '1rem' }}>
+                  Get an instant WhatsApp message on your phone the exact second a customer places an order on BLACK LOOM!
+                </p>
+                <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '1rem', border: '1px solid var(--border-color)', marginBottom: '1.25rem', fontSize: '0.75rem', lineHeight: 1.6 }}>
+                  <strong style={{ color: 'var(--text-primary)' }}>10-Second Free Setup Guide:</strong>
+                  <ol style={{ margin: '0.5rem 0 0 1.2rem', padding: 0 }}>
+                    <li>Add <strong>+34 644 44 44 44</strong> to your phone's WhatsApp contacts (name it "CallMeBot").</li>
+                    <li>Open WhatsApp chat with CallMeBot and send this exact text: <code>I allow callmebot to send me messages</code></li>
+                    <li>CallMeBot will reply in 5 seconds with your <strong>API Key</strong>. Enter your phone & key below!</li>
+                  </ol>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.15em', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>YOUR WHATSAPP PHONE (WITH COUNTRY CODE)</label>
+                    <input 
+                      type="text" 
+                      name="admin_whatsapp_phone"
+                      placeholder="E.G. +923709539945"
+                      defaultValue={localStorage.getItem('admin_whatsapp_phone') || ''}
+                      style={inputStyle}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.15em', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>CALLMEBOT API KEY</label>
+                    <input 
+                      type="text" 
+                      name="admin_whatsapp_apikey"
+                      placeholder="E.G. 987654"
+                      defaultValue={localStorage.getItem('admin_whatsapp_apikey') || ''}
+                      style={inputStyle}
+                    />
+                  </div>
+                </div>
+              </div>
+
               <div>
                 <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.15em', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>STORE ADMIN NOTIFICATION EMAIL</label>
                 <input 

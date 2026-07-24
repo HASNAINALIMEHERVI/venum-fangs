@@ -475,6 +475,30 @@ function App() {
     .catch(err => console.error('Failed to send email notification:', err));
   };
 
+  const sendWhatsAppNotification = (order) => {
+    const adminPhone = localStorage.getItem('admin_whatsapp_phone');
+    const apiKey = localStorage.getItem('admin_whatsapp_apikey');
+
+    if (!adminPhone || !apiKey) {
+      console.log('WhatsApp notification skipped: Admin phone or CallMeBot API key not set in Admin settings.');
+      return;
+    }
+
+    const itemsText = order.items.map(item => `${item.title} (${item.selectedSize}${item.selectedColor ? `, ${item.selectedColor}` : ''} x${item.qty})`).join('\n- ');
+    const addressText = `${order.customer.address}, ${order.customer.city}`;
+
+    const message = `🚨 *NEW BLACK LOOM ORDER!* 🚨\n\n*Order ID:* ${order.id}\n*Customer:* ${order.customer.firstName} ${order.customer.lastName}\n*Phone:* ${order.customer.phone}\n*Total:* Rs. ${order.total.toLocaleString()} (${order.paymentMethod.toUpperCase()})\n*Address:* ${addressText}\n\n*Items:* \n- ${itemsText}`;
+
+    try {
+      const url = `https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(adminPhone)}&text=${encodeURIComponent(message)}&apikey=${encodeURIComponent(apiKey)}`;
+      fetch(url, { mode: 'no-cors' })
+        .then(() => console.log('WhatsApp notification dispatched via CallMeBot API!'))
+        .catch(err => console.error('CallMeBot WhatsApp error:', err));
+    } catch (err) {
+      console.error('Failed to send WhatsApp notification:', err);
+    }
+  };
+
   // Order Operations
   const handlePlaceOrder = async (customerDetails, paymentMethod) => {
     const subtotal = cartItems.reduce((acc, item) => acc + (item.salePrice || item.price) * item.qty, 0);
@@ -493,6 +517,7 @@ function App() {
     const updatedOrders = [newOrder, ...orders];
     saveOrdersToStorage(updatedOrders);
     sendOrderEmailNotification(newOrder);
+    sendWhatsAppNotification(newOrder);
 
     // Save order to Firestore
     try {
