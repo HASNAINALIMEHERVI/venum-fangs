@@ -33,8 +33,9 @@ const Account = ({ currentUser, onLogout, onLoginClick, orders = [] }) => {
   const getStatusColor = (status) => {
     switch(status) {
       case 'PENDING': return '#eab308';
-      case 'PROCESSING': return '#3b82f6';
-      case 'DISPATCHED': return '#a855f7';
+      case 'CONFIRMED': return '#3b82f6';
+      case 'PROCESSING': return '#a855f7';
+      case 'DISPATCHED': return '#1a8c47';
       case 'DELIVERED': return '#22c55e';
       case 'CANCELLED': return '#ef4444';
       default: return 'var(--text-secondary)';

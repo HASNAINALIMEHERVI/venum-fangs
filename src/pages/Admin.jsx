@@ -1496,7 +1496,7 @@ const Admin = ({
                     key={order.id}
                     style={{
                       background: 'var(--bg-secondary)',
-                      border: `1px solid ${order.status === 'PENDING' ? '#b8860b' : (order.status === 'SHIPPED' ? 'var(--accent)' : '#444')}`,
+                      border: `1px solid ${{PENDING: '#e6a23c', CONFIRMED: '#409eff', PROCESSING: '#a855f7', DISPATCHED: 'var(--accent)', DELIVERED: '#16a34a', CANCELLED: '#f56c6c'}[order.status] || '#444'}`,
                       padding: '2rem'
                     }}
                   >
@@ -1519,7 +1519,7 @@ const Admin = ({
                           fontWeight: 900,
                           padding: '4px 10px',
                           letterSpacing: '0.15em',
-                          backgroundColor: order.status === 'SHIPPED' ? 'var(--accent)' : (order.status === 'PENDING' ? '#e6a23c' : '#f56c6c'),
+                          backgroundColor: {PENDING: '#e6a23c', CONFIRMED: '#409eff', PROCESSING: '#a855f7', DISPATCHED: 'var(--accent)', DELIVERED: '#16a34a', CANCELLED: '#f56c6c'}[order.status] || '#888',
                           color: '#000',
                           borderRadius: '12px'
                         }}>
@@ -1613,11 +1613,79 @@ const Admin = ({
                           </div>
                         </div>
 
-                        {/* Status Updates */}
+                        {/* Status Updates — Full Pipeline */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', width: '100%' }}>
                           
-                          {/* If pending, show dispatch panel with optional tracking inputs */}
+                          {/* Status Progress Bar */}
+                          {order.status !== 'CANCELLED' && (() => {
+                            const statuses = ['PENDING', 'CONFIRMED', 'PROCESSING', 'DISPATCHED', 'DELIVERED'];
+                            const currentIdx = statuses.indexOf(order.status);
+                            return (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0', width: '100%', marginBottom: '0.5rem' }}>
+                                {statuses.map((s, i) => {
+                                  const isCompleted = i <= currentIdx;
+                                  const isCurrent = i === currentIdx;
+                                  const colors = { PENDING: '#e6a23c', CONFIRMED: '#409eff', PROCESSING: '#a855f7', DISPATCHED: 'var(--accent)', DELIVERED: '#16a34a' };
+                                  return (
+                                    <React.Fragment key={s}>
+                                      <div style={{
+                                        display: 'flex', flexDirection: 'column', alignItems: 'center', flex: '0 0 auto',
+                                      }}>
+                                        <div style={{
+                                          width: isCurrent ? '28px' : '20px', height: isCurrent ? '28px' : '20px',
+                                          borderRadius: '50%',
+                                          backgroundColor: isCompleted ? (colors[s] || 'var(--accent)') : 'rgba(255,255,255,0.1)',
+                                          border: isCompleted ? 'none' : '2px solid var(--border-color)',
+                                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                          fontSize: '0.55rem', fontWeight: 800, color: isCompleted ? '#fff' : 'var(--text-secondary)',
+                                          transition: 'all 0.3s ease',
+                                          boxShadow: isCurrent ? `0 0 12px ${colors[s]}40` : 'none',
+                                        }}>
+                                          {isCompleted ? '✓' : i + 1}
+                                        </div>
+                                        <span style={{
+                                          fontSize: '0.5rem', fontWeight: 700, letterSpacing: '0.05em',
+                                          color: isCompleted ? colors[s] : 'var(--text-secondary)',
+                                          marginTop: '4px', whiteSpace: 'nowrap',
+                                        }}>{s}</span>
+                                      </div>
+                                      {i < statuses.length - 1 && (
+                                        <div style={{
+                                          flex: 1, height: '2px', minWidth: '8px',
+                                          backgroundColor: i < currentIdx ? (colors[statuses[i + 1]] || 'var(--accent)') : 'rgba(255,255,255,0.1)',
+                                          transition: 'background-color 0.3s ease',
+                                          marginTop: '-14px',
+                                        }} />
+                                      )}
+                                    </React.Fragment>
+                                  );
+                                })}
+                              </div>
+                            );
+                          })()}
+
+                          {/* PENDING → CONFIRM ORDER */}
                           {order.status === 'PENDING' && (
+                            <button 
+                              onClick={() => onUpdateOrderStatus(order.id, 'CONFIRMED')}
+                              style={{ ...statusBtnStyle, backgroundColor: '#409eff', color: '#fff', border: 'none', padding: '10px', fontWeight: 800 }}
+                            >
+                              ✓ CONFIRM ORDER
+                            </button>
+                          )}
+
+                          {/* CONFIRMED → MARK AS PROCESSING */}
+                          {order.status === 'CONFIRMED' && (
+                            <button 
+                              onClick={() => onUpdateOrderStatus(order.id, 'PROCESSING')}
+                              style={{ ...statusBtnStyle, backgroundColor: '#a855f7', color: '#fff', border: 'none', padding: '10px', fontWeight: 800 }}
+                            >
+                              📦 MARK AS PROCESSING
+                            </button>
+                          )}
+
+                          {/* PROCESSING → DISPATCH with courier tracking inputs */}
+                          {order.status === 'PROCESSING' && (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', background: 'rgba(255,255,255,0.02)', padding: '10px', border: '1px solid var(--border-color)' }}>
                               <label style={{ fontSize: '0.625rem', fontWeight: 800, color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>COURIER TRACKING DETAILS (OPTIONAL)</label>
                               <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -1638,30 +1706,53 @@ const Admin = ({
                                 onClick={() => {
                                   const courier = document.getElementById(`courier-${order.id}`).value;
                                   const tracking = document.getElementById(`tracking-${order.id}`).value;
-                                  onUpdateOrderStatus(order.id, 'SHIPPED', tracking, courier);
+                                  onUpdateOrderStatus(order.id, 'DISPATCHED', tracking, courier);
                                 }}
-                                className="order-btn-ship"
-                                style={{ ...statusBtnStyle, backgroundColor: 'var(--accent)', color: '#fff', border: 'none', padding: '10px' }}
+                                style={{ ...statusBtnStyle, backgroundColor: 'var(--accent)', color: '#fff', border: 'none', padding: '10px', fontWeight: 800 }}
                               >
-                                MARK AS SHIPPED & SAVE INFO
+                                🚚 MARK AS DISPATCHED
                               </button>
                             </div>
                           )}
 
-                          {/* If shipped, show tracking details info */}
-                          {order.status === 'SHIPPED' && (
-                            <div style={{ fontSize: '0.75rem', background: 'rgba(26, 140, 71, 0.05)', padding: '10px 12px', border: '1px solid var(--accent)', color: 'var(--text-primary)', lineHeight: 1.4 }}>
-                              <div>SHIPPED VIA: <strong style={{ textTransform: 'uppercase' }}>{order.courierName || 'STANDARD COURIER'}</strong></div>
-                              {order.trackingNum && (
-                                <div style={{ marginTop: '2px' }}>
-                                  TRACKING NUMBER: <strong style={{ color: 'var(--accent)' }}>{order.trackingNum}</strong>
-                                </div>
-                              )}
+                          {/* DISPATCHED → Show tracking info + MARK DELIVERED */}
+                          {order.status === 'DISPATCHED' && (
+                            <>
+                              <div style={{ fontSize: '0.75rem', background: 'rgba(26, 140, 71, 0.05)', padding: '10px 12px', border: '1px solid var(--accent)', color: 'var(--text-primary)', lineHeight: 1.4 }}>
+                                <div>SHIPPED VIA: <strong style={{ textTransform: 'uppercase' }}>{order.courierName || 'STANDARD COURIER'}</strong></div>
+                                {order.trackingNum && (
+                                  <div style={{ marginTop: '2px' }}>
+                                    TRACKING NUMBER: <strong style={{ color: 'var(--accent)' }}>{order.trackingNum}</strong>
+                                  </div>
+                                )}
+                              </div>
+                              <button 
+                                onClick={() => onUpdateOrderStatus(order.id, 'DELIVERED', order.trackingNum || '', order.courierName || '')}
+                                style={{ ...statusBtnStyle, backgroundColor: '#16a34a', color: '#fff', border: 'none', padding: '10px', fontWeight: 800 }}
+                              >
+                                ✅ MARK AS DELIVERED
+                              </button>
+                            </>
+                          )}
+
+                          {/* DELIVERED — show final confirmation */}
+                          {order.status === 'DELIVERED' && (
+                            <div style={{ fontSize: '0.75rem', background: 'rgba(22, 163, 74, 0.08)', padding: '10px 12px', border: '1px solid #16a34a', color: '#16a34a', fontWeight: 700, textAlign: 'center', letterSpacing: '0.05em' }}>
+                              ✅ ORDER SUCCESSFULLY DELIVERED
+                              {order.courierName && <div style={{ marginTop: '4px', fontSize: '0.7rem', color: 'var(--text-secondary)' }}>VIA {order.courierName.toUpperCase()}{order.trackingNum ? ` • ${order.trackingNum}` : ''}</div>}
                             </div>
                           )}
 
+                          {/* CANCELLED — show cancelled badge */}
+                          {order.status === 'CANCELLED' && (
+                            <div style={{ fontSize: '0.75rem', background: 'rgba(245, 108, 108, 0.08)', padding: '10px 12px', border: '1px solid #f56c6c', color: '#f56c6c', fontWeight: 700, textAlign: 'center', letterSpacing: '0.05em' }}>
+                              ❌ ORDER CANCELLED
+                            </div>
+                          )}
+
+                          {/* Action Buttons Row */}
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.25rem' }}>
-                            {order.status !== 'CANCELLED' && (
+                            {order.status !== 'CANCELLED' && order.status !== 'DELIVERED' && (
                               <button 
                                 onClick={() => onUpdateOrderStatus(order.id, 'CANCELLED')}
                                 className="order-btn-cancel"
@@ -1802,11 +1893,12 @@ const Admin = ({
                   const statusCounts = orders.reduce((acc, order) => {
                     acc[order.status] = (acc[order.status] || 0) + 1;
                     return acc;
-                  }, { PENDING: 0, PROCESSING: 0, DISPATCHED: 0, DELIVERED: 0, CANCELLED: 0 });
+                  }, { PENDING: 0, CONFIRMED: 0, PROCESSING: 0, DISPATCHED: 0, DELIVERED: 0, CANCELLED: 0 });
 
                   const colors = {
                     PENDING: '#e6a23c',
-                    PROCESSING: '#409eff',
+                    CONFIRMED: '#409eff',
+                    PROCESSING: '#a855f7',
                     DISPATCHED: 'var(--accent)',
                     DELIVERED: '#16a34a',
                     CANCELLED: '#f56c6c'

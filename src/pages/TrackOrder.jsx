@@ -34,8 +34,10 @@ const TrackOrder = ({ orders = [] }) => {
   const getStatusStep = (status) => {
     switch (status?.toUpperCase()) {
       case 'PENDING': return 1;
-      case 'SHIPPED': return 2;
-      case 'DELIVERED': return 3;
+      case 'CONFIRMED': return 2;
+      case 'PROCESSING': return 3;
+      case 'DISPATCHED': return 4;
+      case 'DELIVERED': return 5;
       case 'CANCELLED': return -1;
       default: return 0;
     }
@@ -60,6 +62,17 @@ const TrackOrder = ({ orders = [] }) => {
   };
 
   const currentStep = getStatusStep(matchedOrder?.status);
+
+  const steps = [
+    { step: 1, label: 'ORDER PLACED', desc: 'Your order has been received.' },
+    { step: 2, label: 'CONFIRMED', desc: 'Your order has been confirmed and is being prepared.' },
+    { step: 3, label: 'PROCESSING', desc: 'Your order is being packed and processed.' },
+    { step: 4, label: 'DISPATCHED', desc: matchedOrder?.courierName ? `Handed over to ${matchedOrder.courierName} for delivery.` : 'Handed over to courier for delivery.' },
+    { step: 5, label: 'DELIVERED', desc: 'Parcel delivered to recipient.' },
+  ];
+
+  // Calculate the progress line height percentage
+  const progressPercent = currentStep <= 1 ? '0%' : currentStep === 2 ? '25%' : currentStep === 3 ? '50%' : currentStep === 4 ? '75%' : '100%';
 
   return (
     <div style={{ padding: '4rem 0', minHeight: '75vh' }} className="fade-in">
@@ -112,7 +125,7 @@ const TrackOrder = ({ orders = [] }) => {
         }}>
           <input 
             type="text" 
-            placeholder="ENTER ORDER ID (E.G. VF-9831)"
+            placeholder="ENTER ORDER ID (E.G. BL-9831)"
             value={searchVal}
             onChange={(e) => setSearchVal(e.target.value)}
             style={{
@@ -196,7 +209,7 @@ const TrackOrder = ({ orders = [] }) => {
                   <div style={{ marginBottom: '2.5rem' }}>
                     <h4 style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '1.5rem' }}>DELIVERY PROGRESS</h4>
                     
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem', position: 'relative', paddingLeft: '2.25rem' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', position: 'relative', paddingLeft: '2.25rem' }}>
                       
                       {/* Left vertical progress bar line */}
                       <div style={{
@@ -214,59 +227,33 @@ const TrackOrder = ({ orders = [] }) => {
                         position: 'absolute',
                         left: '11px',
                         top: '12px',
-                        height: currentStep === 1 ? '0%' : (currentStep === 2 ? '50%' : '100%'),
+                        height: progressPercent,
                         width: '2px',
                         backgroundColor: 'var(--accent)',
                         zIndex: 2,
                         transition: 'height 0.8s ease'
                       }} />
 
-                      {/* Step 1: Placed */}
-                      <div style={{ display: 'flex', flexDirection: 'column', position: 'relative' }}>
-                        <div style={{ position: 'absolute', left: '-2.25rem', top: '1px', zIndex: 10, background: 'var(--bg-secondary)', padding: '2px 0' }}>
-                          <CheckCircle2 size={20} style={{ color: 'var(--accent)' }} fill="var(--bg-secondary)" />
+                      {steps.map(({ step, label, desc }) => (
+                        <div key={step} style={{ display: 'flex', flexDirection: 'column', position: 'relative' }}>
+                          <div style={{ position: 'absolute', left: '-2.25rem', top: '1px', zIndex: 10, background: 'var(--bg-secondary)', padding: '2px 0' }}>
+                            {currentStep >= step ? (
+                              <CheckCircle2 size={20} style={{ color: 'var(--accent)' }} fill="var(--bg-secondary)" />
+                            ) : (
+                              <Circle size={20} style={{ color: 'var(--border-color)' }} fill="var(--bg-secondary)" />
+                            )}
+                          </div>
+                          <span style={{ fontSize: '0.78rem', fontWeight: 700, color: currentStep >= step ? 'var(--text-primary)' : 'var(--text-muted)' }}>{label}</span>
+                          <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '2px' }}>{desc}</span>
                         </div>
-                        <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-primary)' }}>ORDER PLACED</span>
-                        <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '2px' }}>Your order has been received and is being prepared.</span>
-                      </div>
-
-                      {/* Step 2: Shipped */}
-                      <div style={{ display: 'flex', flexDirection: 'column', position: 'relative' }}>
-                        <div style={{ position: 'absolute', left: '-2.25rem', top: '1px', zIndex: 10, background: 'var(--bg-secondary)', padding: '2px 0' }}>
-                          {currentStep >= 2 ? (
-                            <CheckCircle2 size={20} style={{ color: 'var(--accent)' }} fill="var(--bg-secondary)" />
-                          ) : (
-                            <Circle size={20} style={{ color: 'var(--border-color)' }} fill="var(--bg-secondary)" />
-                          )}
-                        </div>
-                        <span style={{ fontSize: '0.78rem', fontWeight: 700, color: currentStep >= 2 ? 'var(--text-primary)' : 'var(--text-muted)' }}>DISPATCHED / SHIPPED</span>
-                        <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                          {currentStep >= 2 
-                            ? `Handed over to ${matchedOrder.courierName || 'courier service'} for delivery.` 
-                            : 'Preparing to dispatch from our facility.'
-                          }
-                        </span>
-                      </div>
-
-                      {/* Step 3: Delivered */}
-                      <div style={{ display: 'flex', flexDirection: 'column', position: 'relative' }}>
-                        <div style={{ position: 'absolute', left: '-2.25rem', top: '1px', zIndex: 10, background: 'var(--bg-secondary)', padding: '2px 0' }}>
-                          {currentStep >= 3 ? (
-                            <CheckCircle2 size={20} style={{ color: 'var(--accent)' }} fill="var(--bg-secondary)" />
-                          ) : (
-                            <Circle size={20} style={{ color: 'var(--border-color)' }} fill="var(--bg-secondary)" />
-                          )}
-                        </div>
-                        <span style={{ fontSize: '0.78rem', fontWeight: 700, color: currentStep >= 3 ? 'var(--text-primary)' : 'var(--text-muted)' }}>DELIVERED</span>
-                        <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '2px' }}>Parcel delivered to recipient.</span>
-                      </div>
+                      ))}
 
                     </div>
                   </div>
                 )}
 
                 {/* Courier / Tracking Number Details */}
-                {matchedOrder.status === 'SHIPPED' && (
+                {(matchedOrder.status === 'DISPATCHED' || matchedOrder.status === 'DELIVERED') && (
                   <div style={{
                     padding: '1.25rem',
                     background: 'rgba(26, 140, 71, 0.05)',
