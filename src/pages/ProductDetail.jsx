@@ -479,7 +479,7 @@ const ProductDetail = ({ products, onAddToCart }) => {
 
                 {/* Size Swatches */}
                 <div style={{ display: 'flex', gap: '1.25rem', flexWrap: 'wrap', alignItems: 'center' }}>
-                  {['S', 'M', 'L', 'XL', 'XXL'].map(size => {
+                  {['S', 'M', 'L', 'XL'].map(size => {
                     const available = product.sizes ? product.sizes.includes(size) : true;
                     const stock = product.stock ? product.stock[size] : undefined;
                     const isOutOfStock = stock === 0 || !available;
@@ -696,13 +696,6 @@ const ProductDetail = ({ products, onAddToCart }) => {
                             <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>30.0</td>
                             <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>26.5</td>
                             <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>10.0</td>
-                          </tr>
-                          <tr>
-                            <td style={{ padding: '10px', border: '1px solid var(--border-color)', fontWeight: 600 }}>XXL</td>
-                            <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>25.0</td>
-                            <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>31.0</td>
-                            <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>27.5</td>
-                            <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>10.5</td>
                           </tr>
                         </tbody>
                       </table>

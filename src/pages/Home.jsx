@@ -592,7 +592,7 @@ const Home = ({ products, productsLoading = false, onQuickAdd }) => {
       {/* Sort & Filter Toolbar */}
       <section style={{ padding: '0 0.5rem 1rem 0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-          {['ALL', 'S', 'M', 'L', 'XL', 'XXL'].map(size => (
+          {['ALL', 'S', 'M', 'L', 'XL'].map(size => (
             <button
               key={size}
               onClick={() => setFilterSize(size)}

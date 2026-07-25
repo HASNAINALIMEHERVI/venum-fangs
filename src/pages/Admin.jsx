@@ -40,14 +40,14 @@ const Admin = ({
     price: '',
     salePrice: '',
     description: '',
-    sizes: ['S', 'M', 'L', 'XL', 'XXL'],
+    sizes: ['S', 'M', 'L', 'XL'],
     images: ['', '', '', ''],
     imageColors: ['', '', '', ''],
     drop: 'drop1',
     showInNewIn: true,
     colorsString: '',
     subCategory: '',
-    stock: { S: 0, M: 0, L: 0, XL: 0, XXL: 0 }
+    stock: { S: 0, M: 0, L: 0, XL: 0 }
   });
   // Track raw File objects selected by the user for upload
   const [pendingFiles, setPendingFiles] = useState([null, null, null, null]);
@@ -418,14 +418,14 @@ const Admin = ({
         price: '',
         salePrice: '',
         description: '',
-        sizes: ['S', 'M', 'L', 'XL', 'XXL'],
+        sizes: ['S', 'M', 'L', 'XL'],
         images: ['', '', '', ''],
         imageColors: ['', '', '', ''],
         drop: 'drop1',
         showInNewIn: true,
         colorsString: '',
         subCategory: '',
-        stock: { S: 0, M: 0, L: 0, XL: 0, XXL: 0 }
+        stock: { S: 0, M: 0, L: 0, XL: 0 }
       });
       setPendingFiles([null, null, null, null]);
     } catch (err) {
@@ -455,14 +455,14 @@ const Admin = ({
       price: product.price.toString(),
       salePrice: product.salePrice ? product.salePrice.toString() : '',
       description: product.description,
-      sizes: product.sizes || ['S', 'M', 'L', 'XL', 'XXL'],
+      sizes: product.sizes || ['S', 'M', 'L', 'XL'],
       images: imageList,
       imageColors: imageColorList,
       drop: product.drop || 'drop1',
       showInNewIn: product.showInNewIn !== false,
       colorsString: product.colors ? product.colors.join(', ') : '',
       subCategory: product.subCategory || '',
-      stock: product.stock || { S: 0, M: 0, L: 0, XL: 0, XXL: 0 }
+      stock: product.stock || { S: 0, M: 0, L: 0, XL: 0 }
     });
     setPendingFiles(new Array(imageList.length).fill(null));
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -901,7 +901,7 @@ const Admin = ({
                   <div>
                     <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.1em', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>SIZES AVAILABLE</label>
                     <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', paddingTop: '4px' }}>
-                      {['S', 'M', 'L', 'XL', 'XXL'].map(size => {
+                      {['S', 'M', 'L', 'XL'].map(size => {
                         const isActive = formData.sizes.includes(size);
                         return (
                           <button
@@ -1203,7 +1203,7 @@ const Admin = ({
                           price: '',
                           salePrice: '',
                           description: '',
-                          sizes: ['S', 'M', 'L', 'XL', 'XXL'],
+                          sizes: ['S', 'M', 'L', 'XL'],
                           images: ['', '', '', '']
                         });
                       }}

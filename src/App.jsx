@@ -59,7 +59,7 @@ const DEFAULT_PRODUCTS = [
     price: 3980,
     salePrice: 2790,
     description: "A PREMIUM STREETWEAR PIECE DECORATED WITH OUR SIGNATURE BLACK LOOM COILED GEOMETRIC ARTWORK. BULKY DROP-SHOULDER CUT ENHANCES THE SILHOUETTE, OFFERING EXTRA ROOM FOR COMFORT AND DRAPE.",
-    sizes: ["S", "M", "L", "XL", "XXL"],
+    sizes: ["S", "M", "L", "XL"],
     images: ["/images/loom_tee_front.png", "/images/loom_tee_back.png"],
     drop: "drop1",
     showInNewIn: true
@@ -71,7 +71,7 @@ const DEFAULT_PRODUCTS = [
     price: 5490,
     salePrice: 4290,
     description: "BUILT FROM 350 GSM HEAVYWEIGHT BRUSHED FLEECE. THE BACK FEATURES THE INDUSTRIAL BLACK LOOM METALLIC EMBLEM EMBROIDERED METICULOUSLY FOR A SHARP VISUAL ATTITUDE.",
-    sizes: ["S", "M", "L", "XL", "XXL"],
+    sizes: ["S", "M", "L", "XL"],
     images: ["/images/loom_hoodie_front.png", "/images/loom_hoodie_back.png"],
     drop: "drop1",
     showInNewIn: true
@@ -109,7 +109,7 @@ const DEFAULT_PRODUCTS = [
     price: 3980,
     salePrice: null,
     description: "MATTE BLACK FINISH T-SHIRT DEVELOPED WITH A WIDER COLLAR LINING AND OVERSIZE FITTING. MINIMALIST EMBOSSED BLACK LOOM SCRIPT ON FRONT CHEST.",
-    sizes: ["S", "M", "L", "XL", "XXL"],
+    sizes: ["S", "M", "L", "XL"],
     images: ["/images/loom_tee_front.png", "/images/loom_tee_back.png"],
     drop: "drop1",
     showInNewIn: false
@@ -134,7 +134,7 @@ const DEFAULT_PRODUCTS = [
     price: 3990,
     salePrice: null,
     description: "FEATURING A HIGH-CONTRAST DUAL SPLIT DESIGN. ONE HALF STARK BRIGHT WHITE, THE OTHER A DEEP MATTE BLACK, MERGING SEAMLESSLY AT THE CENTER.",
-    sizes: ["S", "M", "L", "XL", "XXL"],
+    sizes: ["S", "M", "L", "XL"],
     images: ["/images/eclipse_split_tee.png", "/images/eclipse_split_tee.png"],
     drop: "drop2",
     showInNewIn: true
@@ -146,7 +146,7 @@ const DEFAULT_PRODUCTS = [
     price: 5990,
     salePrice: 4990,
     description: "CRAFTED FROM A PREMIUM 400 GSM BRUSHED COTTON FLEECE. EMBELLISHED WITH ELEGANT GREYISH WHITE SMOKE TEXTURES RISING FROM THE BOTTOM HEM.",
-    sizes: ["S", "M", "L", "XL", "XXL"],
+    sizes: ["S", "M", "L", "XL"],
     images: ["/images/smoke_hoodie.png", "/images/smoke_hoodie.png"],
     drop: "drop2",
     showInNewIn: true
