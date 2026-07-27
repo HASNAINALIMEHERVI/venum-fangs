@@ -1,16 +1,19 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Menu, X, ShoppingBag, Search, User, Heart } from 'lucide-react';
+import { Menu, X, ShoppingBag, Search, User, Heart, ChevronDown, ChevronRight } from 'lucide-react';
 
-const Header = ({ cartCount, onCartClick, products, currentUser, onLogout, wishlistCount = 0 }) => {
+const Header = ({ cartCount, onCartClick, products, currentUser, onLogout, wishlistCount = 0, categories = [] }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-  const [tshirtMenuOpen, setTshirtMenuOpen] = useState(false);
-  const location = useLocation();
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
+  
+  const [desktopCategoriesOpen, setDesktopCategoriesOpen] = useState(false);
+  const [activeCategoryHover, setActiveCategoryHover] = useState(null);
+  const [expandedMobileCategory, setExpandedMobileCategory] = useState(null);
+
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleSearch = (e) => {
     const val = e.target.value;
@@ -33,9 +36,37 @@ const Header = ({ cartCount, onCartClick, products, currentUser, onLogout, wishl
     navigate(`/product/${productId}`);
   };
 
+  const navLinkStyle = {
+    color: 'var(--text-primary)',
+    textDecoration: 'none',
+    fontSize: '0.68rem',
+    fontWeight: 600,
+    letterSpacing: '0.1em',
+    textTransform: 'uppercase',
+    transition: 'opacity 0.2s'
+  };
+
+  const mobileNavLinkStyle = {
+    color: 'var(--text-primary)',
+    textDecoration: 'none',
+    fontSize: '0.8rem',
+    fontWeight: 600,
+    letterSpacing: '0.1em',
+    textTransform: 'uppercase'
+  };
+
+  const mobileSubNavLinkStyle = {
+    color: 'var(--text-secondary)',
+    textDecoration: 'none',
+    fontSize: '0.75rem',
+    fontWeight: 500,
+    letterSpacing: '0.1em',
+    textTransform: 'uppercase'
+  };
+
   return (
     <>
-      <header className="glass-header">
+      <header className="glass-header" style={{ position: 'relative' }}>
         <div style={{ 
           display: 'flex', 
           alignItems: 'center', 
@@ -45,8 +76,8 @@ const Header = ({ cartCount, onCartClick, products, currentUser, onLogout, wishl
           maxWidth: '100%'
         }}>
           
-          {/* Left: Logo */}
-          <div className="header-left" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          {/* Left: Nav Links */}
+          <div className="header-left" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', height: '100%' }}>
             <button 
               className="md-hidden"
               onClick={() => setMobileMenuOpen(true)}
@@ -56,6 +87,98 @@ const Header = ({ cartCount, onCartClick, products, currentUser, onLogout, wishl
               <Menu size={20} strokeWidth={1.5} />
             </button>
             
+            <nav className="desktop-nav" style={{ display: 'none', alignItems: 'center', gap: '1.75rem', height: '100%' }}>
+              <Link to="/?filter=new" className="nav-link" style={navLinkStyle}>NEW IN</Link>
+              <Link to="/" className="nav-link" style={navLinkStyle}>SHOP ALL</Link>
+              
+              <div 
+                onMouseEnter={() => setDesktopCategoriesOpen(true)}
+                onMouseLeave={() => { setDesktopCategoriesOpen(false); setActiveCategoryHover(null); }}
+                style={{ height: '100%', display: 'flex', alignItems: 'center' }}
+              >
+                <span className="nav-link" style={{ ...navLinkStyle, cursor: 'pointer' }}>CATEGORIES</span>
+                
+                {/* Mega Dropdown */}
+                {desktopCategoriesOpen && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    right: 0,
+                    background: 'var(--bg-primary)',
+                    borderBottom: '1px solid var(--border-color)',
+                    boxShadow: 'var(--shadow-md)',
+                    display: 'flex',
+                    zIndex: 50,
+                    minHeight: '280px'
+                  }}>
+                    <div style={{ width: '280px', borderRight: '1px solid var(--border-color)', padding: '2rem 0' }}>
+                      {categories.map(cat => (
+                        <div 
+                          key={cat.id}
+                          onMouseEnter={() => setActiveCategoryHover(cat.id)}
+                          style={{ 
+                            padding: '0.85rem 2.5rem', 
+                            display: 'flex', 
+                            justifyContent: 'space-between', 
+                            alignItems: 'center', 
+                            cursor: 'pointer', 
+                            background: activeCategoryHover === cat.id ? 'var(--bg-secondary)' : 'transparent',
+                            transition: 'background 0.15s'
+                          }}
+                        >
+                          <Link 
+                            to={`/?category=${cat.name}`} 
+                            onClick={() => setDesktopCategoriesOpen(false)} 
+                            style={{ 
+                              color: 'var(--text-primary)', 
+                              textDecoration: 'none', 
+                              fontSize: '0.75rem', 
+                              fontWeight: 600, 
+                              letterSpacing: '0.1em', 
+                              textTransform: 'uppercase' 
+                            }}
+                          >
+                            {cat.name}
+                          </Link>
+                          {cat.subcategories?.length > 0 && <ChevronRight size={14} style={{ color: 'var(--text-muted)' }}/>}
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ flex: 1, padding: '2.85rem 3rem', background: 'var(--bg-primary)' }}>
+                      {activeCategoryHover && categories.find(c => c.id === activeCategoryHover)?.subcategories?.length > 0 && (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1.25rem', alignContent: 'start' }}>
+                          {categories.find(c => c.id === activeCategoryHover).subcategories.map(sub => (
+                            <Link 
+                              key={sub.slug}
+                              to={`/?category=${sub.name}`}
+                              onClick={() => setDesktopCategoriesOpen(false)}
+                              style={{ 
+                                color: 'var(--text-secondary)', 
+                                textDecoration: 'none', 
+                                fontSize: '0.75rem', 
+                                fontWeight: 500, 
+                                letterSpacing: '0.05em', 
+                                textTransform: 'uppercase',
+                                transition: 'color 0.2s'
+                              }}
+                              onMouseEnter={(e) => e.currentTarget.style.color = 'var(--text-primary)'}
+                              onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-secondary)'}
+                            >
+                              {sub.name}
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </nav>
+          </div>
+
+          {/* Center: Logo */}
+          <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center' }}>
             <Link to="/" style={{ textDecoration: 'none', color: 'var(--text-primary)' }}>
               <span className="logo-text" style={{ 
                 fontFamily: '"Didot", "Bodoni MT", "Georgia", serif', 
@@ -68,46 +191,8 @@ const Header = ({ cartCount, onCartClick, products, currentUser, onLogout, wishl
             </Link>
           </div>
 
-          {/* Center: Navigation (Desktop) */}
-          <nav className="desktop-nav" style={{ display: 'none', alignItems: 'center', gap: '1.75rem', position: 'absolute', left: '50%', transform: 'translateX(-50%)', height: '100%' }}>
-            <Link to="/" className="nav-link" style={{ color: 'var(--text-primary)', textDecoration: 'none', fontSize: '0.68rem', fontWeight: 400, letterSpacing: '0.08em', textTransform: 'uppercase', transition: 'opacity 0.2s' }}>NEW IN</Link>
-            
-            <div 
-              className="nav-dropdown-container" 
-              style={{ position: 'relative', display: 'flex', alignItems: 'center', height: '100%' }}
-              onMouseEnter={() => setTshirtMenuOpen(true)}
-              onMouseLeave={() => setTshirtMenuOpen(false)}
-            >
-              <Link to="/?category=T-Shirts" className="nav-link" style={{ color: 'var(--text-primary)', textDecoration: 'none', fontSize: '0.68rem', fontWeight: 400, letterSpacing: '0.08em', textTransform: 'uppercase', transition: 'opacity 0.2s', padding: '1.5rem 0' }}>T-SHIRTS</Link>
-              {tshirtMenuOpen && (
-                <div style={{ 
-                  position: 'absolute', 
-                  top: '100%', 
-                  left: '50%', 
-                  transform: 'translateX(-50%)',
-                  background: 'var(--bg-primary)', 
-                  border: '1px solid var(--border-color)', 
-                  padding: '1.25rem', 
-                  display: 'flex', 
-                  flexDirection: 'column', 
-                  gap: '1rem', 
-                  zIndex: 50, 
-                  minWidth: '160px',
-                  boxShadow: 'var(--shadow-md)'
-                }}>
-                  <Link to="/?category=Graphic Tees" className="nav-link" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.65rem', fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase', transition: 'color 0.2s' }} onClick={() => setTshirtMenuOpen(false)}>GRAPHIC TEES</Link>
-                  <Link to="/?category=Plain Tees" className="nav-link" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.65rem', fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase', transition: 'color 0.2s' }} onClick={() => setTshirtMenuOpen(false)}>PLAIN TEES</Link>
-                </div>
-              )}
-            </div>
-
-            <Link to="/?category=Hoodies" className="nav-link" style={{ color: 'var(--text-primary)', textDecoration: 'none', fontSize: '0.68rem', fontWeight: 400, letterSpacing: '0.08em', textTransform: 'uppercase', transition: 'opacity 0.2s' }}>HOODIES</Link>
-            <Link to="/?category=Sweatshirts" className="nav-link" style={{ color: 'var(--text-primary)', textDecoration: 'none', fontSize: '0.68rem', fontWeight: 400, letterSpacing: '0.08em', textTransform: 'uppercase', transition: 'opacity 0.2s' }}>SWEATSHIRTS</Link>
-            <Link to="/?category=Old Money" className="nav-link" style={{ color: 'var(--text-primary)', textDecoration: 'none', fontSize: '0.68rem', fontWeight: 400, letterSpacing: '0.08em', textTransform: 'uppercase', transition: 'opacity 0.2s' }}>OLD MONEY</Link>
-          </nav>
-
           {/* Right: Icons */}
-          <div className="header-right" style={{ display: 'flex', alignItems: 'center', gap: '1rem', justifyContent: 'flex-end' }}>
+          <div className="header-right" style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', justifyContent: 'flex-end', minWidth: '120px' }}>
             <button 
               onClick={() => setSearchOpen(!searchOpen)} 
               style={{ background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center', transition: 'opacity 0.2s' }}
@@ -130,7 +215,7 @@ const Header = ({ cartCount, onCartClick, products, currentUser, onLogout, wishl
               to="/account"
               style={{ background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', position: 'relative', display: 'flex', alignItems: 'center', padding: '2px', transition: 'opacity 0.2s', textDecoration: 'none' }}
               className="icon-btn"
-              aria-label={`Wishlist (${wishlistCount} ${wishlistCount === 1 ? 'item' : 'items'})`}
+              aria-label={`Wishlist (${wishlistCount} items)`}
             >
               <Heart size={18} strokeWidth={1.5} />
               {wishlistCount > 0 && (
@@ -158,7 +243,7 @@ const Header = ({ cartCount, onCartClick, products, currentUser, onLogout, wishl
               onClick={onCartClick} 
               style={{ background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', position: 'relative', display: 'flex', alignItems: 'center', padding: '2px', transition: 'opacity 0.2s' }}
               className="icon-btn"
-              aria-label={`Cart (${cartCount} ${cartCount === 1 ? 'item' : 'items'})`}
+              aria-label={`Cart (${cartCount} items)`}
             >
               <ShoppingBag size={18} strokeWidth={1.5} />
               {cartCount > 0 && (
@@ -206,6 +291,7 @@ const Header = ({ cartCount, onCartClick, products, currentUser, onLogout, wishl
             .logo-text {
               font-size: 1.35rem;
             }
+          }
           .nav-link:hover {
             opacity: 0.6 !important;
           }
@@ -331,7 +417,8 @@ const Header = ({ cartCount, onCartClick, products, currentUser, onLogout, wishl
               zIndex: 100,
               padding: '1.75rem',
               display: 'flex', flexDirection: 'column', gap: '2rem',
-              boxShadow: 'var(--shadow-xl)'
+              boxShadow: 'var(--shadow-xl)',
+              overflowY: 'auto'
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -345,17 +432,40 @@ const Header = ({ cartCount, onCartClick, products, currentUser, onLogout, wishl
             </div>
             
             <nav style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-              <Link to="/" onClick={() => setMobileMenuOpen(false)} style={{ color: 'var(--text-primary)', textDecoration: 'none', fontSize: '0.8rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase' }}>NEW IN</Link>
-              <Link to="/?category=T-Shirts" onClick={() => setMobileMenuOpen(false)} style={{ color: 'var(--text-primary)', textDecoration: 'none', fontSize: '0.8rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase' }}>T-SHIRTS</Link>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', paddingLeft: '1rem', marginTop: '-0.5rem' }}>
-                <Link to="/?category=Graphic Tees" onClick={() => setMobileMenuOpen(false)} style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.75rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase' }}>GRAPHIC TEES</Link>
-                <Link to="/?category=Plain Tees" onClick={() => setMobileMenuOpen(false)} style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.75rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase' }}>PLAIN TEES</Link>
-              </div>
-              <Link to="/?category=Hoodies" onClick={() => setMobileMenuOpen(false)} style={{ color: 'var(--text-primary)', textDecoration: 'none', fontSize: '0.8rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase' }}>HOODIES</Link>
-              <Link to="/?category=Sweatshirts" onClick={() => setMobileMenuOpen(false)} style={{ color: 'var(--text-primary)', textDecoration: 'none', fontSize: '0.8rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase' }}>SWEATSHIRTS</Link>
-              <Link to="/?category=Old Money" onClick={() => setMobileMenuOpen(false)} style={{ color: 'var(--text-primary)', textDecoration: 'none', fontSize: '0.8rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase' }}>OLD MONEY</Link>
-              <Link to="/account" onClick={() => setMobileMenuOpen(false)} style={{ color: 'var(--text-primary)', textDecoration: 'none', fontSize: '0.8rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase' }}>WISHLIST</Link>
-              <Link to="/account" onClick={() => setMobileMenuOpen(false)} style={{ color: 'var(--text-primary)', textDecoration: 'none', fontSize: '0.8rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase' }}>MY ACCOUNT</Link>
+              <Link to="/?filter=new" onClick={() => setMobileMenuOpen(false)} style={mobileNavLinkStyle}>NEW IN</Link>
+              <Link to="/" onClick={() => setMobileMenuOpen(false)} style={mobileNavLinkStyle}>SHOP ALL</Link>
+              
+              {categories.map(cat => (
+                <div key={cat.id} style={{ display: 'flex', flexDirection: 'column' }}>
+                  <div 
+                    onClick={() => {
+                      if (cat.subcategories?.length > 0) {
+                        setExpandedMobileCategory(expandedMobileCategory === cat.id ? null : cat.id);
+                      } else {
+                        setMobileMenuOpen(false);
+                        navigate(`/?category=${cat.name}`);
+                      }
+                    }}
+                    style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
+                  >
+                    <span style={mobileNavLinkStyle}>{cat.name}</span>
+                    {cat.subcategories?.length > 0 && (
+                      <ChevronDown size={16} style={{ transform: expandedMobileCategory === cat.id ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', color: 'var(--text-primary)' }} />
+                    )}
+                  </div>
+                  {expandedMobileCategory === cat.id && cat.subcategories?.length > 0 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', paddingLeft: '1rem', marginTop: '1rem' }}>
+                      <Link to={`/?category=${cat.name}`} onClick={() => setMobileMenuOpen(false)} style={mobileSubNavLinkStyle}>ALL {cat.name}</Link>
+                      {cat.subcategories.map(sub => (
+                        <Link key={sub.slug} to={`/?category=${sub.name}`} onClick={() => setMobileMenuOpen(false)} style={mobileSubNavLinkStyle}>{sub.name}</Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              <Link to="/account" onClick={() => setMobileMenuOpen(false)} style={mobileNavLinkStyle}>WISHLIST</Link>
+              <Link to="/account" onClick={() => setMobileMenuOpen(false)} style={mobileNavLinkStyle}>MY ACCOUNT</Link>
             </nav>
             
             <div style={{ marginTop: 'auto', borderTop: '1px solid var(--border-color)', paddingTop: '1.5rem' }}>

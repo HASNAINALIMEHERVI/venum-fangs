@@ -225,6 +225,21 @@ function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [showLogin, setShowLogin] = useState(false);
 
+  const DEFAULT_CATEGORIES = [
+    { id: 't-shirts', name: 'T-Shirts', slug: 't-shirts', order: 1, subcategories: [{ name: 'Graphic Tees', slug: 'graphic-tees' }, { name: 'Plain Tees', slug: 'plain-tees' }] },
+    { id: 'hoodies', name: 'Hoodies', slug: 'hoodies', order: 2, subcategories: [] },
+    { id: 'sweatshirts', name: 'Sweatshirts', slug: 'sweatshirts', order: 3, subcategories: [] },
+  ];
+
+  const [categories, setCategories] = useState(() => {
+    try {
+      const saved = localStorage.getItem('black_loom_categories');
+      return saved ? JSON.parse(saved) : DEFAULT_CATEGORIES;
+    } catch (e) {
+      return DEFAULT_CATEGORIES;
+    }
+  });
+
   const handleLogout = async () => {
     try {
       await signOut(auth);
@@ -337,9 +352,34 @@ function App() {
       }
     };
 
+    const loadCategories = async () => {
+      try {
+        const catSnap = await getDocs(collection(db, "categories"));
+        if (!catSnap.empty) {
+          const cats = [];
+          catSnap.forEach(docSnap => {
+            cats.push({ id: docSnap.id, ...docSnap.data() });
+          });
+          cats.sort((a, b) => (a.order || 0) - (b.order || 0));
+          setCategories(cats);
+          localStorage.setItem('black_loom_categories', JSON.stringify(cats));
+        } else {
+          // Seed defaults to Firestore
+          for (const cat of DEFAULT_CATEGORIES) {
+            await setDoc(doc(db, "categories", cat.id), cat);
+          }
+          setCategories(DEFAULT_CATEGORIES);
+          localStorage.setItem('black_loom_categories', JSON.stringify(DEFAULT_CATEGORIES));
+        }
+      } catch (err) {
+        console.error("Error loading categories from Firestore:", err);
+      }
+    };
+
     loadProducts();
     loadOrders();
     loadPromoCodes();
+    loadCategories();
   }, []);
 
   const handleAddPromoCode = async (newCode) => {
@@ -388,6 +428,34 @@ function App() {
       }
     } catch (err) {
       console.error("Error updating promo code status in Firestore:", err);
+    }
+  };
+
+  // Category CRUD handlers
+  const handleSaveCategory = async (cat) => {
+    const id = cat.id || cat.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const catData = { ...cat, id, slug: cat.slug || id };
+    const updated = categories.some(c => c.id === id)
+      ? categories.map(c => c.id === id ? catData : c)
+      : [...categories, catData];
+    updated.sort((a, b) => (a.order || 0) - (b.order || 0));
+    setCategories(updated);
+    localStorage.setItem('black_loom_categories', JSON.stringify(updated));
+    try {
+      await setDoc(doc(db, "categories", id), catData);
+    } catch (err) {
+      console.error("Error saving category to Firestore:", err);
+    }
+  };
+
+  const handleDeleteCategory = async (catId) => {
+    const updated = categories.filter(c => c.id !== catId);
+    setCategories(updated);
+    localStorage.setItem('black_loom_categories', JSON.stringify(updated));
+    try {
+      await deleteDoc(doc(db, "categories", catId));
+    } catch (err) {
+      console.error("Error deleting category from Firestore:", err);
     }
   };
 
@@ -751,6 +819,7 @@ function App() {
           products={products}
           currentUser={currentUser}
           onLogout={handleLogout}
+          categories={categories}
         />
 
         {/* Main Content pages area */}
@@ -774,6 +843,7 @@ function App() {
                   orders={orders}
                   currentUser={currentUser}
                   promoCodes={promoCodes}
+                  categories={categories}
                   onAddProduct={handleAddProduct} 
                   onDeleteProduct={handleDeleteProduct} 
                   onUpdateProduct={handleUpdateProduct} 
@@ -782,6 +852,8 @@ function App() {
                   onAddPromoCode={handleAddPromoCode}
                   onDeletePromoCode={handleDeletePromoCode}
                   onTogglePromoCode={handleTogglePromoCode}
+                  onSaveCategory={handleSaveCategory}
+                  onDeleteCategory={handleDeleteCategory}
                 />
               } 
             />

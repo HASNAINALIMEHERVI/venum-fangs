@@ -17,13 +17,16 @@ const Admin = ({
   onDeleteOrder,
   onAddPromoCode,
   onDeletePromoCode,
-  onTogglePromoCode
+  onTogglePromoCode,
+  categories = [],
+  onSaveCategory,
+  onDeleteCategory
 }) => {
   const [passwordInput, setPasswordInput] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     return sessionStorage.getItem('admin_authenticated') === 'true';
   });
-  const [activeTab, setActiveTab] = useState('products'); // 'products', 'orders', 'settings', 'newsletter', 'promocodes'
+  const [activeTab, setActiveTab] = useState('products'); // 'products', 'categories', 'orders', 'settings', 'newsletter', 'promocodes'
   const [newPromoData, setNewPromoData] = useState({
     code: '',
     type: 'percent',
@@ -51,6 +54,11 @@ const Admin = ({
   });
   // Track raw File objects selected by the user for upload
   const [pendingFiles, setPendingFiles] = useState([null, null, null, null]);
+
+  // Categories Tab State
+  const [editingCategory, setEditingCategory] = useState(null);
+  const [catForm, setCatForm] = useState({ name: '', order: 1, subcategories: [] });
+  const [newSubcatName, setNewSubcatName] = useState('');
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -716,6 +724,23 @@ const Admin = ({
               INVENTORY CATALOG ({products.length})
             </button>
             <button 
+              onClick={() => setActiveTab('categories')} 
+              style={{
+                background: activeTab === 'categories' ? 'var(--bg-primary)' : 'transparent',
+                color: activeTab === 'categories' ? 'var(--accent)' : 'var(--text-secondary)',
+                border: 'none',
+                padding: '0.6rem 1.25rem',
+                fontSize: '0.75rem',
+                fontWeight: 800,
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+            >
+              CATEGORIES
+            </button>
+            <button 
               onClick={() => setActiveTab('orders')} 
               style={{
                 background: activeTab === 'orders' ? 'var(--bg-primary)' : 'transparent',
@@ -865,38 +890,45 @@ const Admin = ({
                         cursor: 'pointer'
                       }}
                     >
-                      <option value="T-Shirts">T-SHIRTS</option>
-                      <option value="Hoodies">HOODIES</option>
-                      <option value="Sweatshirts">SWEATSHIRTS</option>
-                      <option value="Old Money">OLD MONEY</option>
+                      <option value="">SELECT CATEGORY</option>
+                      {categories.map(cat => (
+                        <option key={cat.id} value={cat.name}>{cat.name.toUpperCase()}</option>
+                      ))}
                     </select>
                   </div>
 
-                  {formData.category === 'T-Shirts' && (
-                    <div>
-                      <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.1em', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>T-SHIRT SUBCATEGORY (OPTIONAL)</label>
-                      <select 
-                        name="subCategory"
-                        value={formData.subCategory || ''}
-                        onChange={handleTextChange}
-                        style={{
-                          width: '100%',
-                          background: 'var(--bg-primary)',
-                          border: '1px solid var(--border-color)',
-                          color: 'var(--text-primary)',
-                          padding: '0.8rem',
-                          fontSize: '0.85rem',
-                          fontFamily: 'var(--font-sans)',
-                          outline: 'none',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        <option value="">ALL T-SHIRTS (NO SUBCATEGORY)</option>
-                        <option value="Graphic Tees">GRAPHIC TEES</option>
-                        <option value="Plain Tees">PLAIN TEES</option>
-                      </select>
-                    </div>
-                  )}
+                  {(() => {
+                    const selectedCat = categories.find(c => c.name === formData.category);
+                    if (selectedCat && selectedCat.subcategories && selectedCat.subcategories.length > 0) {
+                      return (
+                        <div>
+                          <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.1em', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>SUBCATEGORY (OPTIONAL)</label>
+                          <select 
+                            name="subCategory"
+                            value={formData.subCategory || ''}
+                            onChange={handleTextChange}
+                            style={{
+                              width: '100%',
+                              background: 'var(--bg-primary)',
+                              border: '1px solid var(--border-color)',
+                              color: 'var(--text-primary)',
+                              padding: '0.8rem',
+                              fontSize: '0.85rem',
+                              fontFamily: 'var(--font-sans)',
+                              outline: 'none',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            <option value="">NONE</option>
+                            {selectedCat.subcategories.map(sub => (
+                              <option key={sub.slug || sub.name} value={sub.name}>{sub.name.toUpperCase()}</option>
+                            ))}
+                          </select>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
 
                   <div>
                     <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.1em', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>SIZES AVAILABLE</label>
@@ -2271,6 +2303,158 @@ const Admin = ({
                 <li>Go to <strong>"Account"</strong> (or <strong>"API Keys"</strong>) and copy the <strong>Public Key</strong>.</li>
                 <li>Paste these keys here, click <strong>Save</strong>, and you're good to go! New orders will now alert you instantly by email.</li>
               </ol>
+            </div>
+          </div>
+        )}
+
+        {/* Tab: Categories */}
+        {activeTab === 'categories' && (
+          <div className="fade-in" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '3rem' }}>
+            <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', padding: '2rem' }}>
+              <h2 style={{ fontFamily: 'Outfit', fontSize: '1.25rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '1.5rem', color: 'var(--text-primary)' }}>
+                {editingCategory ? 'EDIT CATEGORY' : 'ADD NEW CATEGORY'}
+              </h2>
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                if (!catForm.name) return;
+                onSaveCategory(editingCategory ? { ...editingCategory, ...catForm } : catForm);
+                setCatForm({ name: '', order: 1, subcategories: [] });
+                setEditingCategory(null);
+                setNewSubcatName('');
+              }} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.1em', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>CATEGORY NAME *</label>
+                    <input 
+                      type="text" 
+                      placeholder="E.G. T-SHIRTS"
+                      value={catForm.name}
+                      onChange={e => setCatForm(prev => ({ ...prev, name: e.target.value }))}
+                      required
+                      style={inputStyle}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.1em', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>DISPLAY ORDER</label>
+                    <input 
+                      type="number" 
+                      value={catForm.order}
+                      onChange={e => setCatForm(prev => ({ ...prev, order: Number(e.target.value) }))}
+                      style={inputStyle}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.1em', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>SUBCATEGORIES</label>
+                  <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                    <input 
+                      type="text" 
+                      placeholder="E.G. GRAPHIC TEES"
+                      value={newSubcatName}
+                      onChange={e => setNewSubcatName(e.target.value)}
+                      style={{ ...inputStyle, flexGrow: 1 }}
+                    />
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        if (newSubcatName.trim()) {
+                          setCatForm(prev => ({
+                            ...prev,
+                            subcategories: [...(prev.subcategories || []), { name: newSubcatName.trim(), slug: newSubcatName.trim().toLowerCase().replace(/\s+/g, '-') }]
+                          }));
+                          setNewSubcatName('');
+                        }
+                      }}
+                      style={{ background: 'var(--text-primary)', color: 'var(--bg-primary)', border: 'none', padding: '0 1rem', fontWeight: 800, fontSize: '0.75rem', cursor: 'pointer' }}
+                    >
+                      ADD
+                    </button>
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    {(catForm.subcategories || []).map((sub, idx) => (
+                      <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--bg-primary)', border: '1px solid var(--border-color)', padding: '0.4rem 0.8rem', fontSize: '0.75rem' }}>
+                        <span>{sub.name}</span>
+                        <button 
+                          type="button" 
+                          onClick={() => setCatForm(prev => ({ ...prev, subcategories: prev.subcategories.filter((_, i) => i !== idx) }))}
+                          style={{ background: 'none', border: 'none', color: '#ff4d4d', cursor: 'pointer', padding: 0 }}
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                  <button type="submit" className="btn-primary" style={{ flexGrow: 1, padding: '1rem' }}>
+                    {editingCategory ? 'UPDATE CATEGORY' : 'SAVE CATEGORY'}
+                  </button>
+                  {editingCategory && (
+                    <button 
+                      type="button" 
+                      className="btn-secondary"
+                      onClick={() => {
+                        setEditingCategory(null);
+                        setCatForm({ name: '', order: 1, subcategories: [] });
+                        setNewSubcatName('');
+                      }}
+                    >
+                      CANCEL
+                    </button>
+                  )}
+                </div>
+              </form>
+            </div>
+
+            <div>
+              <h2 style={{ fontFamily: 'Outfit', fontSize: '1.25rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '1.5rem', color: 'var(--text-primary)' }}>
+                CURRENT CATEGORIES
+              </h2>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {[...categories].sort((a, b) => (a.order || 0) - (b.order || 0)).map(cat => {
+                  const productCount = products.filter(p => p.category === cat.name).length;
+                  return (
+                    <div key={cat.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', padding: '1rem' }}>
+                      <div>
+                        <div style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase' }}>
+                          {cat.name} <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 600 }}>({productCount} ITEMS) • ORDER: {cat.order || 0}</span>
+                        </div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem', marginTop: '0.5rem' }}>
+                          {(cat.subcategories || []).map(sub => (
+                            <span key={sub.slug || sub.name} style={{ fontSize: '0.65rem', background: 'var(--bg-primary)', border: '1px solid var(--border-color)', padding: '2px 6px', color: 'var(--text-secondary)' }}>
+                              {sub.name}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button 
+                          onClick={() => {
+                            setEditingCategory(cat);
+                            setCatForm({ name: cat.name, order: cat.order || 1, subcategories: cat.subcategories || [] });
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                          }} 
+                          style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '0.5rem', cursor: 'pointer' }}
+                        >
+                          <Edit2 size={16} />
+                        </button>
+                        <button 
+                          onClick={() => {
+                            if (window.confirm(`ARE YOU SURE YOU WANT TO DELETE ${cat.name}?`)) {
+                              onDeleteCategory(cat.id);
+                            }
+                          }}
+                          style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-color)', color: '#ff4d4d', padding: '0.5rem', cursor: 'pointer' }}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         )}
