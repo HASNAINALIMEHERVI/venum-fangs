@@ -470,8 +470,8 @@ const ProductDetail = ({ products, onAddToCart }) => {
                   </span>
                   <a 
                     href="#sizing-fit" 
-                    onClick={() => setActiveAccordion(0)} 
-                    style={{ fontSize: '0.72rem', color: '#000', textDecoration: 'underline', fontWeight: 800, letterSpacing: '0.05em', textTransform: 'uppercase' }}
+                    onClick={() => setActiveAccordion(1)} 
+                    style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', textDecoration: 'underline', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}
                   >
                     SIZE GUIDE
                   </a>
@@ -589,75 +589,88 @@ const ProductDetail = ({ products, onAddToCart }) => {
                 </div>
               </div>
 
-              {/* Product Description Section */}
-              <div style={{ marginTop: '1.5rem' }}>
-                <h3 style={{ fontSize: '0.85rem', fontWeight: 800, letterSpacing: '0.05em', color: 'var(--text-primary)', textTransform: 'uppercase', marginBottom: '0.75rem' }}>
-                  PRODUCT DESCRIPTION
-                </h3>
-                {(() => {
-                  const desc = product.description || '';
-                  // Extract main fit/style description (before Composition/Care sections)
-                  const compIdx = desc.search(/Composition|Care/i);
-                  const mainDesc = compIdx > 0 ? desc.substring(0, compIdx).trim() : desc;
-                  // Remove duplicate "Model Details" line from description text
-                  const cleanedDesc = mainDesc.replace(/Model Details[^\n]*/gi, '').trim();
-                  return (
-                    <>
-                      <p style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.04em', color: 'var(--text-primary)', textTransform: 'uppercase', marginBottom: '0.35rem' }}>
-                        FIT
-                      </p>
-                      <p style={{ 
+              {/* Horizontal Inline Tab Accordions — Minimalist Style */}
+              <div style={{ marginTop: '1.75rem', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
+                
+                {/* Tab Buttons Row */}
+                <div style={{ 
+                  display: 'flex', 
+                  flexWrap: 'wrap',
+                  gap: '0',
+                  borderBottom: '1px solid var(--border-color)',
+                }}>
+                  {[
+                    { id: 0, label: 'Description' },
+                    { id: 1, label: 'Size & Fit' },
+                    { id: 2, label: 'Shipping & Returns' },
+                  ].map(tab => (
+                    <button
+                      key={tab.id}
+                      onClick={() => toggleAccordion(tab.id)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        borderBottom: activeAccordion === tab.id ? '2px solid var(--text-primary)' : '2px solid transparent',
+                        color: activeAccordion === tab.id ? 'var(--text-primary)' : 'var(--text-secondary)',
+                        padding: '0.75rem 1.25rem',
+                        fontSize: '0.72rem',
+                        fontWeight: 600,
+                        letterSpacing: '0.03em',
+                        cursor: 'pointer',
+                        fontFamily: 'var(--font-sans)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.35rem',
+                        transition: 'all 0.2s ease',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {tab.label}
+                      <span style={{ 
                         fontSize: '0.85rem', 
-                        color: 'var(--text-secondary)', 
-                        lineHeight: 1.6, 
-                        whiteSpace: 'pre-wrap',
-                        marginBottom: '1rem'
-                      }}>
-                        {cleanedDesc}
-                      </p>
-                    </>
-                  );
-                })()}
-                
-                {/* Dynamic Model Details */}
-                <p style={{ fontSize: '0.85rem', color: 'var(--text-primary)', fontWeight: 500 }}>
-                  Model Details: The Model Is Wearing Size: L; Model Height: 5.11Ft
-                </p>
-              </div>
+                        fontWeight: 300,
+                        transition: 'transform 0.2s ease',
+                        transform: activeAccordion === tab.id ? 'rotate(45deg)' : 'rotate(0deg)',
+                        display: 'inline-block',
+                      }}>+</span>
+                    </button>
+                  ))}
+                </div>
 
-              {/* Accordion Tabs */}
-              <div style={{ marginTop: '1.5rem' }}>
-                
-                {/* Size Guide Accordion */}
-                <div id="sizing-fit" style={{ borderTop: '1px solid #eaeaea', borderBottom: '1px solid #eaeaea' }}>
-                  <button 
-                    onClick={() => toggleAccordion(0)}
-                    style={{
-                      width: '100%',
-                      background: 'none',
-                      border: 'none',
-                      color: 'var(--text-primary)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      padding: '1.1rem 0',
-                      fontWeight: 700,
-                      fontSize: '0.75rem',
-                      letterSpacing: '0.05em',
-                      cursor: 'pointer',
-                      fontFamily: 'var(--font-sans)',
-                      textAlign: 'left'
-                    }}
-                  >
-                    <span style={{ marginRight: '1rem', width: '12px', display: 'inline-block' }}>
-                      {activeAccordion === 0 ? '−' : '+'}
-                    </span>
-                    <span>SIZE GUIDE</span>
-                  </button>
-                  {activeAccordion === 0 && (
-                    <div style={{ padding: '0 0 1.25rem 0', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                      <p style={{ marginBottom: '1rem', lineHeight: 1.6 }}>
-                        This apparel features our signature street fit. We recommend buying your true size for the perfect look, or sizing down for a regular fit.
-                      </p>
+                {/* Tab Content — Description */}
+                {activeAccordion === 0 && (
+                  <div style={{ padding: '1.25rem 0', color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: 1.7, animation: 'fadeIn 0.25s ease' }}>
+                    {(() => {
+                      const desc = product.description || '';
+                      const compIdx = desc.search(/Composition|Care/i);
+                      const mainDesc = compIdx > 0 ? desc.substring(0, compIdx).trim() : desc;
+                      const cleanedDesc = mainDesc.replace(/Model Details[^\n]*/gi, '').trim();
+                      return (
+                        <>
+                          <p style={{ marginBottom: '1rem', whiteSpace: 'pre-wrap' }}>{cleanedDesc}</p>
+                          <p style={{ fontSize: '0.8rem', color: 'var(--text-primary)', fontWeight: 500 }}>
+                            Model Details: The Model Is Wearing Size: L; Model Height: 5.11Ft
+                          </p>
+                          <ul style={{ paddingLeft: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.3rem', marginTop: '1rem', fontSize: '0.8rem' }}>
+                            <li>100% Premium Combed Cotton</li>
+                            <li>Heavy Fabric Density: 220 GSM (Tees) / 350 GSM (Hoodies & Sweatshirts)</li>
+                            <li>Vibrant High-Definition Puff Screen Print</li>
+                            <li>Ribbed Crew Neck & Double Needle Stitched Seams</li>
+                            <li>Wash Care: Cold wash separately, iron inside out</li>
+                          </ul>
+                        </>
+                      );
+                    })()}
+                  </div>
+                )}
+
+                {/* Tab Content — Size & Fit */}
+                {activeAccordion === 1 && (
+                  <div style={{ padding: '1.25rem 0', color: 'var(--text-secondary)', fontSize: '0.85rem', animation: 'fadeIn 0.25s ease' }}>
+                    <p style={{ marginBottom: '1rem', lineHeight: 1.6 }}>
+                      This apparel features our signature street fit. We recommend buying your true size for the perfect look, or sizing down for a regular fit.
+                    </p>
+                    <div style={{ overflowX: 'auto' }}>
                       <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'center', fontSize: '0.8rem', border: '1px solid var(--border-color)' }}>
                         <thead>
                           <tr style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)', fontWeight: 600 }}>
@@ -700,81 +713,18 @@ const ProductDetail = ({ products, onAddToCart }) => {
                         </tbody>
                       </table>
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
 
-                {/* Product Details Accordion */}
-                <div style={{ borderBottom: '1px solid #eaeaea', marginTop: '-1px' }}>
-                  <button 
-                    onClick={() => toggleAccordion(1)}
-                    style={{
-                      width: '100%',
-                      background: 'none',
-                      border: 'none',
-                      color: 'var(--text-primary)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      padding: '1.1rem 0',
-                      fontWeight: 700,
-                      fontSize: '0.75rem',
-                      letterSpacing: '0.05em',
-                      cursor: 'pointer',
-                      fontFamily: 'var(--font-sans)',
-                      textAlign: 'left'
-                    }}
-                  >
-                    <span style={{ marginRight: '1rem', width: '12px', display: 'inline-block' }}>
-                      {activeAccordion === 1 ? '−' : '+'}
-                    </span>
-                    <span>PRODUCT DETAILS & COMPOSITION</span>
-                  </button>
-                  {activeAccordion === 1 && (
-                    <div style={{ padding: '0 0 1.25rem 0', color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: 1.6 }}>
-                      <ul style={{ paddingLeft: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                        <li>100% Premium Combed Cotton</li>
-                        <li>Heavy Fabric Density: 240 GSM (Tees) / 350 GSM (Hoodies & Sweatshirts)</li>
-                        <li>Vibrant High-Definition Puff Screen Print</li>
-                        <li>Ribbed Crew Neck & Double Needle Stitched Seams</li>
-                        <li>Wash Care: Cold wash separately, iron inside out</li>
-                      </ul>
-                    </div>
-                  )}
-                </div>
-
-                {/* Deliveries & Returns Accordion */}
-                <div style={{ borderBottom: '1px solid #eaeaea', marginTop: '-1px' }}>
-                  <button 
-                    onClick={() => toggleAccordion(2)}
-                    style={{
-                      width: '100%',
-                      background: 'none',
-                      border: 'none',
-                      color: 'var(--text-primary)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      padding: '1.1rem 0',
-                      fontWeight: 700,
-                      fontSize: '0.75rem',
-                      letterSpacing: '0.05em',
-                      cursor: 'pointer',
-                      fontFamily: 'var(--font-sans)',
-                      textAlign: 'left'
-                    }}
-                  >
-                    <span style={{ marginRight: '1rem', width: '12px', display: 'inline-block' }}>
-                      {activeAccordion === 2 ? '−' : '+'}
-                    </span>
-                    <span>DELIVERIES & RETURNS</span>
-                  </button>
-                  {activeAccordion === 2 && (
-                    <div style={{ padding: '0 0 1.25rem 0', color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: 1.6 }}>
-                      <p style={{ marginBottom: '0.75rem' }}><strong>Shipping in Pakistan:</strong></p>
-                      <p style={{ marginBottom: '1rem' }}>All orders placed in Pakistan are delivered via Leopards/TCS Courier within 3 to 5 working days. Shipping charges are 299 PKR.</p>
-                      <p style={{ marginBottom: '0.75rem' }}><strong>Returns Policy:</strong></p>
-                      <p>We offer an easy 7-day hassle-free exchange or refund for any unworn items in original packaging. Simply contact us via email with your order number.</p>
-                    </div>
-                  )}
-                </div>
+                {/* Tab Content — Shipping & Returns */}
+                {activeAccordion === 2 && (
+                  <div style={{ padding: '1.25rem 0', color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: 1.7, animation: 'fadeIn 0.25s ease' }}>
+                    <p style={{ marginBottom: '0.5rem' }}><strong style={{ color: 'var(--text-primary)' }}>Shipping in Pakistan:</strong></p>
+                    <p style={{ marginBottom: '1rem' }}>All orders placed in Pakistan are delivered via Leopards/TCS Courier within 3 to 5 working days. Flat shipping rate: Rs. 299. Free shipping on orders above Rs. 5,000.</p>
+                    <p style={{ marginBottom: '0.5rem' }}><strong style={{ color: 'var(--text-primary)' }}>Returns & Exchange:</strong></p>
+                    <p>We offer an easy 14-day hassle-free exchange for any unworn items in original packaging. Simply contact us via email or WhatsApp with your order number.</p>
+                  </div>
+                )}
 
               </div>
 
