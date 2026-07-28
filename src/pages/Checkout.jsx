@@ -4,6 +4,7 @@ import { CheckCircle, ShoppingBag } from 'lucide-react';
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import { formatCurrency } from '../utils/formatCurrency';
+import { trackInitiateCheckout, trackPurchase } from '../utils/metaPixel';
 
 const PROVINCES = ['Punjab', 'Sindh', 'KPK', 'Balochistan', 'Islamabad', 'AJK', 'Gilgit-Baltistan'];
 
@@ -75,6 +76,13 @@ const Checkout = ({ cartItems, orders = [], onClearCart, onPlaceOrder, currentUs
   }
 
   const total = Math.max(0, subtotal + shippingCost - prepaidDiscount - promoDiscountAmount);
+
+  // Fire InitiateCheckout pixel event when checkout page loads with items
+  useEffect(() => {
+    if (cartItems.length > 0) {
+      trackInitiateCheckout(cartItems, subtotal);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleApplyPromoCode = () => {
     setPromoError('');
@@ -247,6 +255,7 @@ const Checkout = ({ cartItems, orders = [], onClearCart, onPlaceOrder, currentUs
     }
 
     onPlaceOrder(formData, paymentMethod, appliedPromo);
+    trackPurchase(`BL-${Date.now()}`, cartItems, total);
     onClearCart();
     setCompleted(true);
   };

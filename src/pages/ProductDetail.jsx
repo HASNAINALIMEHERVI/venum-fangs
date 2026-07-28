@@ -3,6 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { ShoppingBag, ChevronDown, Check, ArrowLeft, CreditCard, RefreshCw, Truck, X, ChevronLeft, ChevronRight, Star } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
 import { formatCurrency } from '../utils/formatCurrency';
+import { trackViewContent, trackAddToCart } from '../utils/metaPixel';
 import { collection, getDocs, addDoc, Timestamp, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
 
@@ -58,6 +59,7 @@ const ProductDetail = ({ products, onAddToCart }) => {
     const found = products.find(p => p.id === id);
     if (found) {
       setProduct(found);
+      trackViewContent(found);
       
       const searchParams = new URLSearchParams(location.search);
       const urlColor = searchParams.get('color');
@@ -197,6 +199,7 @@ const ProductDetail = ({ products, onAddToCart }) => {
     }
     setSizeError(false);
     onAddToCart(product, selectedSize, selectedColor);
+    trackAddToCart(product, selectedSize, 1);
     setAddedMessage(true);
     setTimeout(() => setAddedMessage(false), 3000);
   };

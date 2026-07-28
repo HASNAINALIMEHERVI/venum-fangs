@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Menu, X, ShoppingBag, Search, User, Heart, ChevronDown, ChevronRight } from 'lucide-react';
+import { trackSearch } from '../utils/metaPixel';
 
 const Header = ({ cartCount, onCartClick, products, currentUser, onLogout, wishlistCount = 0, categories = [] }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -24,6 +25,7 @@ const Header = ({ cartCount, onCartClick, products, currentUser, onLogout, wishl
         p.category.toLowerCase().includes(val.toLowerCase())
       );
       setSearchResults(filtered);
+      trackSearch(val);
     } else {
       setSearchResults([]);
     }
