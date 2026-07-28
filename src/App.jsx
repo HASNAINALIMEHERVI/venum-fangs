@@ -22,6 +22,7 @@ import PaymentModal from './components/PaymentModal';
 import ContactUsModal from './components/ContactUsModal';
 import ShoppingGuideModal from './components/ShoppingGuideModal';
 import ScrollToTop from './components/ScrollToTop';
+import { trackPageView } from './utils/metaPixel';
 
 // Firebase imports
 import { onAuthStateChanged, signOut } from "firebase/auth";
@@ -44,7 +45,10 @@ const CanonicalUpdater = () => {
       link.href = fullUrl;
       document.head.appendChild(link);
     }
-  }, [location]);
+
+    // Fire Meta Pixel PageView on route change
+    trackPageView();
+  }, [location.pathname, location.search]);
 
   return null;
 };

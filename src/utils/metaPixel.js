@@ -17,6 +17,10 @@ const fbq = (...args) => {
   }
 };
 
+export const trackPageView = () => {
+  fbq('track', 'PageView');
+};
+
 export const trackViewContent = (product) => {
   fbq('track', 'ViewContent', {
     content_name: product.title,
