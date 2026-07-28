@@ -194,7 +194,7 @@ const Header = ({ cartCount, onCartClick, products, currentUser, onLogout, wishl
           </div>
 
           {/* Right: Icons */}
-          <div className="header-right" style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', justifyContent: 'flex-end', minWidth: '120px' }}>
+          <div className="header-right" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', minWidth: '120px' }}>
             <button 
               onClick={() => setSearchOpen(!searchOpen)} 
               style={{ background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center', transition: 'opacity 0.2s' }}

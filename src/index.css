@@ -287,3 +287,18 @@ details.accordion-item .accordion-content {
   background-color: rgba(26, 140, 71, 0.12);
   color: var(--text-primary);
 }
+/* Header Mobile Overlap Fixes */
+.header-right {
+  gap: 1.25rem;
+}
+
+@media (max-width: 480px) {
+  .header-right {
+    gap: 0.5rem;
+    min-width: auto !important;
+  }
+  .logo-text {
+    font-size: 0.95rem;
+    white-space: nowrap;
+  }
+}
