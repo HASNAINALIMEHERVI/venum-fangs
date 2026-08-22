@@ -185,17 +185,30 @@ const Checkout = ({ cartItems, orders = [], onClearCart, onPlaceOrder, currentUs
       return;
     }
 
-    const found = promoCodes.find(pc => pc.code.toUpperCase() === cleanInput);
+    if (!promoCodes || promoCodes.length === 0) {
+      setPromoError('Invalid promo code.');
+      return;
+    }
+
+    const found = promoCodes.find(pc => {
+      if (!pc) return false;
+      const codeStr = (pc.code || pc.id || '').toString().trim().toUpperCase();
+      return codeStr === cleanInput;
+    });
+
     if (!found) {
       setPromoError('Invalid promo code.');
       return;
     }
-    if (!found.active) {
+
+    if (found.active === false) {
       setPromoError('This promo code is no longer active.');
       return;
     }
-    if (found.minOrder && subtotal < found.minOrder) {
-      setPromoError(`Minimum order amount of Rs. ${found.minOrder.toLocaleString()} required for code ${found.code}.`);
+
+    const minOrderVal = Number(found.minOrder) || 0;
+    if (minOrderVal > 0 && subtotal < minOrderVal) {
+      setPromoError(`Minimum order amount of Rs. ${minOrderVal.toLocaleString()} required for code ${found.code || found.id}.`);
       return;
     }
 
@@ -203,13 +216,14 @@ const Checkout = ({ cartItems, orders = [], onClearCart, onPlaceOrder, currentUs
     const userEmail = formData.email.trim().toLowerCase();
     const userPhone = formData.phone.replace(/[\s\-\(\)\+]/g, '');
 
-    if (orders && orders.length > 0) {
+    if ((userEmail || userPhone) && orders && orders.length > 0) {
       const alreadyUsed = orders.some(o => {
         const orderEmail = o.customer?.email?.trim()?.toLowerCase();
         const orderPhone = o.customer?.phone?.replace(/[\s\-\(\)\+]/g, '');
-        const sameUser = (userEmail && orderEmail === userEmail) || (userPhone && orderPhone === userPhone);
-        const usedCode = o.appliedPromoCode?.toUpperCase();
-        return sameUser && usedCode === cleanInput;
+        const sameEmail = Boolean(userEmail && orderEmail && orderEmail === userEmail);
+        const samePhone = Boolean(userPhone && orderPhone && orderPhone === userPhone);
+        const usedCode = (o.appliedPromoCode || o.promoCode || '').toString().trim().toUpperCase();
+        return (sameEmail || samePhone) && usedCode === cleanInput;
       });
 
       if (alreadyUsed) {
