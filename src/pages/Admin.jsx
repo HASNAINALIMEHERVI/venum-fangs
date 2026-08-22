@@ -663,7 +663,7 @@ const Admin = ({
     setNewsletterBody('');
   };
 
-  const authorizedAdminEmails = ['zain8pie@gmail.com', 'abdullah8pie@gmail.com'];
+  const authorizedAdminEmails = ['zain8pie@gmail.com', 'abdullah8pie@gmail.com', 'muhammadhadi2704@gmail.com', 'hasnainalimehervi@gmail.com'];
   const isAuthorizedEmail = currentUser && currentUser.email && authorizedAdminEmails.includes(currentUser.email.toLowerCase());
   const storedAdminPassword = localStorage.getItem('admin_panel_password') || 'venum123';
 
@@ -683,7 +683,7 @@ const Admin = ({
             ADMIN ACCESS SECURE
           </h2>
           <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '1.5rem' }}>
-            Enter your secret Admin Password to authenticate, or log into the store with an authorized owner account (<strong>zain8pie@gmail.com</strong> / <strong>abdullah8pie@gmail.com</strong>).
+            Enter your secret Admin Password to authenticate, or log into the store with an authorized owner account.
           </p>
           <form onSubmit={(e) => {
             e.preventDefault();
