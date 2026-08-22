@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Upload, Trash2, Edit2, Plus, Check, ShoppingBag, User, MapPin, Phone, Mail, Clock, ShieldCheck, Send, ExternalLink, Download, TrendingUp, BarChart2, RefreshCw } from 'lucide-react';
+import { Upload, Trash2, Edit2, Plus, Check, ShoppingBag, User, MapPin, Phone, Mail, Clock, ShieldCheck, Send, ExternalLink, Download, TrendingUp, BarChart2, RefreshCw, Layout, Palette } from 'lucide-react';
 import { collection, getDocs, orderBy, query, doc, getDoc, setDoc } from "firebase/firestore";
 import { db, storage } from "../firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { formatCurrency } from '../utils/formatCurrency';
+import SimpleBusinessDashboard from '../components/SimpleBusinessDashboard';
+import { PRESET_THEMES } from '../utils/themePresets';
 
 const Admin = ({ 
   products, 
@@ -20,13 +22,62 @@ const Admin = ({
   onTogglePromoCode,
   categories = [],
   onSaveCategory,
-  onDeleteCategory
+  onDeleteCategory,
+  activeTheme = null,
+  onSaveTheme = null
 }) => {
   const [passwordInput, setPasswordInput] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     return sessionStorage.getItem('admin_authenticated') === 'true';
   });
-  const [activeTab, setActiveTab] = useState('products'); // 'products', 'categories', 'orders', 'settings', 'newsletter', 'promocodes'
+  const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard', 'products', 'categories', 'orders', 'settings', 'newsletter', 'promocodes', 'themes'
+
+  const [themeSaving, setThemeSaving] = useState(false);
+  const [customThemeForm, setCustomThemeForm] = useState(() => {
+    return activeTheme || PRESET_THEMES.default;
+  });
+
+  useEffect(() => {
+    if (activeTheme) {
+      setCustomThemeForm(activeTheme);
+    }
+  }, [activeTheme]);
+
+  const handleApplyPresetTheme = async (presetId) => {
+    const selectedPreset = PRESET_THEMES[presetId];
+    if (!selectedPreset) return;
+    setThemeSaving(true);
+    try {
+      if (onSaveTheme) {
+        await onSaveTheme(selectedPreset);
+        alert(`Theme "${selectedPreset.name}" is now live!`);
+      }
+    } catch (err) {
+      alert("Error activating theme: " + err.message);
+    } finally {
+      setThemeSaving(false);
+    }
+  };
+
+  const handleCustomThemeSubmit = async (e) => {
+    e.preventDefault();
+    setThemeSaving(true);
+    try {
+      const customData = {
+        ...customThemeForm,
+        themeId: 'custom',
+        name: 'Custom Theme'
+      };
+      if (onSaveTheme) {
+        await onSaveTheme(customData);
+        alert("Custom theme published live!");
+      }
+    } catch (err) {
+      alert("Error publishing custom theme: " + err.message);
+    } finally {
+      setThemeSaving(false);
+    }
+  };
   const [newPromoData, setNewPromoData] = useState({
     code: '',
     type: 'percent',
@@ -690,21 +741,21 @@ const Admin = ({
           {/* Tab buttons */}
           <div style={{ display: 'flex', gap: '0.5rem', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', padding: '4px' }}>
             <button 
-              onClick={() => setActiveTab('analytics')} 
+              onClick={() => setActiveTab('dashboard')} 
               style={{
-                background: activeTab === 'analytics' ? 'var(--bg-primary)' : 'transparent',
-                color: activeTab === 'analytics' ? 'var(--accent)' : 'var(--text-secondary)',
+                background: activeTab === 'dashboard' ? 'var(--bg-primary)' : 'transparent',
+                color: activeTab === 'dashboard' ? 'var(--accent)' : 'var(--text-secondary)',
                 border: 'none',
                 padding: '0.6rem 1.25rem',
                 fontSize: '0.75rem',
                 fontWeight: 800,
-                letterSpacing: '0.1em',
+                letterSpacing: '0.08em',
                 textTransform: 'uppercase',
                 cursor: 'pointer',
                 transition: 'all 0.2s'
               }}
             >
-              ANALYTICS
+              DASHBOARD
             </button>
             <button 
               onClick={() => setActiveTab('products')} 
@@ -825,10 +876,34 @@ const Admin = ({
             >
               PLATFORMS
             </button>
+            <button 
+              onClick={() => setActiveTab('themes')} 
+              style={{
+                background: activeTab === 'themes' ? 'var(--bg-primary)' : 'transparent',
+                color: activeTab === 'themes' ? 'var(--accent)' : 'var(--text-secondary)',
+                border: 'none',
+                padding: '0.6rem 1.25rem',
+                fontSize: '0.75rem',
+                fontWeight: 800,
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.35rem'
+              }}
+            >
+              <Palette size={14} /> THEMES & TEMPLATES
+            </button>
           </div>
         </div>
 
         {/* Tab 1: Products Inventory */}
+        {activeTab === 'dashboard' && (
+          <SimpleBusinessDashboard orders={orders} />
+        )}
+
         {activeTab === 'products' && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '3rem' }} className="admin-grid">
             
@@ -2891,6 +2966,390 @@ const Admin = ({
           </div>
         )}
 
+        {/* Tab 6: Themes & Templates */}
+        {activeTab === 'themes' && (
+          <div className="fade-in" style={{ padding: '0 0.5rem' }}>
+            <div style={{ marginBottom: '2rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem' }}>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '0.5rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Palette size={22} style={{ color: 'var(--accent)' }} /> THEME MANAGEMENT & SALE TEMPLATES
+              </h2>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6, maxWidth: '800px', margin: 0 }}>
+                Switch your entire website aesthetic instantly! Select a pre-configured theme template (Standard or Azaadi Sale) or customize your own banner text and colors. Changes push live to all visitors immediately.
+              </p>
+            </div>
+
+            {/* Currently Active Theme Badge */}
+            <div style={{
+              backgroundColor: 'var(--bg-secondary)',
+              border: '1px solid var(--accent)',
+              padding: '1.25rem 1.5rem',
+              marginBottom: '2.5rem',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '1rem'
+            }}>
+              <div>
+                <span style={{ fontSize: '0.68rem', fontWeight: 800, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--accent)', display: 'block', marginBottom: '0.25rem' }}>
+                  🟢 CURRENTLY LIVE THEME
+                </span>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, textTransform: 'uppercase', color: 'var(--text-primary)' }}>
+                  {activeTheme?.name || (activeTheme?.themeId === 'azaadi' ? '🇵🇰 Azaadi Sale (14 August)' : 'Black Loom Standard')}
+                </h3>
+              </div>
+              <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                  Ticker Color: <code style={{ color: 'var(--accent)', background: '#111', padding: '2px 6px' }}>{activeTheme?.tickerBg || '#1a1a1a'}</code>
+                </span>
+                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                  Sale Badge: <code style={{ color: 'var(--accent)', background: '#111', padding: '2px 6px' }}>{activeTheme?.saleBadgeText || 'SALE'}</code>
+                </span>
+              </div>
+            </div>
+
+            {/* Theme Presets Grid */}
+            <h3 style={{ fontSize: '0.9rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '1.25rem', color: 'var(--text-primary)' }}>
+              AVAILABLE THEME TEMPLATES
+            </h3>
+            
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+              gap: '1.5rem',
+              marginBottom: '3rem'
+            }}>
+              {/* Preset 1: Standard Black Loom */}
+              <div style={{
+                background: 'var(--bg-secondary)',
+                border: activeTheme?.themeId === 'default' ? '2px solid var(--accent)' : '1px solid var(--border-color)',
+                padding: '1.75rem',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                position: 'relative'
+              }}>
+                {activeTheme?.themeId === 'default' && (
+                  <span style={{ position: 'absolute', top: '12px', right: '12px', background: 'var(--accent)', color: '#000', fontSize: '0.6rem', fontWeight: 800, padding: '2px 8px', textTransform: 'uppercase' }}>
+                    ACTIVE
+                  </span>
+                )}
+                <div>
+                  <h4 style={{ fontSize: '1rem', fontWeight: 800, textTransform: 'uppercase', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
+                    ⬛ Black Loom Standard
+                  </h4>
+                  <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '1.25rem' }}>
+                    Default clean dark aesthetic. Standard Announcement Ticker, "PREMIUM WEAVES — DROP I" hero banner, and standard "SALE" product badges.
+                  </p>
+
+                  {/* Preview Box */}
+                  <div style={{ background: '#000', padding: '1rem', border: '1px solid var(--border-color)', marginBottom: '1.5rem', borderRadius: '4px' }}>
+                    <div style={{ background: '#1a1a1a', padding: '4px 8px', fontSize: '0.6rem', color: '#fff', marginBottom: '8px', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                      🔥 BUY 3 SHIRTS & SAVE RS. 500 INSTANTLY!...
+                    </div>
+                    <div style={{ textAlign: 'center', padding: '1rem 0' }}>
+                      <span style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.7)', letterSpacing: '0.1em' }}>DROP I: BLACK LOOM</span>
+                      <div style={{ fontSize: '1rem', fontWeight: 800, color: '#fff', margin: '4px 0' }}>PREMIUM WEAVES</div>
+                      <span style={{ background: '#000', border: '1px solid #333', color: '#fff', fontSize: '0.5rem', padding: '2px 6px' }}>SALE BADGE</span>
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  disabled={activeTheme?.themeId === 'default' || themeSaving}
+                  onClick={() => handleApplyPresetTheme('default')}
+                  style={{
+                    width: '100%',
+                    backgroundColor: activeTheme?.themeId === 'default' ? '#333' : 'var(--accent)',
+                    color: activeTheme?.themeId === 'default' ? '#888' : '#000',
+                    border: 'none',
+                    padding: '0.75rem',
+                    fontSize: '0.7rem',
+                    fontWeight: 800,
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    cursor: activeTheme?.themeId === 'default' ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  {activeTheme?.themeId === 'default' ? 'CURRENTLY ACTIVE' : 'ACTIVATE DEFAULT THEME'}
+                </button>
+              </div>
+
+              {/* Preset 2: Azaadi Sale */}
+              <div style={{
+                background: 'var(--bg-secondary)',
+                border: activeTheme?.themeId === 'azaadi' ? '2px solid #01411C' : '1px solid var(--border-color)',
+                padding: '1.75rem',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                position: 'relative'
+              }}>
+                {activeTheme?.themeId === 'azaadi' && (
+                  <span style={{ position: 'absolute', top: '12px', right: '12px', background: '#01411C', color: '#fff', fontSize: '0.6rem', fontWeight: 800, padding: '2px 8px', textTransform: 'uppercase' }}>
+                    ACTIVE
+                  </span>
+                )}
+                <div>
+                  <h4 style={{ fontSize: '1rem', fontWeight: 800, textTransform: 'uppercase', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
+                    🇵🇰 Azaadi Sale (14 August)
+                  </h4>
+                  <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '1.25rem' }}>
+                    Deep Pakistan Green background ticker, "AZAADI SALE — Flat 15% Off" hero section, and green "AZAADI SALE" product badges.
+                  </p>
+
+                  {/* Preview Box */}
+                  <div style={{ background: '#000', padding: '1rem', border: '1px solid #01411C', marginBottom: '1.5rem', borderRadius: '4px' }}>
+                    <div style={{ background: '#01411C', padding: '4px 8px', fontSize: '0.6rem', color: '#fff', marginBottom: '8px', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                      🇵🇰 AZAADI SALE — FLAT 15% OFF ON EVERYTHING...
+                    </div>
+                    <div style={{ textAlign: 'center', padding: '1rem 0' }}>
+                      <span style={{ fontSize: '0.55rem', color: '#4ade80', letterSpacing: '0.1em' }}>14 AUGUST — INDEPENDENCE DAY</span>
+                      <div style={{ fontSize: '1rem', fontWeight: 800, color: '#fff', margin: '4px 0' }}>AZAADI SALE</div>
+                      <span style={{ background: '#01411C', color: '#fff', fontSize: '0.5rem', padding: '2px 6px' }}>AZAADI SALE BADGE</span>
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  disabled={activeTheme?.themeId === 'azaadi' || themeSaving}
+                  onClick={() => handleApplyPresetTheme('azaadi')}
+                  style={{
+                    width: '100%',
+                    backgroundColor: activeTheme?.themeId === 'azaadi' ? '#333' : '#01411C',
+                    color: '#fff',
+                    border: 'none',
+                    padding: '0.75rem',
+                    fontSize: '0.7rem',
+                    fontWeight: 800,
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    cursor: activeTheme?.themeId === 'azaadi' ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  {activeTheme?.themeId === 'azaadi' ? 'CURRENTLY ACTIVE' : 'ACTIVATE AZAADI SALE THEME'}
+                </button>
+              </div>
+
+              {/* Preset 3: Black Widow / Spider Theme */}
+              <div style={{
+                background: 'var(--bg-secondary)',
+                border: activeTheme?.themeId === 'spider' ? '2px solid #a855f7' : '1px solid var(--border-color)',
+                padding: '1.75rem',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                position: 'relative'
+              }}>
+                {activeTheme?.themeId === 'spider' && (
+                  <span style={{ position: 'absolute', top: '12px', right: '12px', background: '#a855f7', color: '#000', fontSize: '0.6rem', fontWeight: 800, padding: '2px 8px', textTransform: 'uppercase' }}>
+                    ACTIVE
+                  </span>
+                )}
+                <div>
+                  <h4 style={{ fontSize: '1rem', fontWeight: 800, textTransform: 'uppercase', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
+                    🕷️ Black Widow / Spider Theme
+                  </h4>
+                  <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '1.25rem' }}>
+                    Dark gothic aesthetic featuring live interactive crawling spider animation, corner translucent cobwebs, purple accents, and "BLACK WIDOW DROP" hero banner.
+                  </p>
+
+                  {/* Preview Box */}
+                  <div style={{ background: '#09090b', padding: '1rem', border: '1px solid #a855f7', marginBottom: '1.5rem', borderRadius: '4px' }}>
+                    <div style={{ background: '#18181b', padding: '4px 8px', fontSize: '0.6rem', color: '#f4f4f5', marginBottom: '8px', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                      🕷️ BLACK LOOM SPIDER DROP — EXCLUSIVE...
+                    </div>
+                    <div style={{ textAlign: 'center', padding: '1rem 0' }}>
+                      <span style={{ fontSize: '0.55rem', color: '#a855f7', letterSpacing: '0.1em' }}>LIMITED EDITION — VENOM & COBWEBS</span>
+                      <div style={{ fontSize: '1rem', fontWeight: 800, color: '#fff', margin: '4px 0' }}>BLACK WIDOW DROP</div>
+                      <span style={{ background: '#18181b', border: '1px solid #a855f7', color: '#a855f7', fontSize: '0.5rem', padding: '2px 6px' }}>SPIDER DROP</span>
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  disabled={activeTheme?.themeId === 'spider' || themeSaving}
+                  onClick={() => handleApplyPresetTheme('spider')}
+                  style={{
+                    width: '100%',
+                    backgroundColor: activeTheme?.themeId === 'spider' ? '#333' : '#a855f7',
+                    color: activeTheme?.themeId === 'spider' ? '#888' : '#000',
+                    border: 'none',
+                    padding: '0.75rem',
+                    fontSize: '0.7rem',
+                    fontWeight: 800,
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    cursor: activeTheme?.themeId === 'spider' ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  {activeTheme?.themeId === 'spider' ? 'CURRENTLY ACTIVE' : 'ACTIVATE SPIDER THEME 🕷️'}
+                </button>
+              </div>
+            </div>
+
+
+            {/* Live Customizer Section */}
+            <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', padding: '2rem', marginBottom: '3rem' }}>
+              <h3 style={{ fontSize: '1rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
+                ✏️ CUSTOM THEME EDITOR
+              </h3>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
+                Want to run a custom flash sale or change banner text? Customize any text or color below and hit Publish.
+              </p>
+
+              <form onSubmit={handleCustomThemeSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem' }}>
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <label style={adminLabelStyle}>Ticker Text (Top Scrolling Bar)</label>
+                  <textarea
+                    rows={2}
+                    value={customThemeForm.tickerText || ''}
+                    onChange={(e) => setCustomThemeForm({ ...customThemeForm, tickerText: e.target.value })}
+                    style={{ ...adminInputStyle, fontFamily: 'monospace', fontSize: '0.75rem' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={adminLabelStyle}>Ticker Background Color</label>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <input
+                      type="color"
+                      value={customThemeForm.tickerBg || '#1a1a1a'}
+                      onChange={(e) => setCustomThemeForm({ ...customThemeForm, tickerBg: e.target.value })}
+                      style={{ width: '40px', height: '38px', border: '1px solid var(--border-color)', background: 'none', cursor: 'pointer' }}
+                    />
+                    <input
+                      type="text"
+                      value={customThemeForm.tickerBg || '#1a1a1a'}
+                      onChange={(e) => setCustomThemeForm({ ...customThemeForm, tickerBg: e.target.value })}
+                      style={adminInputStyle}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label style={adminLabelStyle}>Hero Top Label (Small Upper Text)</label>
+                  <input
+                    type="text"
+                    value={customThemeForm.heroTopLabel || ''}
+                    onChange={(e) => setCustomThemeForm({ ...customThemeForm, heroTopLabel: e.target.value })}
+                    style={adminInputStyle}
+                  />
+                </div>
+
+                <div>
+                  <label style={adminLabelStyle}>Hero Main Title (Large Heading)</label>
+                  <input
+                    type="text"
+                    value={customThemeForm.heroTitle || ''}
+                    onChange={(e) => setCustomThemeForm({ ...customThemeForm, heroTitle: e.target.value })}
+                    style={adminInputStyle}
+                  />
+                </div>
+
+                <div>
+                  <label style={adminLabelStyle}>Hero Subtitle / Description</label>
+                  <input
+                    type="text"
+                    value={customThemeForm.heroSubtitle || ''}
+                    onChange={(e) => setCustomThemeForm({ ...customThemeForm, heroSubtitle: e.target.value })}
+                    style={adminInputStyle}
+                  />
+                </div>
+
+                <div>
+                  <label style={adminLabelStyle}>Hero Subtext (e.g. Valid Dates)</label>
+                  <input
+                    type="text"
+                    value={customThemeForm.heroSubtext || ''}
+                    onChange={(e) => setCustomThemeForm({ ...customThemeForm, heroSubtext: e.target.value })}
+                    style={adminInputStyle}
+                  />
+                </div>
+
+                <div>
+                  <label style={adminLabelStyle}>Hero CTA Button Text</label>
+                  <input
+                    type="text"
+                    value={customThemeForm.heroCta || ''}
+                    onChange={(e) => setCustomThemeForm({ ...customThemeForm, heroCta: e.target.value })}
+                    style={adminInputStyle}
+                  />
+                </div>
+
+                <div>
+                  <label style={adminLabelStyle}>Hero CTA Button Color</label>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <input
+                      type="color"
+                      value={customThemeForm.heroCtaBg || '#000000'}
+                      onChange={(e) => setCustomThemeForm({ ...customThemeForm, heroCtaBg: e.target.value })}
+                      style={{ width: '40px', height: '38px', border: '1px solid var(--border-color)', background: 'none', cursor: 'pointer' }}
+                    />
+                    <input
+                      type="text"
+                      value={customThemeForm.heroCtaBg || '#000000'}
+                      onChange={(e) => setCustomThemeForm({ ...customThemeForm, heroCtaBg: e.target.value })}
+                      style={adminInputStyle}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label style={adminLabelStyle}>Product Sale Badge Text</label>
+                  <input
+                    type="text"
+                    value={customThemeForm.saleBadgeText || ''}
+                    onChange={(e) => setCustomThemeForm({ ...customThemeForm, saleBadgeText: e.target.value })}
+                    style={adminInputStyle}
+                  />
+                </div>
+
+                <div>
+                  <label style={adminLabelStyle}>Product Sale Badge Color</label>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <input
+                      type="color"
+                      value={customThemeForm.saleBadgeBg || '#000000'}
+                      onChange={(e) => setCustomThemeForm({ ...customThemeForm, saleBadgeBg: e.target.value })}
+                      style={{ width: '40px', height: '38px', border: '1px solid var(--border-color)', background: 'none', cursor: 'pointer' }}
+                    />
+                    <input
+                      type="text"
+                      value={customThemeForm.saleBadgeBg || '#000000'}
+                      onChange={(e) => setCustomThemeForm({ ...customThemeForm, saleBadgeBg: e.target.value })}
+                      style={adminInputStyle}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ gridColumn: '1 / -1', marginTop: '1rem' }}>
+                  <button
+                    type="submit"
+                    disabled={themeSaving}
+                    style={{
+                      backgroundColor: 'var(--accent)',
+                      color: '#000',
+                      border: 'none',
+                      padding: '0.85rem 2rem',
+                      fontSize: '0.75rem',
+                      fontWeight: 800,
+                      letterSpacing: '0.1em',
+                      textTransform: 'uppercase',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {themeSaving ? 'SAVING...' : 'PUBLISH CUSTOM THEME'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
       </div>
 
       <style dangerouslySetInnerHTML={{__html: `
@@ -2938,7 +3397,21 @@ const inputStyle = {
   fontSize: '0.85rem',
   fontFamily: 'var(--font-sans)',
   outline: 'none',
-  letterSpacing: '0.05em'
+};
+
+const adminLabelStyle = {
+  display: 'block',
+  fontSize: '0.65rem',
+  fontWeight: 800,
+  letterSpacing: '0.1em',
+  textTransform: 'uppercase',
+  color: 'var(--text-secondary)',
+  marginBottom: '0.4rem'
+};
+
+const adminInputStyle = {
+  ...inputStyle,
+  background: 'var(--bg-primary)'
 };
 
 const actionBtnStyle = {

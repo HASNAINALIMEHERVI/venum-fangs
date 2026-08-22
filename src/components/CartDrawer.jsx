@@ -23,6 +23,12 @@ const CartDrawer = ({ isOpen, onClose, cartItems, onUpdateQty, onRemoveItem, car
     return acc + price * item.qty;
   }, 0);
 
+  const totalQty = cartItems.reduce((acc, item) => acc + item.qty, 0);
+  const BUNDLE_QTY = 3;
+  const BUNDLE_DISCOUNT = 500;
+  const bundleEligible = totalQty >= BUNDLE_QTY;
+  const shirtsNeeded = BUNDLE_QTY - totalQty;
+
   const FREE_SHIPPING_THRESHOLD = 5000;
   const remainingForFreeShipping = Math.max(0, FREE_SHIPPING_THRESHOLD - subtotal);
   const progressPercentage = Math.min(100, (subtotal / FREE_SHIPPING_THRESHOLD) * 100);
@@ -118,6 +124,26 @@ const CartDrawer = ({ isOpen, onClose, cartItems, onUpdateQty, onRemoveItem, car
                     transition: 'width 0.4s ease-in-out'
                   }} />
                 </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Bundle Offer Banner */}
+        {cartItems.length > 0 && (
+          <div style={{
+            padding: '0.75rem 1.5rem',
+            borderBottom: '1px solid var(--border-color)',
+            backgroundColor: bundleEligible ? '#ecfdf5' : '#fffbeb',
+            textAlign: 'center'
+          }}>
+            {bundleEligible ? (
+              <div style={{ color: '#047857', fontSize: '0.8rem', fontWeight: 600 }}>
+                🎉 BUNDLE DEAL APPLIED! You save Rs. 500!
+              </div>
+            ) : (
+              <div style={{ color: '#92400e', fontSize: '0.8rem', fontWeight: 600 }}>
+                🔥 Add {shirtsNeeded} more {shirtsNeeded === 1 ? 'item' : 'items'} to save Rs. 500!
               </div>
             )}
           </div>
@@ -255,6 +281,13 @@ const CartDrawer = ({ isOpen, onClose, cartItems, onUpdateQty, onRemoveItem, car
               <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Subtotal</span>
               <span style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--accent)' }}>{formatCurrency(subtotal)}</span>
             </div>
+
+            {bundleEligible && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#047857' }}>Bundle Deal (3+ items)</span>
+                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#047857' }}>-Rs. 500</span>
+              </div>
+            )}
 
             <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textAlign: 'center', marginBottom: '0.875rem' }}>
               Taxes and shipping calculated at checkout

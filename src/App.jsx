@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { formatCurrency } from './utils/formatCurrency';
+import { PRESET_THEMES } from './utils/themePresets';
 import AnnouncementBar from './components/AnnouncementBar';
+import SpiderOverlay from './components/SpiderOverlay';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import CartDrawer from './components/CartDrawer';
@@ -228,6 +230,44 @@ function App() {
   const [cartOpen, setCartOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [showLogin, setShowLogin] = useState(false);
+
+  const [activeTheme, setActiveTheme] = useState(() => {
+    try {
+      const saved = localStorage.getItem('black_loom_active_theme');
+      return saved ? JSON.parse(saved) : PRESET_THEMES.default;
+    } catch (e) {
+      return PRESET_THEMES.default;
+    }
+  });
+
+  useEffect(() => {
+    const fetchActiveTheme = async () => {
+      try {
+        const docRef = doc(db, 'settings', 'active_theme');
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          const themeData = docSnap.data();
+          setActiveTheme(themeData);
+          localStorage.setItem('black_loom_active_theme', JSON.stringify(themeData));
+        }
+      } catch (err) {
+        console.error("Failed to load active theme from Firestore:", err);
+      }
+    };
+    fetchActiveTheme();
+  }, []);
+
+  const handleSaveTheme = async (newThemeData) => {
+    try {
+      await setDoc(doc(db, 'settings', 'active_theme'), newThemeData);
+      setActiveTheme(newThemeData);
+      localStorage.setItem('black_loom_active_theme', JSON.stringify(newThemeData));
+      return true;
+    } catch (err) {
+      console.error("Error saving theme:", err);
+      throw err;
+    }
+  };
 
   const DEFAULT_CATEGORIES = [
     { id: 't-shirts', name: 'T-Shirts', slug: 't-shirts', order: 1, subcategories: [{ name: 'Graphic Tees', slug: 'graphic-tees' }, { name: 'Plain Tees', slug: 'plain-tees' }] },
@@ -635,6 +675,37 @@ function App() {
     .catch(err => console.error('Failed to send email notification:', err));
   };
 
+  // Customer receipt via a Vercel server function, keeping the Resend key private.
+  const sendCustomerOrderConfirmation = async (order) => {
+    const payload = {
+      orderId: order.id,
+      date: order.date,
+      customer: order.customer,
+      items: order.items.map(item => ({
+        title: item.title,
+        size: item.selectedSize,
+        color: item.selectedColor,
+        quantity: item.qty,
+        unitPrice: item.salePrice || item.price
+      })),
+      subtotal: order.subtotal,
+      shippingCost: order.shippingCost,
+      discountApplied: order.discountApplied,
+      total: order.total,
+      paymentMethod: order.paymentMethod
+    };
+
+    const response = await fetch('/api/send-order-confirmation', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      throw new Error(`Confirmation email request failed (${response.status})`);
+    }
+  };
+
   const sendWhatsAppNotification = (order) => {
     const adminPhone = localStorage.getItem('admin_whatsapp_phone');
     const apiKey = localStorage.getItem('admin_whatsapp_apikey');
@@ -662,7 +733,7 @@ function App() {
   // Order Operations
   const handlePlaceOrder = async (customerDetails, paymentMethod, appliedPromo = null) => {
     const subtotal = cartItems.reduce((acc, item) => acc + (item.salePrice || item.price) * item.qty, 0);
-    const orderId = `BL-${Math.floor(1000 + Math.random() * 9000)}`;
+    const orderId = `BL-${Date.now().toString().slice(-8)}-${Math.floor(100 + Math.random() * 900)}`;
     const prepaidDiscount = paymentMethod === 'easypaisa' ? 100 : 0;
     
     let promoDiscountAmount = 0;
@@ -693,18 +764,27 @@ function App() {
       status: 'PENDING'
     };
 
+    // Persist first. Notifications must never be sent for an order that was not saved.
+    try {
+      await setDoc(doc(db, "orders", orderId), newOrder);
+    } catch (err) {
+      console.error("Error saving order to Firestore:", err);
+      throw new Error("Could not save order details online. Please contact support.", { cause: err });
+    }
+
     const updatedOrders = [newOrder, ...orders];
     saveOrdersToStorage(updatedOrders);
     sendOrderEmailNotification(newOrder);
     sendWhatsAppNotification(newOrder);
 
-    // Save order to Firestore
     try {
-      await setDoc(doc(db, "orders", orderId), newOrder);
+      await sendCustomerOrderConfirmation(newOrder);
     } catch (err) {
-      console.error("Error saving order to Firestore:", err);
-      alert("Database error: Could not save order details online. Please contact support.");
+      // The order is stored, so an email outage must never lose the sale.
+      console.error("Customer confirmation email failed:", err);
     }
+
+    return newOrder;
   };
 
   // Admin inventory operations
@@ -800,6 +880,7 @@ function App() {
     <Router>
       <ScrollToTop />
       <CanonicalUpdater />
+      <SpiderOverlay active={activeTheme?.enableSpiderAnimation || activeTheme?.themeId === 'spider'} />
       <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', position: 'relative' }}>
         
         {/* Login Modal (only shown when triggered) */}
@@ -814,7 +895,7 @@ function App() {
         )}
 
         {/* Banner ticker top */}
-        <AnnouncementBar />
+        <AnnouncementBar activeTheme={activeTheme} />
 
         {/* Brand header */}
         <Header 
@@ -831,7 +912,7 @@ function App() {
           <Routes>
             <Route 
               path="/" 
-              element={<Home products={products} productsLoading={productsLoading} onQuickAdd={handleQuickAdd} />} 
+              element={<Home products={products} productsLoading={productsLoading} onQuickAdd={handleQuickAdd} activeTheme={activeTheme} />} 
             />
             
             <Route 
@@ -848,6 +929,8 @@ function App() {
                   currentUser={currentUser}
                   promoCodes={promoCodes}
                   categories={categories}
+                  activeTheme={activeTheme}
+                  onSaveTheme={handleSaveTheme}
                   onAddProduct={handleAddProduct} 
                   onDeleteProduct={handleDeleteProduct} 
                   onUpdateProduct={handleUpdateProduct} 

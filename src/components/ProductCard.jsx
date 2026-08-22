@@ -29,7 +29,7 @@ const getColorHex = (colorName) => {
   return colorMap[name] || name;
 };
 
-const ProductCard = ({ product, onQuickAdd, isAboveTheFold = false }) => {
+const ProductCard = ({ product, onQuickAdd, isAboveTheFold = false, activeTheme = null }) => {
   const [hovered, setHovered] = useState(false);
   const navigate = useNavigate();
   const hasSale = product.salePrice && Number(product.salePrice) < Number(product.price);
@@ -110,16 +110,16 @@ const ProductCard = ({ product, onQuickAdd, isAboveTheFold = false }) => {
             position: 'absolute',
             top: '8px',
             left: '8px',
-            backgroundColor: '#000',
+            backgroundColor: activeTheme?.saleBadgeBg || '#000',
             color: '#fff',
             fontSize: '0.55rem',
-            fontWeight: 500,
+            fontWeight: 600,
             padding: '3px 8px',
             letterSpacing: '0.08em',
             zIndex: 10,
             textTransform: 'uppercase'
           }}>
-            SALE
+            {activeTheme?.saleBadgeText || 'SALE'}
           </span>
         )}
 

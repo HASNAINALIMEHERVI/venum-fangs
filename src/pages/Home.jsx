@@ -6,7 +6,7 @@ import { db } from '../firebase';
 import ProductCard from '../components/ProductCard';
 import ProductSkeleton from '../components/ProductSkeleton';
 
-const Home = ({ products, productsLoading = false, onQuickAdd }) => {
+const Home = ({ products, productsLoading = false, onQuickAdd, activeTheme = null }) => {
   const [searchParams] = useSearchParams();
   const categoryFilter = searchParams.get('category');
   const navigate = useNavigate();
@@ -112,6 +112,7 @@ const Home = ({ products, productsLoading = false, onQuickAdd }) => {
                     product={product} 
                     onQuickAdd={onQuickAdd} 
                     isAboveTheFold={idx < 4}
+                    activeTheme={activeTheme}
                   />
                 ))}
               </div>
@@ -292,27 +293,27 @@ const Home = ({ products, productsLoading = false, onQuickAdd }) => {
           width: '50%', height: '70%',
           right: '5%', top: '15%',
           borderRadius: '50%',
-          background: 'rgba(26, 140, 71, 0.08)',
+          background: activeTheme?.heroGlow || 'rgba(26, 140, 71, 0.08)',
           filter: 'blur(120px)',
           pointerEvents: 'none',
           zIndex: 2
         }} />
         <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: '800px', margin: '0 auto', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <span style={{
-            color: '#fff',
+            color: activeTheme?.heroTopLabelColor || (activeTheme?.themeId === 'azaadi' ? '#4ade80' : '#fff'),
             fontSize: '0.65rem',
-            fontWeight: 500,
-            letterSpacing: '0.15em',
+            fontWeight: 600,
+            letterSpacing: '0.2em',
             textTransform: 'uppercase',
             display: 'block',
             marginBottom: '0.75rem',
-            opacity: 0.8
+            opacity: activeTheme?.themeId === 'azaadi' ? 1 : 0.8
           }}>
-            DROP I: BLACK LOOM
+            {activeTheme?.heroTopLabel || 'DROP I: BLACK LOOM'}
           </span>
           <h1 style={{
             fontFamily: 'var(--font-sans)',
-            fontSize: 'clamp(2rem, 5vw, 3.5rem)',
+            fontSize: 'clamp(2.2rem, 6vw, 4rem)',
             fontWeight: 700,
             letterSpacing: '-0.02em',
             lineHeight: 1.05,
@@ -320,24 +321,43 @@ const Home = ({ products, productsLoading = false, onQuickAdd }) => {
             color: '#fff',
             textTransform: 'uppercase'
           }}>
-            PREMIUM WEAVES
+            {activeTheme?.heroTitle || 'PREMIUM WEAVES'}
           </h1>
           <p style={{
-            fontSize: '0.8rem',
-            color: 'rgba(255,255,255,0.55)',
+            fontSize: '0.85rem',
+            color: 'rgba(255,255,255,0.7)',
             lineHeight: 1.6,
             maxWidth: '480px',
-            margin: '0 auto 2rem auto',
+            margin: '0 auto 0.75rem auto',
             fontWeight: 400
           }}>
-            Experience apparel in its most extreme form. Heavyweight fabrics, acid wash textures and detailed puff-print embellishments.
+            {activeTheme?.heroSubtitle || 'Experience apparel in its most extreme form. Heavyweight fabrics, acid wash textures and detailed puff-print embellishments.'}
           </p>
+          {activeTheme?.heroSubtext && (
+            <p style={{
+              fontSize: '0.7rem',
+              color: 'rgba(255,255,255,0.4)',
+              margin: '0 auto 1.5rem auto',
+              fontWeight: 400
+            }}>
+              {activeTheme.heroSubtext}
+            </p>
+          )}
           <button 
             onClick={() => navigate('/?category=T-Shirts')}
             className="btn-primary"
-            style={{ fontSize: '0.7rem', padding: '0.8rem 1.8rem', letterSpacing: '0.1em', textTransform: 'uppercase', borderRadius: '0px' }}
+            style={{
+              fontSize: '0.7rem',
+              padding: '0.8rem 1.8rem',
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              borderRadius: '0px',
+              backgroundColor: activeTheme?.heroCtaBg || '#000',
+              border: 'none',
+              marginTop: activeTheme?.heroSubtext ? '0' : '1rem'
+            }}
           >
-            SHOP LATEST DROP
+            {activeTheme?.heroCta || 'SHOP LATEST DROP'}
           </button>
         </div>
       </section>

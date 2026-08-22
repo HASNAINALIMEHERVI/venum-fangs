@@ -11,6 +11,8 @@ const PROVINCES = ['Punjab', 'Sindh', 'KPK', 'Balochistan', 'Islamabad', 'AJK', 
 const Checkout = ({ cartItems, orders = [], onClearCart, onPlaceOrder, currentUser, promoCodes = [] }) => {
   const navigate = useNavigate();
   const [completed, setCompleted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [confirmationEmail, setConfirmationEmail] = useState('');
   const [formData, setFormData] = useState({
     email: '',
     phone: '',
@@ -220,8 +222,9 @@ const Checkout = ({ cartItems, orders = [], onClearCart, onPlaceOrder, currentUs
     }
   };
 
-  const handlePlaceOrder = (e) => {
+  const handlePlaceOrder = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
     const errors = validateCheckoutData(formData);
     setFormErrors(errors);
 
@@ -254,10 +257,19 @@ const Checkout = ({ cartItems, orders = [], onClearCart, onPlaceOrder, currentUs
       }
     }
 
-    onPlaceOrder(formData, paymentMethod, appliedPromo);
-    trackPurchase(`BL-${Date.now()}`, cartItems, total);
-    onClearCart();
-    setCompleted(true);
+    setIsSubmitting(true);
+    try {
+      const placedOrder = await onPlaceOrder(formData, paymentMethod, appliedPromo);
+      trackPurchase(placedOrder?.id || `BL-${Date.now()}`, cartItems, total);
+      setConfirmationEmail(formData.email.trim());
+      onClearCart();
+      setCompleted(true);
+    } catch (err) {
+      console.error('Order placement failed:', err);
+      alert(err.message || 'We could not place your order. Please try again or contact support.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleDone = () => {
@@ -379,7 +391,7 @@ const Checkout = ({ cartItems, orders = [], onClearCart, onPlaceOrder, currentUs
           <CheckCircle size={56} style={{ color: '#16a34a', marginBottom: '1.5rem' }} />
           <h1 style={{ fontSize: '1.6rem', fontWeight: 700, letterSpacing: '0.02em', margin: '0 0 0.75rem', color: '#111' }}>Order Confirmed</h1>
           <p style={{ color: '#6b7280', fontSize: '0.88rem', lineHeight: 1.6, marginBottom: '2.5rem' }}>
-            Thank you for shopping with Black Loom. We've received your order and will contact you shortly to confirm delivery details.
+            Thank you for shopping with Black Loom. We've received your order and sent the confirmation to {confirmationEmail || 'your email address'}.
           </p>
           <button onClick={handleDone} style={{ background: '#000', color: '#fff', border: 'none', padding: '1rem 3rem', fontSize: '0.82rem', fontWeight: 600, borderRadius: '6px', cursor: 'pointer', fontFamily: 'var(--font-sans)' }}>
             Continue Shopping
@@ -570,6 +582,7 @@ const Checkout = ({ cartItems, orders = [], onClearCart, onPlaceOrder, currentUs
               {/* Complete Order Button */}
               <button
                 type="submit"
+                disabled={isSubmitting}
                 style={{
                   width: '100%',
                   padding: '1.1rem',
@@ -580,14 +593,15 @@ const Checkout = ({ cartItems, orders = [], onClearCart, onPlaceOrder, currentUs
                   backgroundColor: '#000',
                   border: 'none',
                   borderRadius: '8px',
-                  cursor: 'pointer',
+                  cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                  opacity: isSubmitting ? 0.65 : 1,
                   transition: 'opacity 0.2s',
                   marginBottom: '2rem'
                 }}
-                onMouseOver={(e) => e.currentTarget.style.opacity = '0.85'}
-                onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
+                onMouseOver={(e) => { if (!isSubmitting) e.currentTarget.style.opacity = '0.85'; }}
+                onMouseOut={(e) => { if (!isSubmitting) e.currentTarget.style.opacity = '1'; }}
               >
-                Complete order
+                {isSubmitting ? 'Placing order…' : 'Complete order'}
               </button>
 
               {/* Footer Links */}

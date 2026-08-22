@@ -4,6 +4,7 @@ import { ShoppingBag, ChevronDown, Check, ArrowLeft, CreditCard, RefreshCw, Truc
 import ProductCard from '../components/ProductCard';
 import { formatCurrency } from '../utils/formatCurrency';
 import { trackViewContent, trackAddToCart } from '../utils/metaPixel';
+import { trackViewContent as ttqViewContent, trackAddToCart as ttqAddToCart } from '../utils/tiktokPixel';
 import { collection, getDocs, addDoc, Timestamp, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
 
@@ -60,6 +61,7 @@ const ProductDetail = ({ products, onAddToCart }) => {
     if (found) {
       setProduct(found);
       trackViewContent(found);
+      ttqViewContent(found);
       
       const searchParams = new URLSearchParams(location.search);
       const urlColor = searchParams.get('color');
@@ -200,6 +202,7 @@ const ProductDetail = ({ products, onAddToCart }) => {
     setSizeError(false);
     onAddToCart(product, selectedSize, selectedColor);
     trackAddToCart(product, selectedSize, 1);
+    ttqAddToCart(product, selectedSize, 1);
     setAddedMessage(true);
     setTimeout(() => setAddedMessage(false), 3000);
   };
