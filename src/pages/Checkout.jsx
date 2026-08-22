@@ -8,6 +8,97 @@ import { trackInitiateCheckout, trackPurchase } from '../utils/metaPixel';
 
 const PROVINCES = ['Punjab', 'Sindh', 'KPK', 'Balochistan', 'Islamabad', 'AJK', 'Gilgit-Baltistan'];
 
+// Floating label input component (Top-level to preserve input DOM focus across state re-renders)
+const FloatingInput = ({ label, name, type = 'text', value, onChange, required = false, disabled = false, error = null }) => (
+  <div style={{ position: 'relative', width: '100%' }}>
+    <input
+      type={type}
+      name={name}
+      value={value}
+      onChange={onChange}
+      required={required}
+      disabled={disabled}
+      placeholder=" "
+      style={{
+        width: '100%',
+        padding: '1.1rem 0.85rem 0.45rem',
+        fontSize: '0.85rem',
+        fontFamily: 'var(--font-sans)',
+        border: error ? '1.5px solid #ef4444' : '1px solid #d1d5db',
+        borderRadius: '6px',
+        outline: 'none',
+        background: disabled ? '#f9fafb' : '#fff',
+        color: disabled ? '#9ca3af' : '#111',
+        boxSizing: 'border-box',
+        transition: 'border-color 0.2s'
+      }}
+      onFocus={(e) => e.target.style.borderColor = error ? '#ef4444' : '#2563eb'}
+      onBlur={(e) => e.target.style.borderColor = error ? '#ef4444' : '#d1d5db'}
+    />
+    <label style={{
+      position: 'absolute',
+      left: '0.85rem',
+      top: value ? '0.3rem' : '0.78rem',
+      fontSize: value ? '0.6rem' : '0.82rem',
+      color: error ? '#ef4444' : '#6b7280',
+      pointerEvents: 'none',
+      transition: 'all 0.15s ease',
+      fontFamily: 'var(--font-sans)'
+    }}>{label}</label>
+    {error && (
+      <span style={{ fontSize: '0.72rem', color: '#ef4444', marginTop: '0.35rem', display: 'block', fontWeight: 500, fontFamily: 'var(--font-sans)' }}>
+        {error}
+      </span>
+    )}
+  </div>
+);
+
+// Floating label select component (Top-level to preserve select DOM state)
+const FloatingSelect = ({ label, name, value, onChange, options, required = false }) => (
+  <div style={{ position: 'relative', width: '100%' }}>
+    <select
+      name={name}
+      value={value}
+      onChange={onChange}
+      required={required}
+      style={{
+        width: '100%',
+        padding: '1.1rem 0.85rem 0.45rem',
+        fontSize: '0.85rem',
+        fontFamily: 'var(--font-sans)',
+        border: '1px solid #d1d5db',
+        borderRadius: '6px',
+        outline: 'none',
+        background: '#fff',
+        color: '#111',
+        cursor: 'pointer',
+        boxSizing: 'border-box',
+        appearance: 'none',
+        WebkitAppearance: 'none',
+        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
+        backgroundRepeat: 'no-repeat',
+        backgroundPosition: 'right 0.85rem center',
+        transition: 'border-color 0.2s'
+      }}
+      onFocus={(e) => e.target.style.borderColor = '#2563eb'}
+      onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+    >
+      {options.map(opt => (
+        <option key={opt} value={opt}>{opt}</option>
+      ))}
+    </select>
+    <label style={{
+      position: 'absolute',
+      left: '0.85rem',
+      top: '0.3rem',
+      fontSize: '0.6rem',
+      color: '#6b7280',
+      pointerEvents: 'none',
+      fontFamily: 'var(--font-sans)'
+    }}>{label}</label>
+  </div>
+);
+
 const Checkout = ({ cartItems, orders = [], onClearCart, onPlaceOrder, currentUser, promoCodes = [] }) => {
   const navigate = useNavigate();
   const [completed, setCompleted] = useState(false);
@@ -286,97 +377,6 @@ const Checkout = ({ cartItems, orders = [], onClearCart, onPlaceOrder, currentUs
       </div>
     );
   }
-
-  // Floating label input component
-  const FloatingInput = ({ label, name, type = 'text', value, onChange, required = false, disabled = false, error = null }) => (
-    <div style={{ position: 'relative', width: '100%' }}>
-      <input
-        type={type}
-        name={name}
-        value={value}
-        onChange={onChange}
-        required={required}
-        disabled={disabled}
-        placeholder=" "
-        style={{
-          width: '100%',
-          padding: '1.1rem 0.85rem 0.45rem',
-          fontSize: '0.85rem',
-          fontFamily: 'var(--font-sans)',
-          border: error ? '1.5px solid #ef4444' : '1px solid #d1d5db',
-          borderRadius: '6px',
-          outline: 'none',
-          background: disabled ? '#f9fafb' : '#fff',
-          color: disabled ? '#9ca3af' : '#111',
-          boxSizing: 'border-box',
-          transition: 'border-color 0.2s'
-        }}
-        onFocus={(e) => e.target.style.borderColor = error ? '#ef4444' : '#2563eb'}
-        onBlur={(e) => e.target.style.borderColor = error ? '#ef4444' : '#d1d5db'}
-      />
-      <label style={{
-        position: 'absolute',
-        left: '0.85rem',
-        top: value ? '0.3rem' : '0.78rem',
-        fontSize: value ? '0.6rem' : '0.82rem',
-        color: error ? '#ef4444' : '#6b7280',
-        pointerEvents: 'none',
-        transition: 'all 0.15s ease',
-        fontFamily: 'var(--font-sans)'
-      }}>{label}</label>
-      {error && (
-        <span style={{ fontSize: '0.72rem', color: '#ef4444', marginTop: '0.35rem', display: 'block', fontWeight: 500, fontFamily: 'var(--font-sans)' }}>
-          {error}
-        </span>
-      )}
-    </div>
-  );
-
-  // Floating label select component
-  const FloatingSelect = ({ label, name, value, onChange, options, required = false }) => (
-    <div style={{ position: 'relative', width: '100%' }}>
-      <select
-        name={name}
-        value={value}
-        onChange={onChange}
-        required={required}
-        style={{
-          width: '100%',
-          padding: '1.1rem 0.85rem 0.45rem',
-          fontSize: '0.85rem',
-          fontFamily: 'var(--font-sans)',
-          border: '1px solid #d1d5db',
-          borderRadius: '6px',
-          outline: 'none',
-          background: '#fff',
-          color: '#111',
-          cursor: 'pointer',
-          boxSizing: 'border-box',
-          appearance: 'none',
-          WebkitAppearance: 'none',
-          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
-          backgroundRepeat: 'no-repeat',
-          backgroundPosition: 'right 0.85rem center',
-          transition: 'border-color 0.2s'
-        }}
-        onFocus={(e) => e.target.style.borderColor = '#2563eb'}
-        onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
-      >
-        {options.map(opt => (
-          <option key={opt} value={opt}>{opt}</option>
-        ))}
-      </select>
-      <label style={{
-        position: 'absolute',
-        left: '0.85rem',
-        top: '0.3rem',
-        fontSize: '0.6rem',
-        color: '#6b7280',
-        pointerEvents: 'none',
-        fontFamily: 'var(--font-sans)'
-      }}>{label}</label>
-    </div>
-  );
 
   return (
     <div className="fade-in" style={{ fontFamily: 'var(--font-sans)' }}>
