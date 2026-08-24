@@ -1794,25 +1794,33 @@ const Admin = ({
                           {/* PROCESSING → DISPATCH with courier tracking inputs */}
                           {order.status === 'PROCESSING' && (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', background: 'rgba(255,255,255,0.02)', padding: '10px', border: '1px solid var(--border-color)' }}>
-                              <label style={{ fontSize: '0.625rem', fontWeight: 800, color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>COURIER TRACKING DETAILS (OPTIONAL)</label>
+                              <label style={{ fontSize: '0.625rem', fontWeight: 800, color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>COURIER TRACKING DETAILS (REQUIRED FOR DISPATCH EMAIL)</label>
                               <div style={{ display: 'flex', gap: '0.5rem' }}>
                                 <input 
                                   type="text" 
-                                  placeholder="COURIER (E.G. TRAX)" 
+                                  placeholder="COURIER (E.G. TRAX / LEOPARDS)" 
                                   id={`courier-${order.id}`}
+                                  defaultValue={order.courierName || ''}
                                   style={{ ...inputStyle, padding: '4px 8px', fontSize: '0.75rem' }} 
                                 />
                                 <input 
                                   type="text" 
-                                  placeholder="TRACKING NUMBER" 
+                                  placeholder="TRACKING NUMBER *" 
                                   id={`tracking-${order.id}`}
+                                  defaultValue={order.trackingNum || ''}
                                   style={{ ...inputStyle, padding: '4px 8px', fontSize: '0.75rem' }} 
                                 />
                               </div>
                               <button 
                                 onClick={() => {
-                                  const courier = document.getElementById(`courier-${order.id}`).value;
-                                  const tracking = document.getElementById(`tracking-${order.id}`).value;
+                                  const courierEl = document.getElementById(`courier-${order.id}`);
+                                  const trackingEl = document.getElementById(`tracking-${order.id}`);
+                                  const courier = courierEl ? courierEl.value : '';
+                                  const tracking = trackingEl ? trackingEl.value : '';
+                                  if (!courier.trim() || !tracking.trim()) {
+                                    alert('PLEASE ENTER BOTH COURIER NAME AND TRACKING NUMBER');
+                                    return;
+                                  }
                                   onUpdateOrderStatus(order.id, 'DISPATCHED', tracking, courier);
                                 }}
                                 style={{ ...statusBtnStyle, backgroundColor: 'var(--accent)', color: '#fff', border: 'none', padding: '10px', fontWeight: 800 }}

@@ -837,9 +837,58 @@ function App() {
 
   // Admin order operations
   const handleUpdateOrderStatus = async (orderId, newStatus, trackingNum = '', courierName = '') => {
+    const currentOrder = orders.find(o => o.id === orderId);
+    const cleanTrackingNum = trackingNum.trim();
+    const cleanCourierName = courierName.trim();
+
+    if (newStatus === 'DISPATCHED') {
+      if (!currentOrder?.customer?.email) {
+        alert("This order does not have a customer email address.");
+        return;
+      }
+      if (!cleanCourierName || !cleanTrackingNum) {
+        alert("Please enter both the courier name and tracking number.");
+        return;
+      }
+
+      try {
+        const idToken = await auth.currentUser?.getIdToken();
+        if (!idToken) {
+          alert("Please log in with an authorized owner account before dispatching an order.");
+          return;
+        }
+
+        const emailResponse = await fetch('/api/send-dispatch-notification', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${idToken}`,
+          },
+          body: JSON.stringify({
+            orderId: currentOrder.id,
+            customer: {
+              firstName: currentOrder.customer.firstName,
+              email: currentOrder.customer.email,
+            },
+            courierName: cleanCourierName,
+            trackingNum: cleanTrackingNum,
+          }),
+        });
+
+        if (!emailResponse.ok) {
+          const result = await emailResponse.json().catch(() => ({}));
+          throw new Error(result.error || `Dispatch email request failed (${emailResponse.status})`);
+        }
+      } catch (error) {
+        console.error("Dispatch email failed:", error);
+        alert(`Dispatch email was not sent: ${error.message}\n\nThe order status has not been changed. Please try again.`);
+        return;
+      }
+    }
+
     const updated = orders.map(o => 
       o.id === orderId 
-        ? { ...o, status: newStatus, trackingNum, courierName } 
+        ? { ...o, status: newStatus, trackingNum: cleanTrackingNum, courierName: cleanCourierName } 
         : o
     );
 
@@ -849,7 +898,9 @@ function App() {
       if (orderData) {
         await setDoc(doc(db, "orders", orderId), orderData);
         saveOrdersToStorage(updated);
-        alert("Order status successfully updated!");
+        alert(newStatus === 'DISPATCHED'
+          ? "Order marked as dispatched and the customer email was sent!"
+          : "Order status successfully updated!");
       }
     } catch (err) {
       console.error("Error updating order in Firestore:", err);
