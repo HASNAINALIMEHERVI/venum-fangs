@@ -115,6 +115,10 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
   const [expenseForm, setExpenseForm] = useState({ category: 'Ads', note: '', amount: '' });
   const [offlineSaleForm, setOfflineSaleForm] = useState({ productId: 'kalakar', size: 'S', quantity: 1, revenue: '' });
 
+  // Add Return Form state
+  const [showReturnForm, setShowReturnForm] = useState(false);
+  const [returnForm, setReturnForm] = useState({ productId: 'kalakar', size: 'S', quantity: 1, note: '' });
+
   // Drop Modal state
   const [dropModalOpen, setDropModalOpen] = useState(false);
   const [editDropId, setEditDropId] = useState('');
@@ -138,7 +142,6 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
           console.warn('Could not read saved dashboard data:', error);
         }
       } else {
-        // First load on v2: initialize fresh 0-record state with 26 shirts
         const initial = createDefaultData();
         setData(initial);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(initial));
@@ -177,7 +180,7 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
     }
   };
 
-  // Reconcile delivered website orders with stock
+  // Automatic Sales & Stock Reconciliation on Delivered Website Orders
   useEffect(() => {
     if (!ready) return;
     const processed = new Set((data.processedOrderIds || []).map((id) => String(id).toUpperCase()));
@@ -189,28 +192,66 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
     if (newlyDelivered.length === 0) return;
 
     let nextInventory = data.inventory.map((item) => ({ ...item, stock: { ...item.stock } }));
+    let autoSalesEntries = [];
+
     newlyDelivered.forEach((order) => {
       const baseline = data.stockBaselineAt ? new Date(data.stockBaselineAt) : new Date(0);
       const isAfterVerifiedCount = !order.date || new Date(order.date) > baseline;
-      if (!isAfterVerifiedCount) return;
-      (order.items || []).forEach((orderItem) => {
+
+      (order.items || []).forEach((orderItem, idx) => {
         const productId = productIdFromTitle(orderItem.title);
         const size = orderItem.selectedSize;
-        nextInventory = nextInventory.map((stockItem) => stockItem.id === productId && SIZES.includes(size)
-          ? {
-              ...stockItem,
-              stock: {
-                ...stockItem.stock,
-                [size]: Math.max(0, number(stockItem.stock[size]) - number(orderItem.qty)),
-              },
+
+        // Deduct inventory
+        if (isAfterVerifiedCount && productId && SIZES.includes(size)) {
+          nextInventory = nextInventory.map((stockItem) => stockItem.id === productId
+            ? {
+                ...stockItem,
+                stock: {
+                  ...stockItem.stock,
+                  [size]: Math.max(0, number(stockItem.stock[size]) - number(orderItem.qty)),
+                },
+              }
+            : stockItem);
+        }
+
+        // Automatic sales record creation
+        const product = data.inventory.find(p => p.id === productId);
+        const itemTitle = orderItem.title || (product ? product.name : 'Shirt');
+        const itemPrice = number(orderItem.price) || (number(order.total) / Math.max(1, (order.items || []).length));
+
+        let matchedDropId = (data.drops && data.drops[0]) ? data.drops[0].id : 'initial-inventory';
+        let matchedItemId = (data.drops && data.drops[0] && data.drops[0].items && data.drops[0].items[0]) ? data.drops[0].items[0].id : 'item_default';
+
+        for (const drop of (data.drops || [])) {
+          for (const item of (drop.items || [])) {
+            if (item.name.toLowerCase().includes(itemTitle.toLowerCase()) || itemTitle.toLowerCase().includes(item.name.toLowerCase())) {
+              matchedDropId = drop.id;
+              matchedItemId = item.id;
+              break;
             }
-          : stockItem);
+          }
+          if (matchedDropId !== 'initial-inventory') break;
+        }
+
+        autoSalesEntries.push({
+          id: `auto-delivered-${order.id}-${idx}-${Date.now()}`,
+          dropId: matchedDropId,
+          itemId: matchedItemId,
+          qty: number(orderItem.qty || 1),
+          pricePerShirt: itemPrice,
+          note: `Website Order ${order.id} (${size || 'Std'})`,
+          date: order.date ? new Date(order.date).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
+          type: 'website-delivered',
+          sourceOrderId: String(order.id)
+        });
       });
     });
 
     persist({
       ...data,
       inventory: nextInventory,
+      sales: [...(data.sales || []), ...autoSalesEntries],
       processedOrderIds: [
         ...(data.processedOrderIds || []),
         ...newlyDelivered.map((order) => String(order.id)),
@@ -241,11 +282,6 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
       }
     });
 
-    const websiteRevenue = orders
-      .filter((o) => String(o.status).toUpperCase() === 'DELIVERED')
-      .reduce((sum, o) => sum + number(o.total), 0);
-    const offlineRevenue = (data.manualSales || []).reduce((sum, s) => sum + number(s.revenue), 0);
-
     const totalCombinedRevenue = tRev;
     const tProfit = tRev - tCostSold;
     const avgP = tSold > 0 ? tProfit / tSold : 0;
@@ -255,9 +291,13 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
     const totalInventoryCount = (data.inventory || []).reduce((sum, item) => sum + totalStock(item), 0);
     const totalInventoryValue = (data.inventory || []).reduce((sum, item) => sum + totalStock(item) * number(item.unitCost), 0);
 
+    // Total Investment includes the starting 26 shirts inventory value (PKR 27,280) + supplier drops
+    const grandTotalInvestment = tInvest + totalInventoryValue;
+
     return {
-      tInvest,
-      tShirts,
+      tInvest: grandTotalInvestment,
+      supplierSpend: tInvest,
+      tShirts: tShirts + totalInventoryCount,
       tRev: totalCombinedRevenue,
       tSold,
       tProfit,
@@ -287,7 +327,34 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
     persist(next);
   };
 
+  // Possible Returns Handlers & Restocking
+  const handleAddPossibleReturn = (e) => {
+    e.preventDefault();
+    const product = data.inventory.find(p => p.id === returnForm.productId);
+    if (!product || number(returnForm.quantity) <= 0) return;
+
+    const newReturn = {
+      id: `return-${Date.now()}`,
+      productId: product.id,
+      product: product.name,
+      color: product.color,
+      size: returnForm.size,
+      quantity: number(returnForm.quantity),
+      status: 'possible',
+      date: new Date().toISOString().slice(0, 10),
+      note: returnForm.note.trim() || 'Customer Return'
+    };
+
+    persist({
+      ...data,
+      possibleReturns: [...(data.possibleReturns || []), newReturn]
+    });
+    setReturnForm({ productId: 'kalakar', size: 'S', quantity: 1, note: '' });
+    setShowReturnForm(false);
+  };
+
   const receiveReturn = (returnItem) => {
+    // Restock shirt into physical inventory
     const next = {
       ...data,
       inventory: data.inventory.map((item) => item.id === returnItem.productId
@@ -301,7 +368,7 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
   const dismissReturn = (returnId) => {
     persist({
       ...data,
-      possibleReturns: data.possibleReturns.map((item) => item.id === returnId ? { ...item, status: 'closed' } : item),
+      possibleReturns: data.possibleReturns.filter((item) => item.id !== returnId),
     });
   };
 
@@ -560,7 +627,7 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
         <div className="simple-summary-card">
           <div className="simple-card-heading"><span>Total Investment</span><WalletCards size={18} /></div>
           <strong>{formatPKR(summaryMetrics.tInvest)}</strong>
-          <small>{summaryMetrics.tShirts} supplier batch shirts</small>
+          <small>26 inventory shirts ({formatPKR(summaryMetrics.totalInventoryValue)}) + supplier drops</small>
         </div>
 
         <div className="simple-summary-card simple-tone-blue">
@@ -772,13 +839,13 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
 
             <div className="simple-table-wrap">
               {data.sales.length === 0 ? (
-                <p className="simple-empty">No sales recorded yet. Click "+ Record sale" to log a transaction.</p>
+                <p className="simple-empty">No sales recorded yet. Delivered website orders will appear here automatically, or click "+ Record sale" to log a transaction.</p>
               ) : (
                 <table className="simple-table">
                   <thead>
                     <tr>
                       <th>Date</th>
-                      <th>Drop</th>
+                      <th>Drop / Source</th>
                       <th>Shirt Type</th>
                       <th>Qty</th>
                       <th>Sale Price</th>
@@ -802,7 +869,7 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
                         <tr key={sale.id}>
                           <td>{formatDate(sale.date)}</td>
                           <td>
-                            <strong>{drop ? drop.name : 'Unknown Drop'}</strong>
+                            <strong>{drop ? drop.name : (sale.type === 'website-delivered' ? 'Website Order' : 'Direct Sale')}</strong>
                             {sale.note && <small>{sale.note}</small>}
                           </td>
                           <td><span className="drop-item-tag">{itemName}</span></td>
@@ -1013,23 +1080,98 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
           </div>
         </article>
 
-        {/* Possible Returns */}
+        {/* Possible Returns & Restocking */}
         <article className="simple-panel">
           <div className="simple-panel-header">
-            <div><span className="simple-eyebrow">DO NOT RESTOCK YET</span><h3>Possible Returns</h3></div>
-            <RotateCcw size={21} />
+            <div><span className="simple-eyebrow">RESTOCKING PIPELINE</span><h3>Possible Returns</h3></div>
+            <button
+              type="button"
+              className="simple-outline-btn"
+              onClick={() => setShowReturnForm(!showReturnForm)}
+            >
+              <Plus size={14} /> {showReturnForm ? 'Cancel' : 'Log Return'}
+            </button>
           </div>
+
+          {/* Add Return Form */}
+          {showReturnForm && (
+            <form className="simple-form" onSubmit={handleAddPossibleReturn} style={{ marginBottom: '1rem', padding: '12px', background: 'var(--bg-primary)', border: '1px solid var(--border-color)', borderRadius: '12px' }}>
+              <label>
+                Product
+                <select
+                  value={returnForm.productId}
+                  onChange={(e) => setReturnForm({ ...returnForm, productId: e.target.value })}
+                >
+                  {data.inventory.map((item) => (
+                    <option key={item.id} value={item.id}>{item.name} ({item.color})</option>
+                  ))}
+                </select>
+              </label>
+
+              <div className="simple-form-row">
+                <label>
+                  Size
+                  <select
+                    value={returnForm.size}
+                    onChange={(e) => setReturnForm({ ...returnForm, size: e.target.value })}
+                  >
+                    {SIZES.map((s) => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </label>
+                <label>
+                  Quantity
+                  <input
+                    type="number"
+                    min="1"
+                    value={returnForm.quantity}
+                    onChange={(e) => setReturnForm({ ...returnForm, quantity: e.target.value })}
+                  />
+                </label>
+              </div>
+
+              <label>
+                Reason / Note
+                <input
+                  type="text"
+                  placeholder="e.g. Size exchange / Customer return"
+                  value={returnForm.note}
+                  onChange={(e) => setReturnForm({ ...returnForm, note: e.target.value })}
+                />
+              </label>
+
+              <button type="submit" className="simple-primary-btn">
+                <Plus size={14} /> Add Return Entry
+              </button>
+            </form>
+          )}
+
           <div className="return-list">
-            {data.possibleReturns.filter((item) => item.status === 'possible').map((item) => (
+            {(data.possibleReturns || []).map((item) => (
               <div className="return-item" key={item.id}>
-                <div><strong>{item.product}</strong><small>{item.color} · Size {item.size} · Qty {item.quantity}</small></div>
+                <div>
+                  <strong>{item.product}</strong>
+                  <small>{item.color} · Size {item.size} · Qty {item.quantity} {item.note ? `· ${item.note}` : ''}</small>
+                  {item.status === 'received' && (
+                    <span className="profit-badge positive" style={{ fontSize: '0.65rem', marginTop: '4px', display: 'inline-block' }}>
+                      ✓ Restocked to Inventory
+                    </span>
+                  )}
+                </div>
                 <div className="return-actions">
-                  <button className="receive-btn" onClick={() => receiveReturn(item)}><Check size={14} /> Received</button>
-                  <button className="icon-delete" onClick={() => dismissReturn(item.id)} aria-label="Close possible return"><Trash2 size={15} /></button>
+                  {item.status !== 'received' ? (
+                    <button className="receive-btn" onClick={() => receiveReturn(item)}>
+                      <Check size={14} /> Received & Restock
+                    </button>
+                  ) : (
+                    <span style={{ fontSize: '0.7rem', color: '#16a34a', fontWeight: 800 }}>Restocked</span>
+                  )}
+                  <button className="icon-delete" onClick={() => dismissReturn(item.id)} aria-label="Remove return">
+                    <Trash2 size={15} />
+                  </button>
                 </div>
               </div>
             ))}
-            {data.possibleReturns.filter((item) => item.status === 'possible').length === 0 && <p className="simple-empty">No possible returns waiting.</p>}
+            {(data.possibleReturns || []).length === 0 && <p className="simple-empty">No pending returns log. Click "+ Log Return" above to record a return.</p>}
           </div>
         </article>
 
