@@ -19,7 +19,7 @@ import { db } from '../firebase';
 import { formatCurrency } from '../utils/formatCurrency';
 import './SimpleBusinessDashboard.css';
 
-const STORAGE_KEY = 'black_loom_simple_business_dashboard_v5';
+const STORAGE_KEY = 'black_loom_simple_business_dashboard_v6';
 const SIZES = ['S', 'M', 'L', 'XL'];
 
 // Default inventory state (26 shirts initial baseline)
@@ -164,14 +164,14 @@ const SimpleBusinessDashboard = ({ orders = [], products = [] }) => {
       }
 
       try {
-        const snapshot = await getDoc(doc(db, 'settings', 'business_dashboard_v5'));
+        const snapshot = await getDoc(doc(db, 'settings', 'business_dashboard_v6'));
         if (active && snapshot.exists()) {
           const normalized = normalizeData(snapshot.data());
           setData(normalized);
           localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
         } else if (active) {
           const initial = createDefaultData();
-          await setDoc(doc(db, 'settings', 'business_dashboard_v5'), initial);
+          await setDoc(doc(db, 'settings', 'business_dashboard_v6'), initial);
         }
       } catch (error) {
         console.warn('Using local dashboard data because Firebase could not be read:', error);
@@ -188,7 +188,7 @@ const SimpleBusinessDashboard = ({ orders = [], products = [] }) => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
     setSaveState('Saving…');
     try {
-      await setDoc(doc(db, 'settings', 'business_dashboard_v5'), next);
+      await setDoc(doc(db, 'settings', 'business_dashboard_v6'), next);
       setSaveState('Saved');
     } catch (error) {
       console.warn('Dashboard saved locally; Firebase sync failed:', error);
@@ -214,12 +214,14 @@ const SimpleBusinessDashboard = ({ orders = [], products = [] }) => {
       const baseline = data.stockBaselineAt ? new Date(data.stockBaselineAt) : new Date(0);
       const isAfterVerifiedCount = !order.date || new Date(order.date) > baseline;
 
+      if (!isAfterVerifiedCount) return; // Skip past historical orders before baseline reset
+
       (order.items || []).forEach((orderItem, idx) => {
         const productId = getProductIdForTitle(orderItem.title, data.inventory, products);
         const size = orderItem.selectedSize;
 
         // Deduct inventory
-        if (isAfterVerifiedCount && productId && SIZES.includes(size)) {
+        if (productId && SIZES.includes(size)) {
           nextInventory = nextInventory.map((stockItem) => stockItem.id === productId
             ? {
                 ...stockItem,
