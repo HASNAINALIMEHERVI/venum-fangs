@@ -19,10 +19,10 @@ import { db } from '../firebase';
 import { formatCurrency } from '../utils/formatCurrency';
 import './SimpleBusinessDashboard.css';
 
-const STORAGE_KEY = 'black_loom_simple_business_dashboard_v3';
+const STORAGE_KEY = 'black_loom_simple_business_dashboard_v4';
 const SIZES = ['S', 'M', 'L', 'XL'];
 
-// Fresh 0-record state with 26 shirts in inventory (value: PKR 27,280)
+// Fresh 0-record state with 26 shirts in inventory (value: PKR 27,280) + Spiderman Shirt
 const createDefaultData = () => ({
   inventory: [
     { id: 'kalakar', name: 'Kalakar', color: 'Cream', unitCost: 1400, stock: { S: 2, M: 1, L: 2, XL: 2 } }, // 7
@@ -30,6 +30,7 @@ const createDefaultData = () => ({
     { id: 'gothic-thorn', name: 'Gothic Thorn', color: 'Black', unitCost: 950, stock: { S: 1, M: 0, L: 2, XL: 0 } }, // 3
     { id: 'breathe', name: 'Breathe', color: 'Black', unitCost: 950, stock: { S: 1, M: 0, L: 1, XL: 1 } }, // 3
     { id: 'plain-black', name: 'Plain Shirt', color: 'Black', unitCost: 680, stock: { S: 1, M: 2, L: 2, XL: 1 } }, // 6
+    { id: 'spiderman', name: 'Spiderman Shirt', color: 'Black', unitCost: 1200, stock: { S: 0, M: 0, L: 0, XL: 0 } }, // 0
   ],
   possibleReturns: [],
   drops: [],
@@ -80,7 +81,16 @@ const normalizeData = (saved = {}) => {
   const defaults = createDefaultData();
   const drops = Array.isArray(saved.drops) ? saved.drops : defaults.drops;
   const sales = Array.isArray(saved.sales) ? saved.sales : defaults.sales;
-  const inventory = Array.isArray(saved.inventory) && saved.inventory.length > 0 ? saved.inventory : defaults.inventory;
+  let inventory = Array.isArray(saved.inventory) && saved.inventory.length > 0 ? saved.inventory : defaults.inventory;
+
+  // Ensure Spiderman Shirt is included in inventory list
+  const hasSpiderman = inventory.some(item => item.id === 'spiderman' || item.name.toLowerCase().includes('spiderman') || item.name.toLowerCase().includes('spider'));
+  if (!hasSpiderman) {
+    inventory = [
+      ...inventory,
+      { id: 'spiderman', name: 'Spiderman Shirt', color: 'Black', unitCost: 1200, stock: { S: 0, M: 0, L: 0, XL: 0 } }
+    ];
+  }
 
   return {
     ...defaults,
@@ -98,6 +108,7 @@ const normalizeData = (saved = {}) => {
 
 const productIdFromTitle = (title = '') => {
   const normalized = title.toLowerCase();
+  if (normalized.includes('spider') || normalized.includes('spiderman')) return 'spiderman';
   if (normalized.includes('kalakar')) return 'kalakar';
   if (normalized.includes('speed')) return 'speed';
   if (normalized.includes('gothic')) return 'gothic-thorn';
@@ -118,6 +129,10 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
   // Add Return Form state
   const [showReturnForm, setShowReturnForm] = useState(false);
   const [returnForm, setReturnForm] = useState({ productId: 'kalakar', size: 'S', quantity: 1, note: '' });
+
+  // Add Inventory Item Modal state
+  const [addInventoryModalOpen, setAddInventoryModalOpen] = useState(false);
+  const [newInventoryForm, setNewInventoryForm] = useState({ name: '', color: 'Black', unitCost: 1200, S: 0, M: 0, L: 0, XL: 0 });
 
   // Drop Modal state
   const [dropModalOpen, setDropModalOpen] = useState(false);
@@ -148,14 +163,14 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
       }
 
       try {
-        const snapshot = await getDoc(doc(db, 'settings', 'business_dashboard_v3'));
+        const snapshot = await getDoc(doc(db, 'settings', 'business_dashboard_v4'));
         if (active && snapshot.exists()) {
           const normalized = normalizeData(snapshot.data());
           setData(normalized);
           localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
         } else if (active) {
           const initial = createDefaultData();
-          await setDoc(doc(db, 'settings', 'business_dashboard_v3'), initial);
+          await setDoc(doc(db, 'settings', 'business_dashboard_v4'), initial);
         }
       } catch (error) {
         console.warn('Using local dashboard data because Firebase could not be read:', error);
@@ -172,7 +187,7 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
     setSaveState('Saving…');
     try {
-      await setDoc(doc(db, 'settings', 'business_dashboard_v3'), next);
+      await setDoc(doc(db, 'settings', 'business_dashboard_v4'), next);
       setSaveState('Saved');
     } catch (error) {
       console.warn('Dashboard saved locally; Firebase sync failed:', error);
@@ -291,7 +306,7 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
     const totalInventoryCount = (data.inventory || []).reduce((sum, item) => sum + totalStock(item), 0);
     const totalInventoryValue = (data.inventory || []).reduce((sum, item) => sum + totalStock(item) * number(item.unitCost), 0);
 
-    // Total Investment includes the starting 26 shirts inventory value (PKR 27,280) + supplier drops
+    // Total Investment includes the starting inventory shirts value + supplier drops
     const grandTotalInvestment = tInvest + totalInventoryValue;
 
     return {
@@ -310,7 +325,7 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
 
   // Reset to Fresh Zero State
   const handleResetToZero = () => {
-    if (window.confirm("Are you sure you want to reset all records to zero? This will clear past sales, drops, expenses, and set inventory to 26 shirts (value: PKR 27,280).")) {
+    if (window.confirm("Are you sure you want to reset all records to zero? This will clear past sales, drops, expenses, and set inventory to initial 26 shirts (value: PKR 27,280).")) {
       const cleanData = createDefaultData();
       persist(cleanData);
     }
@@ -325,6 +340,35 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
         : item),
     };
     persist(next);
+  };
+
+  // Add Custom Shirt to Inventory
+  const handleAddInventoryProduct = (e) => {
+    e.preventDefault();
+    if (!newInventoryForm.name.trim()) {
+      alert('Please enter a shirt name.');
+      return;
+    }
+    const cleanId = newInventoryForm.name.toLowerCase().replace(/[^a-z0-9]/g, '-');
+    const newProduct = {
+      id: cleanId || `prod-${Date.now()}`,
+      name: newInventoryForm.name.trim(),
+      color: newInventoryForm.color.trim() || 'Black',
+      unitCost: number(newInventoryForm.unitCost) || 1000,
+      stock: {
+        S: Math.max(0, number(newInventoryForm.S)),
+        M: Math.max(0, number(newInventoryForm.M)),
+        L: Math.max(0, number(newInventoryForm.L)),
+        XL: Math.max(0, number(newInventoryForm.XL)),
+      }
+    };
+
+    persist({
+      ...data,
+      inventory: [...data.inventory, newProduct]
+    });
+    setAddInventoryModalOpen(false);
+    setNewInventoryForm({ name: '', color: 'Black', unitCost: 1200, S: 0, M: 0, L: 0, XL: 0 });
   };
 
   // Possible Returns Handlers & Restocking
@@ -627,7 +671,7 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
         <div className="simple-summary-card">
           <div className="simple-card-heading"><span>Total Investment</span><WalletCards size={18} /></div>
           <strong>{formatPKR(summaryMetrics.tInvest)}</strong>
-          <small>26 inventory shirts ({formatPKR(summaryMetrics.totalInventoryValue)}) + supplier drops</small>
+          <small>{summaryMetrics.totalInventoryCount} inventory shirts ({formatPKR(summaryMetrics.totalInventoryValue)}) + supplier drops</small>
         </div>
 
         <div className="simple-summary-card simple-tone-blue">
@@ -1034,8 +1078,15 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
         {/* Verified Physical Count Inventory */}
         <article className="simple-panel simple-panel-wide">
           <div className="simple-panel-header">
-            <div><span className="simple-eyebrow">VERIFIED PHYSICAL COUNT</span><h3>Current Inventory (26 Shirts Total)</h3></div>
-            <div style={{ textAlign: 'right' }}>
+            <div><span className="simple-eyebrow">VERIFIED PHYSICAL COUNT</span><h3>Current Inventory</h3></div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <button
+                type="button"
+                className="simple-outline-btn"
+                onClick={() => setAddInventoryModalOpen(true)}
+              >
+                <Plus size={14} /> Add Shirt to Inventory
+              </button>
               <span className="simple-total-pill" style={{ background: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0' }}>
                 {summaryMetrics.totalInventoryCount} available · Value: {formatPKR(summaryMetrics.totalInventoryValue)}
               </span>
@@ -1050,7 +1101,10 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
                   const val = qty * number(item.unitCost);
                   return (
                     <tr key={item.id}>
-                      <td><strong>{item.name}</strong><small>{item.color}</small></td>
+                      <td>
+                        <strong>{item.name}</strong>
+                        <small>{item.color}</small>
+                      </td>
                       {SIZES.map((size) => (
                         <td key={size}>
                           <div className="stock-stepper">
@@ -1217,6 +1271,75 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
         </article>
       </div>
 
+      {/* Add Shirt to Inventory Modal */}
+      {addInventoryModalOpen && (
+        <div className="tracker-modal-overlay">
+          <div className="tracker-modal">
+            <h2>Add Shirt to Inventory</h2>
+            <form onSubmit={handleAddInventoryProduct}>
+              <div className="tracker-form-group">
+                <label>Shirt Name</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Spiderman Shirt / Spider Heavyweight Tee"
+                  value={newInventoryForm.name}
+                  onChange={(e) => setNewInventoryForm({ ...newInventoryForm, name: e.target.value })}
+                />
+              </div>
+
+              <div className="tracker-form-row">
+                <div className="tracker-form-group">
+                  <label>Color</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Black / White"
+                    value={newInventoryForm.color}
+                    onChange={(e) => setNewInventoryForm({ ...newInventoryForm, color: e.target.value })}
+                  />
+                </div>
+                <div className="tracker-form-group">
+                  <label>Unit Cost per Shirt (PKR)</label>
+                  <input
+                    type="number"
+                    placeholder="1200"
+                    min="0"
+                    value={newInventoryForm.unitCost}
+                    onChange={(e) => setNewInventoryForm({ ...newInventoryForm, unitCost: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="tracker-form-group">
+                <label>Initial Stock per Size</label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
+                  {SIZES.map((size) => (
+                    <div key={size}>
+                      <span style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>{size}</span>
+                      <input
+                        type="number"
+                        min="0"
+                        placeholder="0"
+                        value={newInventoryForm[size]}
+                        onChange={(e) => setNewInventoryForm({ ...newInventoryForm, [size]: e.target.value })}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="tracker-modal-actions">
+                <button type="button" className="simple-outline-btn" onClick={() => setAddInventoryModalOpen(false)}>
+                  Cancel
+                </button>
+                <button type="submit" className="simple-primary-btn" style={{ width: 'auto' }}>
+                  Save to Inventory
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Add / Edit Drop Modal */}
       {dropModalOpen && (
         <div className="tracker-modal-overlay">
@@ -1255,7 +1378,7 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
                     <label>Shirt Type</label>
                     <input
                       type="text"
-                      placeholder="e.g. Polo, Round Neck"
+                      placeholder="e.g. Polo, Spiderman Shirt"
                       value={item.name}
                       onChange={(e) => {
                         const val = e.target.value;
