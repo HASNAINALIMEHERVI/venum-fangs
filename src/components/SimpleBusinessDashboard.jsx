@@ -19,10 +19,10 @@ import { db } from '../firebase';
 import { formatCurrency } from '../utils/formatCurrency';
 import './SimpleBusinessDashboard.css';
 
-const STORAGE_KEY = 'black_loom_simple_business_dashboard_v4';
+const STORAGE_KEY = 'black_loom_simple_business_dashboard_v5';
 const SIZES = ['S', 'M', 'L', 'XL'];
 
-// Fresh 0-record state with 26 shirts in inventory (value: PKR 27,280) + Spiderman Shirt
+// Default inventory state (26 shirts initial baseline)
 const createDefaultData = () => ({
   inventory: [
     { id: 'kalakar', name: 'Kalakar', color: 'Cream', unitCost: 1400, stock: { S: 2, M: 1, L: 2, XL: 2 } }, // 7
@@ -30,7 +30,6 @@ const createDefaultData = () => ({
     { id: 'gothic-thorn', name: 'Gothic Thorn', color: 'Black', unitCost: 950, stock: { S: 1, M: 0, L: 2, XL: 0 } }, // 3
     { id: 'breathe', name: 'Breathe', color: 'Black', unitCost: 950, stock: { S: 1, M: 0, L: 1, XL: 1 } }, // 3
     { id: 'plain-black', name: 'Plain Shirt', color: 'Black', unitCost: 680, stock: { S: 1, M: 2, L: 2, XL: 1 } }, // 6
-    { id: 'spiderman', name: 'Spiderman Shirt', color: 'Black', unitCost: 1200, stock: { S: 0, M: 0, L: 0, XL: 0 } }, // 0
   ],
   possibleReturns: [],
   drops: [],
@@ -81,16 +80,7 @@ const normalizeData = (saved = {}) => {
   const defaults = createDefaultData();
   const drops = Array.isArray(saved.drops) ? saved.drops : defaults.drops;
   const sales = Array.isArray(saved.sales) ? saved.sales : defaults.sales;
-  let inventory = Array.isArray(saved.inventory) && saved.inventory.length > 0 ? saved.inventory : defaults.inventory;
-
-  // Ensure Spiderman Shirt is included in inventory list
-  const hasSpiderman = inventory.some(item => item.id === 'spiderman' || item.name.toLowerCase().includes('spiderman') || item.name.toLowerCase().includes('spider'));
-  if (!hasSpiderman) {
-    inventory = [
-      ...inventory,
-      { id: 'spiderman', name: 'Spiderman Shirt', color: 'Black', unitCost: 1200, stock: { S: 0, M: 0, L: 0, XL: 0 } }
-    ];
-  }
+  const inventory = Array.isArray(saved.inventory) && saved.inventory.length > 0 ? saved.inventory : defaults.inventory;
 
   return {
     ...defaults,
@@ -106,19 +96,30 @@ const normalizeData = (saved = {}) => {
   };
 };
 
-const productIdFromTitle = (title = '') => {
-  const normalized = title.toLowerCase();
-  if (normalized.includes('spider') || normalized.includes('spiderman')) return 'spiderman';
-  if (normalized.includes('kalakar')) return 'kalakar';
-  if (normalized.includes('speed')) return 'speed';
-  if (normalized.includes('gothic')) return 'gothic-thorn';
-  if (normalized.includes('breathe')) return 'breathe';
-  if (normalized.includes('plain') && normalized.includes('white')) return 'plain-white';
-  if (normalized.includes('plain')) return 'plain-black';
+const getProductIdForTitle = (title = '', inventoryList = [], catalogProducts = []) => {
+  if (!title) return null;
+  const normalized = title.toLowerCase().trim();
+
+  // 1. Exact or partial match in dashboard inventory
+  const invMatch = inventoryList.find(i => 
+    i.id.toLowerCase() === normalized || 
+    i.name.toLowerCase().includes(normalized) || 
+    normalized.includes(i.name.toLowerCase())
+  );
+  if (invMatch) return invMatch.id;
+
+  // 2. Catalog product match
+  const catMatch = catalogProducts.find(p => 
+    p.id.toLowerCase() === normalized || 
+    p.title.toLowerCase().includes(normalized) || 
+    normalized.includes(p.title.toLowerCase())
+  );
+  if (catMatch) return catMatch.id;
+
   return null;
 };
 
-const SimpleBusinessDashboard = ({ orders = [] }) => {
+const SimpleBusinessDashboard = ({ orders = [], products = [] }) => {
   const [data, setData] = useState(createDefaultData);
   const [ready, setReady] = useState(false);
   const [saveState, setSaveState] = useState('Saved');
@@ -132,7 +133,7 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
 
   // Add Inventory Item Modal state
   const [addInventoryModalOpen, setAddInventoryModalOpen] = useState(false);
-  const [newInventoryForm, setNewInventoryForm] = useState({ name: '', color: 'Black', unitCost: 1200, S: 0, M: 0, L: 0, XL: 0 });
+  const [newInventoryForm, setNewInventoryForm] = useState({ id: '', name: '', color: 'Black', unitCost: 1200, S: 0, M: 0, L: 0, XL: 0 });
 
   // Drop Modal state
   const [dropModalOpen, setDropModalOpen] = useState(false);
@@ -163,14 +164,14 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
       }
 
       try {
-        const snapshot = await getDoc(doc(db, 'settings', 'business_dashboard_v4'));
+        const snapshot = await getDoc(doc(db, 'settings', 'business_dashboard_v5'));
         if (active && snapshot.exists()) {
           const normalized = normalizeData(snapshot.data());
           setData(normalized);
           localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
         } else if (active) {
           const initial = createDefaultData();
-          await setDoc(doc(db, 'settings', 'business_dashboard_v4'), initial);
+          await setDoc(doc(db, 'settings', 'business_dashboard_v5'), initial);
         }
       } catch (error) {
         console.warn('Using local dashboard data because Firebase could not be read:', error);
@@ -187,7 +188,7 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
     setSaveState('Saving…');
     try {
-      await setDoc(doc(db, 'settings', 'business_dashboard_v4'), next);
+      await setDoc(doc(db, 'settings', 'business_dashboard_v5'), next);
       setSaveState('Saved');
     } catch (error) {
       console.warn('Dashboard saved locally; Firebase sync failed:', error);
@@ -214,7 +215,7 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
       const isAfterVerifiedCount = !order.date || new Date(order.date) > baseline;
 
       (order.items || []).forEach((orderItem, idx) => {
-        const productId = productIdFromTitle(orderItem.title);
+        const productId = getProductIdForTitle(orderItem.title, data.inventory, products);
         const size = orderItem.selectedSize;
 
         // Deduct inventory
@@ -325,7 +326,7 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
 
   // Reset to Fresh Zero State
   const handleResetToZero = () => {
-    if (window.confirm("Are you sure you want to reset all records to zero? This will clear past sales, drops, expenses, and set inventory to initial 26 shirts (value: PKR 27,280).")) {
+    if (window.confirm("Are you sure you want to reset all records to zero? This will clear past sales, drops, expenses, and reset inventory to initial 26 shirts (value: PKR 27,280).")) {
       const cleanData = createDefaultData();
       persist(cleanData);
     }
@@ -342,33 +343,62 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
     persist(next);
   };
 
-  // Add Custom Shirt to Inventory
+  // Delete inventory product from dashboard
+  const handleRemoveInventoryProduct = (productId, productName) => {
+    if (window.confirm(`Remove "${productName}" from the Dashboard Physical Count Inventory?`)) {
+      const nextInventory = data.inventory.filter(item => item.id !== productId);
+      persist({ ...data, inventory: nextInventory });
+    }
+  };
+
+  // Add Custom or Selected Catalog Shirt to Inventory
   const handleAddInventoryProduct = (e) => {
     e.preventDefault();
     if (!newInventoryForm.name.trim()) {
-      alert('Please enter a shirt name.');
+      alert('Please select a shirt from Catalog or enter a shirt name.');
       return;
     }
-    const cleanId = newInventoryForm.name.toLowerCase().replace(/[^a-z0-9]/g, '-');
-    const newProduct = {
-      id: cleanId || `prod-${Date.now()}`,
-      name: newInventoryForm.name.trim(),
-      color: newInventoryForm.color.trim() || 'Black',
-      unitCost: number(newInventoryForm.unitCost) || 1000,
-      stock: {
-        S: Math.max(0, number(newInventoryForm.S)),
-        M: Math.max(0, number(newInventoryForm.M)),
-        L: Math.max(0, number(newInventoryForm.L)),
-        XL: Math.max(0, number(newInventoryForm.XL)),
-      }
-    };
+    const cleanId = newInventoryForm.id || newInventoryForm.name.toLowerCase().replace(/[^a-z0-9]/g, '-');
+
+    // Check if already in inventory
+    const existsIndex = data.inventory.findIndex(item => item.id === cleanId || item.name.toLowerCase() === newInventoryForm.name.trim().toLowerCase());
+    
+    let nextInventory = [...data.inventory];
+    if (existsIndex !== -1) {
+      // Update existing item
+      nextInventory[existsIndex] = {
+        ...nextInventory[existsIndex],
+        color: newInventoryForm.color.trim() || nextInventory[existsIndex].color,
+        unitCost: number(newInventoryForm.unitCost) || nextInventory[existsIndex].unitCost,
+        stock: {
+          S: Math.max(0, number(newInventoryForm.S)),
+          M: Math.max(0, number(newInventoryForm.M)),
+          L: Math.max(0, number(newInventoryForm.L)),
+          XL: Math.max(0, number(newInventoryForm.XL)),
+        }
+      };
+    } else {
+      // Add new item
+      nextInventory.push({
+        id: cleanId,
+        name: newInventoryForm.name.trim(),
+        color: newInventoryForm.color.trim() || 'Black',
+        unitCost: number(newInventoryForm.unitCost) || 1200,
+        stock: {
+          S: Math.max(0, number(newInventoryForm.S)),
+          M: Math.max(0, number(newInventoryForm.M)),
+          L: Math.max(0, number(newInventoryForm.L)),
+          XL: Math.max(0, number(newInventoryForm.XL)),
+        }
+      });
+    }
 
     persist({
       ...data,
-      inventory: [...data.inventory, newProduct]
+      inventory: nextInventory
     });
     setAddInventoryModalOpen(false);
-    setNewInventoryForm({ name: '', color: 'Black', unitCost: 1200, S: 0, M: 0, L: 0, XL: 0 });
+    setNewInventoryForm({ id: '', name: '', color: 'Black', unitCost: 1200, S: 0, M: 0, L: 0, XL: 0 });
   };
 
   // Possible Returns Handlers & Restocking
@@ -1078,14 +1108,14 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
         {/* Verified Physical Count Inventory */}
         <article className="simple-panel simple-panel-wide">
           <div className="simple-panel-header">
-            <div><span className="simple-eyebrow">VERIFIED PHYSICAL COUNT</span><h3>Current Inventory</h3></div>
+            <div><span className="simple-eyebrow">VERIFIED PHYSICAL COUNT</span><h3>Current Dashboard Inventory</h3></div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <button
                 type="button"
                 className="simple-outline-btn"
                 onClick={() => setAddInventoryModalOpen(true)}
               >
-                <Plus size={14} /> Add Shirt to Inventory
+                <Plus size={14} /> Add / Select Shirt from Catalog
               </button>
               <span className="simple-total-pill" style={{ background: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0' }}>
                 {summaryMetrics.totalInventoryCount} available · Value: {formatPKR(summaryMetrics.totalInventoryValue)}
@@ -1094,7 +1124,7 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
           </div>
           <div className="simple-table-wrap">
             <table className="simple-table inventory-table">
-              <thead><tr><th>Product</th>{SIZES.map((size) => <th key={size}>{size}</th>)}<th>Total</th><th>Unit Cost</th><th>Stock Value</th></tr></thead>
+              <thead><tr><th>Product</th>{SIZES.map((size) => <th key={size}>{size}</th>)}<th>Total</th><th>Unit Cost</th><th>Stock Value</th><th></th></tr></thead>
               <tbody>
                 {data.inventory.map((item) => {
                   const qty = totalStock(item);
@@ -1117,6 +1147,16 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
                       <td><strong>{qty}</strong></td>
                       <td>{formatCurrency(item.unitCost)}</td>
                       <td><strong style={{ color: '#047857' }}>{formatPKR(val)}</strong></td>
+                      <td>
+                        <button
+                          type="button"
+                          className="icon-delete"
+                          onClick={() => handleRemoveInventoryProduct(item.id, item.name)}
+                          title="Remove from Dashboard Inventory"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </td>
                     </tr>
                   );
                 })}
@@ -1128,6 +1168,7 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
                   <td><strong>{summaryMetrics.totalInventoryCount}</strong></td>
                   <td></td>
                   <td><strong style={{ color: '#047857' }}>{formatPKR(summaryMetrics.totalInventoryValue)}</strong></td>
+                  <td></td>
                 </tr>
               </tfoot>
             </table>
@@ -1271,17 +1312,52 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
         </article>
       </div>
 
-      {/* Add Shirt to Inventory Modal */}
+      {/* Add / Select Shirt from Catalog to Dashboard Inventory Modal */}
       {addInventoryModalOpen && (
         <div className="tracker-modal-overlay">
           <div className="tracker-modal">
-            <h2>Add Shirt to Inventory</h2>
+            <h2>Select Shirt from Catalog to Show in Dashboard</h2>
+
+            {/* Catalog Selector Dropdown */}
+            {products && products.length > 0 && (
+              <div className="tracker-form-group" style={{ background: 'rgba(59, 130, 246, 0.08)', border: '1px solid #bfdbfe', padding: '12px', borderRadius: '12px', marginBottom: '16px' }}>
+                <label style={{ color: '#1e40af', fontWeight: 800 }}>⚡ Choose Existing Shirt from Store Catalog</label>
+                <select
+                  style={{ background: '#fff' }}
+                  onChange={(e) => {
+                    const selectedId = e.target.value;
+                    if (!selectedId) return;
+                    const foundProd = products.find(p => String(p.id) === String(selectedId));
+                    if (foundProd) {
+                      setNewInventoryForm({
+                        id: foundProd.id,
+                        name: foundProd.title,
+                        color: foundProd.color || 'Black',
+                        unitCost: number(foundProd.cost || foundProd.price || 1200),
+                        S: number(foundProd.sizes?.S || 0),
+                        M: number(foundProd.sizes?.M || 0),
+                        L: number(foundProd.sizes?.L || 0),
+                        XL: number(foundProd.sizes?.XL || 0),
+                      });
+                    }
+                  }}
+                >
+                  <option value="">-- Select from Catalog ({products.length} shirts available) --</option>
+                  {products.map((prod) => (
+                    <option key={prod.id} value={prod.id}>
+                      {prod.title} {prod.color ? `(${prod.color})` : ''} — Rs. {prod.price}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             <form onSubmit={handleAddInventoryProduct}>
               <div className="tracker-form-group">
                 <label>Shirt Name</label>
                 <input
                   type="text"
-                  placeholder="e.g. Spiderman Shirt / Spider Heavyweight Tee"
+                  placeholder="e.g. SPIDERMAN SCRATCHED"
                   value={newInventoryForm.name}
                   onChange={(e) => setNewInventoryForm({ ...newInventoryForm, name: e.target.value })}
                 />
@@ -1310,7 +1386,7 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
               </div>
 
               <div className="tracker-form-group">
-                <label>Initial Stock per Size</label>
+                <label>Stock per Size (S / M / L / XL)</label>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
                   {SIZES.map((size) => (
                     <div key={size}>
@@ -1332,7 +1408,7 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
                   Cancel
                 </button>
                 <button type="submit" className="simple-primary-btn" style={{ width: 'auto' }}>
-                  Save to Inventory
+                  Add to Dashboard Inventory
                 </button>
               </div>
             </form>

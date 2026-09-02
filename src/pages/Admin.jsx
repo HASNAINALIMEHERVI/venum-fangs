@@ -901,7 +901,7 @@ const Admin = ({
 
         {/* Tab 1: Products Inventory */}
         {activeTab === 'dashboard' && (
-          <SimpleBusinessDashboard orders={orders} />
+          <SimpleBusinessDashboard orders={orders} products={products} />
         )}
 
         {activeTab === 'products' && (
