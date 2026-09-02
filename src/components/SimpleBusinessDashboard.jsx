@@ -10,6 +10,10 @@ import {
   ShoppingBag,
   Trash2,
   WalletCards,
+  Edit2,
+  TrendingUp,
+  BarChart2,
+  Layers
 } from 'lucide-react';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -33,11 +37,38 @@ const createDefaultData = () => ({
     { id: 'return-plain-black-xl', productId: 'plain-black', product: 'Plain Shirt', color: 'Black', size: 'XL', quantity: 1, status: 'possible' },
     { id: 'return-gothic-xl', productId: 'gothic-thorn', product: 'Gothic Thorn', color: 'Black', size: 'XL', quantity: 1, status: 'possible' },
   ],
-  purchases: [
-    { id: 'supplier-batch-1', date: '2026-08-01', label: 'Supplier batch 1', units: 11, productsCost: 9550, delivery: 1000, total: 10550 },
-    { id: 'supplier-batch-2', date: '2026-08-01', label: 'Supplier batch 2', units: 18, productsCost: 21450, delivery: 1100, total: 22550 },
-    { id: 'supplier-batch-3', date: '2026-08-01', label: 'Supplier batch 3', units: 5, productsCost: 4750, delivery: 400, total: 5150 },
+  drops: [
+    {
+      id: 'supplier-batch-1',
+      name: 'Supplier batch 1',
+      date: '2026-08-01',
+      delivery: 1000,
+      items: [
+        { id: 'item_1_1', name: 'Polo Shirt', qty: 6, costPerShirt: 950 },
+        { id: 'item_1_2', name: 'Round Neck', qty: 5, costPerShirt: 760 }
+      ]
+    },
+    {
+      id: 'supplier-batch-2',
+      name: 'Supplier batch 2',
+      date: '2026-08-01',
+      delivery: 1100,
+      items: [
+        { id: 'item_2_1', name: 'Oversized Tee', qty: 10, costPerShirt: 1200 },
+        { id: 'item_2_2', name: 'Acid Wash', qty: 8, costPerShirt: 1180 }
+      ]
+    },
+    {
+      id: 'supplier-batch-3',
+      name: 'Supplier batch 3',
+      date: '2026-08-01',
+      delivery: 400,
+      items: [
+        { id: 'item_3_1', name: 'Heavyweight Cotton', qty: 5, costPerShirt: 950 }
+      ]
+    }
   ],
+  sales: [],
   expenses: [
     { id: 'expense-meta', date: '2026-08-18', category: 'Ads', note: 'Meta advertising', amount: 8700 },
     { id: 'expense-packing', date: '2026-08-18', category: 'Packing', note: 'Flyers and packing', amount: 5300 },
@@ -53,15 +84,90 @@ const createDefaultData = () => ({
 });
 
 const number = (value) => Number(value) || 0;
+const formatPKR = (n) => 'PKR ' + Math.round(number(n)).toLocaleString('en-PK');
+const formatDate = (d) => {
+  if (!d) return '';
+  try {
+    return new Date(d + 'T00:00:00').toLocaleDateString('en-PK', { year: 'numeric', month: 'short', day: 'numeric' });
+  } catch (e) {
+    return d;
+  }
+};
+
 const totalStock = (item) => SIZES.reduce((sum, size) => sum + number(item.stock?.[size]), 0);
+
+// Helper metrics for Drops
+const getDropTotalQty = (drop) => (drop.items || []).reduce((s, i) => s + number(i.qty), 0);
+const getDropShirtCost = (drop) => (drop.items || []).reduce((s, i) => s + number(i.qty) * number(i.costPerShirt), 0);
+const getDropTotalPaid = (drop) => getDropShirtCost(drop) + number(drop.delivery);
+const getDropAvgCost = (drop) => {
+  const q = getDropTotalQty(drop);
+  return q > 0 ? getDropTotalPaid(drop) / q : 0;
+};
+
+const getItemEffectiveCost = (drop, item) => {
+  const totalQty = getDropTotalQty(drop);
+  if (totalQty === 0) return number(item.costPerShirt);
+  const deliveryPerShirt = number(drop.delivery) / totalQty;
+  return number(item.costPerShirt) + deliveryPerShirt;
+};
+
+const getItemSold = (sales = [], dropId, itemId) => {
+  return sales
+    .filter((s) => s.dropId === dropId && s.itemId === itemId)
+    .reduce((sum, s) => sum + number(s.qty), 0);
+};
+
 const normalizeData = (saved = {}) => {
   const defaults = createDefaultData();
+  let drops = Array.isArray(saved.drops) ? saved.drops : [];
+
+  // Migration from old purchases format if drops is empty
+  if (drops.length === 0 && Array.isArray(saved.purchases) && saved.purchases.length > 0) {
+    drops = saved.purchases.map((p) => ({
+      id: p.id,
+      name: p.label || 'Batch',
+      date: p.date || new Date().toISOString().slice(0, 10),
+      delivery: number(p.delivery),
+      items: [
+        {
+          id: 'item_' + p.id,
+          name: 'Shirt',
+          qty: number(p.units),
+          costPerShirt: number(p.units) > 0 ? number(p.productsCost) / number(p.units) : 0
+        }
+      ]
+    }));
+  }
+
+  if (drops.length === 0) {
+    drops = defaults.drops;
+  }
+
+  // Ensure drops items migration
+  drops.forEach((drop) => {
+    if (!drop.items || drop.items.length === 0) {
+      drop.items = [{ id: 'item_' + drop.id, name: 'Shirt', qty: number(drop.qty || 0), costPerShirt: number(drop.costPerShirt || 0) }];
+    }
+  });
+
+  let sales = Array.isArray(saved.sales) ? saved.sales : defaults.sales;
+  sales.forEach((sale) => {
+    if (!sale.itemId) {
+      const drop = drops.find((d) => d.id === sale.dropId);
+      if (drop && drop.items.length > 0) {
+        sale.itemId = drop.items[0].id;
+      }
+    }
+  });
+
   return {
     ...defaults,
     ...saved,
     inventory: Array.isArray(saved.inventory) ? saved.inventory : defaults.inventory,
     possibleReturns: Array.isArray(saved.possibleReturns) ? saved.possibleReturns : defaults.possibleReturns,
-    purchases: Array.isArray(saved.purchases) ? saved.purchases : defaults.purchases,
+    drops,
+    sales,
     expenses: Array.isArray(saved.expenses) ? saved.expenses : defaults.expenses,
     manualSales: Array.isArray(saved.manualSales) ? saved.manualSales : defaults.manualSales,
     influencer: { ...defaults.influencer, ...(saved.influencer || {}) },
@@ -84,8 +190,21 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
   const [data, setData] = useState(createDefaultData);
   const [ready, setReady] = useState(false);
   const [saveState, setSaveState] = useState('Saved');
+  const [trackerTab, setTrackerTab] = useState('drops'); // 'drops', 'sales', 'profit'
   const [expenseForm, setExpenseForm] = useState({ category: 'Ads', note: '', amount: '' });
-  const [saleForm, setSaleForm] = useState({ productId: 'kalakar', size: 'S', quantity: 1, revenue: '' });
+  const [offlineSaleForm, setOfflineSaleForm] = useState({ productId: 'kalakar', size: 'S', quantity: 1, revenue: '' });
+
+  // Drop Modal state
+  const [dropModalOpen, setDropModalOpen] = useState(false);
+  const [editDropId, setEditDropId] = useState('');
+  const [dropForm, setDropForm] = useState({ name: '', date: '', delivery: 0, items: [] });
+
+  // Sale Modal state
+  const [saleModalOpen, setSaleModalOpen] = useState(false);
+  const [saleForm, setSaleForm] = useState({ dropId: '', itemId: '', qty: '', price: '', note: '' });
+
+  // Confirm Modal state
+  const [confirmModal, setConfirmModal] = useState({ open: false, type: '', id: '', label: '' });
 
   useEffect(() => {
     let active = true;
@@ -129,6 +248,7 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
     }
   };
 
+  // Reconcile delivered website orders with stock
   useEffect(() => {
     if (!ready) return;
     const processed = new Set((data.processedOrderIds || []).map((id) => String(id).toUpperCase()));
@@ -159,8 +279,6 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
       });
     });
 
-    // This is the single reconciliation point between incoming Firebase orders and verified stock.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     persist({
       ...data,
       inventory: nextInventory,
@@ -169,64 +287,56 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
         ...newlyDelivered.map((order) => String(order.id)),
       ],
     });
-  // Persisting processed IDs intentionally causes one follow-up render, then this effect becomes a no-op.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, orders, data.processedOrderIds]);
 
-  const metrics = useMemo(() => {
-    const deliveredOrders = orders.filter((order) => String(order.status).toUpperCase() === 'DELIVERED' && number(order.total) > 0);
-    const liveOrderIds = new Set(orders.map((order) => String(order.id).toUpperCase()));
-    const historicalSales = data.manualSales.filter((sale) => !sale.sourceOrderId || !liveOrderIds.has(String(sale.sourceOrderId).toUpperCase()));
+  // Overall metrics calculation
+  const summaryMetrics = useMemo(() => {
+    let tInvest = 0, tShirts = 0, tRev = 0, tSold = 0, tCostSold = 0;
 
-    const websiteRevenue = deliveredOrders.reduce((sum, order) => sum + number(order.total), 0);
-    const manualRevenue = historicalSales.reduce((sum, sale) => sum + number(sale.revenue), 0);
-    const soldUnitsFromOrders = deliveredOrders.reduce(
-      (sum, order) => sum + (order.items || []).reduce((itemSum, item) => itemSum + number(item.qty), 0),
-      0,
-    );
-    const manualUnits = historicalSales.reduce((sum, sale) => sum + number(sale.quantity), 0);
+    (data.drops || []).forEach((drop) => {
+      tInvest += getDropTotalPaid(drop);
+      tShirts += getDropTotalQty(drop);
+    });
 
-    const liveCogs = deliveredOrders.reduce((sum, order) => sum + (order.items || []).reduce((itemSum, item) => {
-      const product = data.inventory.find((stockItem) => stockItem.id === productIdFromTitle(item.title));
-      return itemSum + number(item.qty) * number(item.unitCostAtSale ?? product?.unitCost);
-    }, 0), 0);
-    const manualCogs = historicalSales.reduce((sum, sale) => sum + number(sale.cost), 0);
+    (data.sales || []).forEach((sale) => {
+      const rev = number(sale.qty) * number(sale.pricePerShirt);
+      tRev += rev;
+      tSold += number(sale.qty);
+      const drop = (data.drops || []).find((d) => d.id === sale.dropId);
+      if (drop) {
+        const item = (drop.items || []).find((i) => i.id === sale.itemId);
+        if (item) {
+          tCostSold += number(sale.qty) * getItemEffectiveCost(drop, item);
+        }
+      }
+    });
 
-    const purchaseSpend = data.purchases.reduce((sum, purchase) => sum + number(purchase.total), 0);
-    const supplierDelivery = data.purchases.reduce((sum, purchase) => sum + number(purchase.delivery), 0);
-    const purchasedUnits = data.purchases.reduce((sum, purchase) => sum + number(purchase.units), 0);
-    const deliveryPerUnit = purchasedUnits ? supplierDelivery / purchasedUnits : 0;
-    const operatingExpenses = data.expenses.reduce((sum, expense) => sum + number(expense.amount), 0);
-    const confirmedStock = data.inventory.reduce((sum, item) => sum + totalStock(item), 0);
-    const inventoryValue = data.inventory.reduce((sum, item) => sum + totalStock(item) * (number(item.unitCost) + deliveryPerUnit), 0);
-    const possibleReturns = data.possibleReturns.filter((item) => item.status === 'possible').reduce((sum, item) => sum + number(item.quantity), 0);
-    const soldUnits = soldUnitsFromOrders + manualUnits;
-    const cogs = liveCogs + manualCogs + soldUnits * deliveryPerUnit;
-    const giveawayCost = number(data.influencer.cost) + number(data.influencer.quantity) * deliveryPerUnit;
-    const revenue = websiteRevenue + manualRevenue;
-    const cashSpent = purchaseSpend + operatingExpenses;
-    const result = revenue - cogs - operatingExpenses - giveawayCost;
+    // Also factor website sales & manual offline sales into summary revenue
+    const websiteRevenue = orders
+      .filter((o) => String(o.status).toUpperCase() === 'DELIVERED')
+      .reduce((sum, o) => sum + number(o.total), 0);
+    const offlineRevenue = (data.manualSales || []).reduce((sum, s) => sum + number(s.revenue), 0);
+
+    const totalCombinedRevenue = tRev + websiteRevenue + offlineRevenue;
+    const tProfit = tRev - tCostSold;
+    const avgP = tSold > 0 ? tProfit / tSold : 0;
+    const margin = tRev > 0 ? (tProfit / tRev * 100) : 0;
+    const remaining = tShirts - tSold;
 
     return {
-      revenue,
-      websiteRevenue,
-      manualRevenue,
-      soldUnits,
-      purchaseSpend,
-      operatingExpenses,
-      cashSpent,
-      confirmedStock,
-      possibleReturns,
-      inventoryValue,
-      cogs,
-      giveawayCost,
-      result,
-      deliveryPerUnit,
-      historicalSales,
-      deliveredOrders,
+      tInvest,
+      tShirts,
+      tRev: totalCombinedRevenue,
+      tSold,
+      tProfit,
+      margin,
+      avgP,
+      remaining
     };
   }, [data, orders]);
 
+  // Inventory adjustment controls
   const adjustStock = (productId, size, change) => {
     const next = {
       ...data,
@@ -276,94 +386,642 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
 
   const addOfflineSale = (event) => {
     event.preventDefault();
-    const quantity = Math.max(1, number(saleForm.quantity));
-    const product = data.inventory.find((item) => item.id === saleForm.productId);
-    if (!product || number(saleForm.revenue) <= 0 || number(product.stock[saleForm.size]) < quantity) return;
+    const quantity = Math.max(1, number(offlineSaleForm.quantity));
+    const product = data.inventory.find((item) => item.id === offlineSaleForm.productId);
+    if (!product || number(offlineSaleForm.revenue) <= 0 || number(product.stock[offlineSaleForm.size]) < quantity) return;
 
     persist({
       ...data,
       inventory: data.inventory.map((item) => item.id === product.id
-        ? { ...item, stock: { ...item.stock, [saleForm.size]: number(item.stock[saleForm.size]) - quantity } }
+        ? { ...item, stock: { ...item.stock, [offlineSaleForm.size]: number(item.stock[offlineSaleForm.size]) - quantity } }
         : item),
       manualSales: [
         ...data.manualSales,
         {
           id: `offline-${Date.now()}`,
           date: new Date().toISOString().slice(0, 10),
-          label: `${quantity} × ${product.name} (${saleForm.size}) offline`,
+          label: `${quantity} × ${product.name} (${offlineSaleForm.size}) offline`,
           type: 'offline',
           productId: product.id,
-          size: saleForm.size,
+          size: offlineSaleForm.size,
           quantity,
-          revenue: number(saleForm.revenue),
+          revenue: number(offlineSaleForm.revenue),
           cost: number(product.unitCost) * quantity,
         },
       ],
     });
-    setSaleForm({ ...saleForm, quantity: 1, revenue: '' });
+    setOfflineSaleForm({ ...offlineSaleForm, quantity: 1, revenue: '' });
   };
 
-  const addPurchase = () => {
-    const label = window.prompt('Supplier order name:');
-    if (!label) return;
-    const units = number(window.prompt('How many shirts were purchased?'));
-    const productsCost = number(window.prompt('Shirts cost excluding supplier delivery:'));
-    const delivery = number(window.prompt('Supplier delivery charges:'));
-    if (units <= 0 || productsCost <= 0) return;
-    persist({
-      ...data,
-      purchases: [...data.purchases, {
-        id: `purchase-${Date.now()}`,
+  // Drop Handlers
+  const handleOpenDropModal = (editId = '') => {
+    if (editId) {
+      const drop = data.drops.find((d) => d.id === editId);
+      if (!drop) return;
+      setEditDropId(editId);
+      setDropForm({
+        name: drop.name,
+        date: drop.date,
+        delivery: drop.delivery,
+        items: drop.items ? drop.items.map((i) => ({ ...i })) : []
+      });
+    } else {
+      setEditDropId('');
+      setDropForm({
+        name: '',
         date: new Date().toISOString().slice(0, 10),
-        label,
-        units,
-        productsCost,
-        delivery,
-        total: productsCost + delivery,
-      }],
+        delivery: 0,
+        items: [{ id: 'new_1', name: '', qty: '', costPerShirt: '' }]
+      });
+    }
+    setDropModalOpen(true);
+  };
+
+  const handleAddDropLineItem = () => {
+    setDropForm((prev) => ({
+      ...prev,
+      items: [
+        ...prev.items,
+        { id: 'new_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6), name: '', qty: '', costPerShirt: '' }
+      ]
+    }));
+  };
+
+  const handleRemoveDropLineItem = (index) => {
+    if (dropForm.items.length <= 1) {
+      alert('A batch must have at least one shirt type.');
+      return;
+    }
+    setDropForm((prev) => ({
+      ...prev,
+      items: prev.items.filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleSaveDrop = () => {
+    const { name, date, delivery, items } = dropForm;
+    if (!name.trim() || !date) {
+      alert('Please fill in batch name and date.');
+      return;
+    }
+    let valid = items.length > 0;
+    const cleanItems = items.map((item) => {
+      const q = number(item.qty);
+      const c = number(item.costPerShirt);
+      if (q <= 0 || c <= 0) valid = false;
+      return {
+        id: item.id.startsWith('new_') ? 'item_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6) : item.id,
+        name: item.name.trim() || 'Shirt',
+        qty: q,
+        costPerShirt: c
+      };
     });
+
+    if (!valid) {
+      alert('Please add at least one shirt type with valid quantity and cost.');
+      return;
+    }
+
+    let nextDrops = [...data.drops];
+    if (editDropId) {
+      nextDrops = nextDrops.map((d) => d.id === editDropId ? { ...d, name: name.trim(), date, delivery: number(delivery), items: cleanItems } : d);
+    } else {
+      nextDrops.push({
+        id: 'drop_' + Date.now(),
+        name: name.trim(),
+        date,
+        delivery: number(delivery),
+        items: cleanItems
+      });
+    }
+
+    persist({ ...data, drops: nextDrops });
+    setDropModalOpen(false);
+  };
+
+  // Sale Handlers
+  const handleOpenSaleModal = () => {
+    if (data.drops.length === 0) {
+      alert('Please add a drop first.');
+      return;
+    }
+    let defaultVal = '';
+    for (const drop of data.drops) {
+      for (const item of drop.items) {
+        const sold = getItemSold(data.sales, drop.id, item.id);
+        const rem = item.qty - sold;
+        if (rem > 0) {
+          defaultVal = `${drop.id}|${item.id}`;
+          break;
+        }
+      }
+      if (defaultVal) break;
+    }
+
+    if (!defaultVal) {
+      alert('No shirts available to sell. All stock is sold out.');
+      return;
+    }
+
+    const [dId, iId] = defaultVal.split('|');
+    setSaleForm({ dropId: dId, itemId: iId, qty: '', price: '', note: '' });
+    setSaleModalOpen(true);
+  };
+
+  const handleSaveSale = () => {
+    const { dropId, itemId, qty, price, note } = saleForm;
+    const q = number(qty);
+    const p = number(price);
+
+    if (!dropId || !itemId || q <= 0 || p <= 0) {
+      alert('Please fill in all required fields.');
+      return;
+    }
+
+    const drop = data.drops.find((d) => d.id === dropId);
+    const item = drop ? drop.items.find((i) => i.id === itemId) : null;
+    if (!item) return;
+
+    const sold = getItemSold(data.sales, dropId, itemId);
+    const remaining = item.qty - sold;
+    if (q > remaining) {
+      alert(`Only ${remaining} shirts of "${item.name}" available.`);
+      return;
+    }
+
+    const newSale = {
+      id: 'sale_' + Date.now(),
+      dropId,
+      itemId,
+      qty: q,
+      pricePerShirt: p,
+      note: note.trim(),
+      date: new Date().toISOString().slice(0, 10)
+    };
+
+    persist({ ...data, sales: [...data.sales, newSale] });
+    setSaleModalOpen(false);
+  };
+
+  // Delete Handler
+  const handleConfirmDelete = () => {
+    const { type, id } = confirmModal;
+    if (type === 'drop') {
+      const nextDrops = data.drops.filter((d) => d.id !== id);
+      const nextSales = data.sales.filter((s) => s.dropId !== id);
+      persist({ ...data, drops: nextDrops, sales: nextSales });
+    } else if (type === 'sale') {
+      const nextSales = data.sales.filter((s) => s.id !== id);
+      persist({ ...data, sales: nextSales });
+    }
+    setConfirmModal({ open: false, type: '', id: '', label: '' });
   };
 
   if (!ready) return <div className="simple-dashboard-loading">Loading business dashboard…</div>;
 
-  const summaryCards = [
-    { label: 'Sales received', value: formatCurrency(metrics.revenue), note: `${metrics.soldUnits} shirts sold`, icon: CircleDollarSign, tone: 'green' },
-    { label: 'Total cash spent', value: formatCurrency(metrics.cashSpent), note: `Stock ${formatCurrency(metrics.purchaseSpend)} + running costs`, icon: WalletCards, tone: 'dark' },
-    { label: 'Physical stock', value: `${metrics.confirmedStock} shirts`, note: `Cost value ${formatCurrency(Math.round(metrics.inventoryValue))}`, icon: Package, tone: 'light' },
-    { label: 'Possible returns', value: `${metrics.possibleReturns} shirts`, note: 'Not included in stock yet', icon: RotateCcw, tone: 'amber' },
-    { label: 'Estimated result', value: formatCurrency(Math.round(metrics.result)), note: 'After sold stock, expenses & giveaways', icon: metrics.result >= 0 ? ArrowUpRight : ArrowDownRight, tone: metrics.result >= 0 ? 'green' : 'red' },
-  ];
+  // Selected item calculations for Sale Modal
+  const selectedSaleDrop = data.drops.find((d) => d.id === saleForm.dropId);
+  const selectedSaleItem = selectedSaleDrop ? selectedSaleDrop.items.find((i) => i.id === saleForm.itemId) : null;
+  const selectedSaleEffCost = selectedSaleDrop && selectedSaleItem ? getItemEffectiveCost(selectedSaleDrop, selectedSaleItem) : 0;
+  const selectedSaleSold = selectedSaleDrop && selectedSaleItem ? getItemSold(data.sales, selectedSaleDrop.id, selectedSaleItem.id) : 0;
+  const selectedSaleRemaining = selectedSaleItem ? selectedSaleItem.qty - selectedSaleSold : 0;
+
+  // Live Drop Preview calculation
+  const dropFormTotalQty = (dropForm.items || []).reduce((s, i) => s + number(i.qty), 0);
+  const dropFormShirtCost = (dropForm.items || []).reduce((s, i) => s + number(i.qty) * number(i.costPerShirt), 0);
+  const dropFormTotalPaid = dropFormShirtCost + number(dropForm.delivery);
+  const dropFormAvgCost = dropFormTotalQty > 0 ? dropFormTotalPaid / dropFormTotalQty : 0;
 
   return (
     <section className="simple-dashboard">
+      {/* Hero */}
       <div className="simple-dashboard-hero">
         <div>
           <span className="simple-eyebrow">BLACK LOOM BUSINESS</span>
-          <h2>Everything important. Nothing complicated.</h2>
-          <p>Delivered website orders update automatically. Offline sales and expenses take only one entry.</p>
+          <h2>Shirt Business Tracker</h2>
+          <p>Track your supplier drops, sales records, and item profits seamlessly.</p>
         </div>
         <div className="simple-save-state"><Check size={15} /> {saveState}</div>
       </div>
 
+      {/* Summary Cards */}
       <div className="simple-summary-grid">
-        {summaryCards.map(({ label, value, note, icon: Icon, tone }) => (
-          <article className={`simple-summary-card simple-tone-${tone}`} key={label}>
-            <div className="simple-card-heading"><span>{label}</span><Icon size={19} /></div>
-            <strong>{value}</strong>
-            <small>{note}</small>
-          </article>
-        ))}
+        <div className="simple-summary-card">
+          <div className="simple-card-heading"><span>Total Investment</span><WalletCards size={18} /></div>
+          <strong>{formatPKR(summaryMetrics.tInvest)}</strong>
+          <small>{summaryMetrics.tShirts} shirts purchased</small>
+        </div>
+
+        <div className="simple-summary-card simple-tone-blue">
+          <div className="simple-card-heading"><span>Total Revenue</span><CircleDollarSign size={18} /></div>
+          <strong>{formatPKR(summaryMetrics.tRev)}</strong>
+          <small>{summaryMetrics.tSold} shirts sold</small>
+        </div>
+
+        <div className={`simple-summary-card ${summaryMetrics.tProfit >= 0 ? 'simple-tone-green' : 'simple-tone-red'}`}>
+          <div className="simple-card-heading"><span>Total Profit</span><TrendingUp size={18} /></div>
+          <strong>{formatPKR(summaryMetrics.tProfit)}</strong>
+          <small>{summaryMetrics.margin.toFixed(1)}% margin</small>
+        </div>
+
+        <div className="simple-summary-card">
+          <div className="simple-card-heading"><span>Avg Profit / Shirt</span><Package size={18} /></div>
+          <strong>{formatPKR(summaryMetrics.avgP)}</strong>
+          <small>{summaryMetrics.remaining} in stock</small>
+        </div>
       </div>
 
-      <div className="simple-dashboard-grid">
+      {/* Sub-Tabs Navigation */}
+      <div className="tracker-tabs">
+        <button
+          className={`tracker-tab ${trackerTab === 'drops' ? 'active' : ''}`}
+          onClick={() => setTrackerTab('drops')}
+        >
+          📦 Drops
+        </button>
+        <button
+          className={`tracker-tab ${trackerTab === 'sales' ? 'active' : ''}`}
+          onClick={() => setTrackerTab('sales')}
+        >
+          💰 Sales
+        </button>
+        <button
+          className={`tracker-tab ${trackerTab === 'profit' ? 'active' : ''}`}
+          onClick={() => setTrackerTab('profit')}
+        >
+          📊 Profit Analysis
+        </button>
+      </div>
+
+      {/* Tab Content 1: Drops */}
+      {trackerTab === 'drops' && (
         <article className="simple-panel simple-panel-wide">
           <div className="simple-panel-header">
-            <div><span className="simple-eyebrow">VERIFIED PHYSICAL COUNT</span><h3>Current inventory</h3></div>
-            <span className="simple-total-pill">{metrics.confirmedStock} available</span>
+            <div>
+              <span className="simple-eyebrow">STOCK MONEY</span>
+              <h3>Supplier Purchases</h3>
+            </div>
+            <button className="simple-outline-btn" onClick={() => handleOpenDropModal('')}>
+              <Plus size={15} /> Add supplier order
+            </button>
+          </div>
+
+          <div className="simple-table-wrap">
+            {data.drops.length === 0 ? (
+              <p className="simple-empty">No drops added yet. Click "Add supplier order" to get started.</p>
+            ) : (
+              <table className="simple-table">
+                <thead>
+                  <tr>
+                    <th>Batch</th>
+                    <th>Shirts</th>
+                    <th>Shirt Cost</th>
+                    <th>Delivery</th>
+                    <th>Total Paid</th>
+                    <th>Avg Cost / Shirt</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.drops.map((drop) => {
+                    const dQty = getDropTotalQty(drop);
+                    const dCost = getDropShirtCost(drop);
+                    const dTotal = getDropTotalPaid(drop);
+                    const dAvg = getDropAvgCost(drop);
+
+                    return (
+                      <tr key={drop.id}>
+                        <td>
+                          <strong>{drop.name}</strong>
+                          <small>{formatDate(drop.date)}</small>
+                          <div style={{ marginTop: '4px' }}>
+                            {(drop.items || []).map((item) => (
+                              <span key={item.id} className="drop-item-tag">
+                                {item.name}: {item.qty} × {formatPKR(item.costPerShirt)}
+                              </span>
+                            ))}
+                          </div>
+                        </td>
+                        <td>{dQty}</td>
+                        <td>{formatPKR(dCost)}</td>
+                        <td>{formatPKR(drop.delivery)}</td>
+                        <td><strong>{formatPKR(dTotal)}</strong></td>
+                        <td>{formatPKR(dAvg)}</td>
+                        <td>
+                          <div style={{ display: 'flex', gap: '6px' }}>
+                            <button
+                              type="button"
+                              className="icon-delete"
+                              style={{ background: 'var(--bg-primary)', color: 'var(--text-primary)' }}
+                              onClick={() => handleOpenDropModal(drop.id)}
+                              title="Edit"
+                            >
+                              <Edit2 size={14} />
+                            </button>
+                            <button
+                              type="button"
+                              className="icon-delete"
+                              onClick={() => setConfirmModal({ open: true, type: 'drop', id: drop.id, label: drop.name })}
+                              title="Delete"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+                <tfoot>
+                  <tr className="total-row">
+                    <td><strong>Total invested</strong></td>
+                    <td><strong>{summaryMetrics.tShirts}</strong></td>
+                    <td></td>
+                    <td></td>
+                    <td><strong>{formatPKR(summaryMetrics.tInvest)}</strong></td>
+                    <td>{summaryMetrics.tShirts > 0 ? formatPKR(summaryMetrics.tInvest / summaryMetrics.tShirts) : 'PKR 0'}</td>
+                    <td></td>
+                  </tr>
+                </tfoot>
+              </table>
+            )}
+          </div>
+        </article>
+      )}
+
+      {/* Tab Content 2: Sales */}
+      {trackerTab === 'sales' && (
+        <div style={{ display: 'grid', gap: '1.25rem' }}>
+          {/* Remaining Stock Grid */}
+          <article className="simple-panel simple-panel-wide">
+            <div className="simple-panel-header">
+              <div>
+                <span className="simple-eyebrow">INVENTORY</span>
+                <h3>Remaining Stock</h3>
+              </div>
+            </div>
+
+            <div className="stock-grid">
+              {(() => {
+                const allItems = [];
+                data.drops.forEach((drop) => {
+                  (drop.items || []).forEach((item) => {
+                    const sold = getItemSold(data.sales, drop.id, item.id);
+                    const remaining = item.qty - sold;
+                    allItems.push({ drop, item, sold, remaining, total: item.qty });
+                  });
+                });
+
+                allItems.sort((a, b) => (a.remaining === 0 && b.remaining > 0 ? 1 : a.remaining > 0 && b.remaining === 0 ? -1 : 0));
+
+                if (allItems.length === 0) {
+                  return <p className="simple-empty">No stock items available.</p>;
+                }
+
+                return allItems.map(({ drop, item, sold, remaining, total }) => {
+                  const pct = total > 0 ? (remaining / total) * 100 : 0;
+                  let barClass = 'high';
+                  if (pct === 0) barClass = 'empty';
+                  else if (pct <= 25) barClass = 'low';
+                  else if (pct <= 50) barClass = 'mid';
+
+                  const effCost = getItemEffectiveCost(drop, item);
+                  const soldOut = remaining === 0;
+
+                  return (
+                    <div className={`stock-card ${soldOut ? 'sold-out' : ''}`} key={`${drop.id}-${item.id}`}>
+                      <div className="sc-batch">{drop.name}</div>
+                      <div className="sc-name">{item.name}</div>
+                      <div className="sc-cost">Cost: {formatPKR(effCost)} / shirt</div>
+                      <div className="sc-bar-bg">
+                        <div className={`sc-bar-fill ${barClass}`} style={{ width: `${pct}%` }}></div>
+                      </div>
+                      <div className="sc-bottom">
+                        <span className="sc-qty">{soldOut ? 'Sold out' : `${remaining} left`}</span>
+                        <span className="sc-of">{sold} of {total} sold</span>
+                      </div>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+          </article>
+
+          {/* Sales Records Table */}
+          <article className="simple-panel simple-panel-wide">
+            <div className="simple-panel-header">
+              <div>
+                <span className="simple-eyebrow">REVENUE</span>
+                <h3>Sales Records</h3>
+              </div>
+              <button className="simple-outline-btn" onClick={handleOpenSaleModal}>
+                <Plus size={15} /> Record sale
+              </button>
+            </div>
+
+            <div className="simple-table-wrap">
+              {data.sales.length === 0 ? (
+                <p className="simple-empty">No sales recorded yet. Add a drop first, then record sales.</p>
+              ) : (
+                <table className="simple-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Drop</th>
+                      <th>Shirt Type</th>
+                      <th>Qty</th>
+                      <th>Sale Price</th>
+                      <th>Revenue</th>
+                      <th>Profit / Shirt</th>
+                      <th>Total Profit</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.sales.slice().reverse().map((sale) => {
+                      const drop = data.drops.find((d) => d.id === sale.dropId);
+                      const item = drop ? (drop.items || []).find((i) => i.id === sale.itemId) : null;
+                      const itemName = item ? item.name : 'Shirt';
+                      const effCost = item && drop ? getItemEffectiveCost(drop, item) : (drop ? getDropAvgCost(drop) : 0);
+                      const pps = sale.pricePerShirt - effCost;
+                      const rev = sale.qty * sale.pricePerShirt;
+                      const tp = sale.qty * pps;
+
+                      return (
+                        <tr key={sale.id}>
+                          <td>{formatDate(sale.date)}</td>
+                          <td>
+                            <strong>{drop ? drop.name : 'Unknown Drop'}</strong>
+                            {sale.note && <small>{sale.note}</small>}
+                          </td>
+                          <td><span className="drop-item-tag">{itemName}</span></td>
+                          <td>{sale.qty}</td>
+                          <td>{formatPKR(sale.pricePerShirt)}</td>
+                          <td>{formatPKR(rev)}</td>
+                          <td>
+                            <span className={`profit-badge ${pps >= 0 ? 'positive' : 'negative'}`}>
+                              {pps >= 0 ? '+' : ''}{formatPKR(pps)}
+                            </span>
+                          </td>
+                          <td>
+                            <strong style={{ color: tp >= 0 ? '#16a34a' : '#dc2626' }}>
+                              {tp >= 0 ? '+' : ''}{formatPKR(tp)}
+                            </strong>
+                          </td>
+                          <td>
+                            <button
+                              type="button"
+                              className="icon-delete"
+                              onClick={() => setConfirmModal({ open: true, type: 'sale', id: sale.id, label: 'sale record' })}
+                              title="Delete"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </article>
+        </div>
+      )}
+
+      {/* Tab Content 3: Profit Analysis */}
+      {trackerTab === 'profit' && (
+        <article className="simple-panel simple-panel-wide">
+          <div className="simple-panel-header">
+            <div>
+              <span className="simple-eyebrow">ANALYTICS</span>
+              <h3>Profit Analysis by Drop</h3>
+            </div>
+          </div>
+
+          <div className="simple-table-wrap">
+            {data.drops.length === 0 ? (
+              <p className="simple-empty">Add drops and record sales to see your profit analysis.</p>
+            ) : (
+              <table className="simple-table">
+                <thead>
+                  <tr>
+                    <th>Drop / Item</th>
+                    <th>Total</th>
+                    <th>Sold</th>
+                    <th>Left</th>
+                    <th>Cost / Shirt</th>
+                    <th>Avg Sale</th>
+                    <th>Avg Profit / Shirt</th>
+                    <th>Total Profit</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(() => {
+                    let gShirts = 0, gSold = 0, gProfit = 0, gRev = 0, gCostSold = 0;
+
+                    return (
+                      <>
+                        {data.drops.map((drop) => {
+                          const dQty = getDropTotalQty(drop);
+                          let dSold = 0, dRev = 0, dCostSold = 0;
+
+                          const itemRows = (drop.items || []).map((item) => {
+                            const itemSales = data.sales.filter((s) => s.dropId === drop.id && s.itemId === item.id);
+                            const sold = itemSales.reduce((sum, s) => sum + number(s.qty), 0);
+                            const rev = itemSales.reduce((sum, s) => sum + number(s.qty) * number(s.pricePerShirt), 0);
+                            const remaining = item.qty - sold;
+                            const effCost = getItemEffectiveCost(drop, item);
+                            const avgSale = sold > 0 ? rev / sold : 0;
+                            const avgP = sold > 0 ? avgSale - effCost : 0;
+                            const totalP = sold * avgP;
+
+                            dSold += sold;
+                            dRev += rev;
+                            dCostSold += sold * effCost;
+
+                            const pc = avgP > 0 ? 'positive' : avgP < 0 ? 'negative' : 'neutral';
+                            const sc = remaining === 0 ? 'stock-low' : '';
+
+                            return (
+                              <tr key={`${drop.id}-${item.id}`}>
+                                <td style={{ paddingLeft: '20px' }}>
+                                  <span className="drop-item-tag">{item.name}</span>
+                                  <small>{drop.name}</small>
+                                </td>
+                                <td>{item.qty}</td>
+                                <td>{sold}</td>
+                                <td><span className={sc}>{remaining}</span></td>
+                                <td>{formatPKR(effCost)}</td>
+                                <td>{sold > 0 ? formatPKR(avgSale) : '—'}</td>
+                                <td>
+                                  {sold > 0 ? (
+                                    <span className={`profit-badge ${pc}`}>
+                                      {avgP >= 0 ? '+' : ''}{formatPKR(avgP)}
+                                    </span>
+                                  ) : '—'}
+                                </td>
+                                <td>
+                                  {sold > 0 ? (
+                                    <strong style={{ color: totalP >= 0 ? '#16a34a' : '#dc2626' }}>
+                                      {totalP >= 0 ? '+' : ''}{formatPKR(totalP)}
+                                    </strong>
+                                  ) : '—'}
+                                </td>
+                              </tr>
+                            );
+                          });
+
+                          gShirts += dQty;
+                          gSold += dSold;
+                          gRev += dRev;
+                          gCostSold += dCostSold;
+                          gProfit += (dRev - dCostSold);
+
+                          return itemRows;
+                        })}
+
+                        <tr className="total-row">
+                          <td><strong>Overall Total</strong></td>
+                          <td><strong>{gShirts}</strong></td>
+                          <td><strong>{gSold}</strong></td>
+                          <td><strong>{gShirts - gSold}</strong></td>
+                          <td></td>
+                          <td>{gSold > 0 ? <strong>{formatPKR(gRev / gSold)}</strong> : '—'}</td>
+                          <td>
+                            {gSold > 0 ? (
+                              <span className={`profit-badge ${(gRev - gCostSold) >= 0 ? 'positive' : 'negative'}`}>
+                                {(gRev - gCostSold) >= 0 ? '+' : ''}{formatPKR((gRev - gCostSold) / gSold)}
+                              </span>
+                            ) : '—'}
+                          </td>
+                          <td>
+                            <strong style={{ color: gProfit >= 0 ? '#16a34a' : '#dc2626' }}>
+                              {gProfit >= 0 ? '+' : ''}{formatPKR(gProfit)}
+                            </strong>
+                          </td>
+                        </tr>
+                      </>
+                    );
+                  })()}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </article>
+      )}
+
+      {/* Grid for Inventory, Possible Returns, Quick Entry Offline Sale, Expenses */}
+      <div className="simple-dashboard-grid" style={{ marginTop: '1.5rem' }}>
+        {/* Verified Physical Count Inventory */}
+        <article className="simple-panel simple-panel-wide">
+          <div className="simple-panel-header">
+            <div><span className="simple-eyebrow">VERIFIED PHYSICAL COUNT</span><h3>Current Inventory (Sizes S/M/L/XL)</h3></div>
+            <span className="simple-total-pill">{data.inventory.reduce((sum, item) => sum + totalStock(item), 0)} available</span>
           </div>
           <div className="simple-table-wrap">
             <table className="simple-table inventory-table">
-              <thead><tr><th>Product</th>{SIZES.map((size) => <th key={size}>{size}</th>)}<th>Total</th><th>Unit cost</th></tr></thead>
+              <thead><tr><th>Product</th>{SIZES.map((size) => <th key={size}>{size}</th>)}<th>Total</th><th>Unit Cost</th></tr></thead>
               <tbody>
                 {data.inventory.map((item) => (
                   <tr key={item.id}>
@@ -386,9 +1044,10 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
           </div>
         </article>
 
+        {/* Possible Returns */}
         <article className="simple-panel">
           <div className="simple-panel-header">
-            <div><span className="simple-eyebrow">DO NOT RESTOCK YET</span><h3>Possible returns</h3></div>
+            <div><span className="simple-eyebrow">DO NOT RESTOCK YET</span><h3>Possible Returns</h3></div>
             <RotateCcw size={21} />
           </div>
           <div className="return-list">
@@ -401,30 +1060,32 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
                 </div>
               </div>
             ))}
-            {metrics.possibleReturns === 0 && <p className="simple-empty">No possible returns waiting.</p>}
+            {data.possibleReturns.filter((item) => item.status === 'possible').length === 0 && <p className="simple-empty">No possible returns waiting.</p>}
           </div>
         </article>
 
+        {/* Quick Entry Offline Sale */}
         <article className="simple-panel">
           <div className="simple-panel-header">
-            <div><span className="simple-eyebrow">QUICK ENTRY</span><h3>Record offline sale</h3></div>
+            <div><span className="simple-eyebrow">QUICK ENTRY</span><h3>Record Offline Sale</h3></div>
             <ShoppingBag size={21} />
           </div>
           <form className="simple-form" onSubmit={addOfflineSale}>
-            <label>Product<select value={saleForm.productId} onChange={(event) => setSaleForm({ ...saleForm, productId: event.target.value })}>{data.inventory.map((item) => <option key={item.id} value={item.id}>{item.name} — {item.color}</option>)}</select></label>
+            <label>Product<select value={offlineSaleForm.productId} onChange={(event) => setOfflineSaleForm({ ...offlineSaleForm, productId: event.target.value })}>{data.inventory.map((item) => <option key={item.id} value={item.id}>{item.name} — {item.color}</option>)}</select></label>
             <div className="simple-form-row">
-              <label>Size<select value={saleForm.size} onChange={(event) => setSaleForm({ ...saleForm, size: event.target.value })}>{SIZES.map((size) => <option key={size}>{size}</option>)}</select></label>
-              <label>Quantity<input type="number" min="1" value={saleForm.quantity} onChange={(event) => setSaleForm({ ...saleForm, quantity: event.target.value })} /></label>
+              <label>Size<select value={offlineSaleForm.size} onChange={(event) => setOfflineSaleForm({ ...offlineSaleForm, size: event.target.value })}>{SIZES.map((size) => <option key={size}>{size}</option>)}</select></label>
+              <label>Quantity<input type="number" min="1" value={offlineSaleForm.quantity} onChange={(event) => setOfflineSaleForm({ ...offlineSaleForm, quantity: event.target.value })} /></label>
             </div>
-            <label>Total amount received<input type="number" min="1" placeholder="e.g. 1100" value={saleForm.revenue} onChange={(event) => setSaleForm({ ...saleForm, revenue: event.target.value })} /></label>
+            <label>Total amount received<input type="number" min="1" placeholder="e.g. 1100" value={offlineSaleForm.revenue} onChange={(event) => setOfflineSaleForm({ ...offlineSaleForm, revenue: event.target.value })} /></label>
             <button className="simple-primary-btn" type="submit"><Plus size={16} /> Save sale & reduce stock</button>
           </form>
         </article>
 
+        {/* Business Expenses Ledger */}
         <article className="simple-panel simple-panel-wide">
           <div className="simple-panel-header">
             <div><span className="simple-eyebrow">EVERY RUPEE SPENT</span><h3>Expenses</h3></div>
-            <span className="simple-total-pill">{formatCurrency(metrics.operatingExpenses)}</span>
+            <span className="simple-total-pill">{formatCurrency(data.expenses.reduce((sum, e) => sum + number(e.amount), 0))}</span>
           </div>
           <form className="expense-inline-form" onSubmit={addExpense}>
             <select value={expenseForm.category} onChange={(event) => setExpenseForm({ ...expenseForm, category: event.target.value })}><option>Ads</option><option>Packing</option><option>Courier</option><option>Website</option><option>Other</option></select>
@@ -439,25 +1100,273 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
             </table>
           </div>
         </article>
-
-        <article className="simple-panel simple-panel-wide">
-          <div className="simple-panel-header">
-            <div><span className="simple-eyebrow">STOCK MONEY</span><h3>Supplier purchases</h3></div>
-            <button className="simple-outline-btn" onClick={addPurchase}><Plus size={15} /> Add supplier order</button>
-          </div>
-          <div className="simple-table-wrap">
-            <table className="simple-table">
-              <thead><tr><th>Batch</th><th>Shirts</th><th>Shirt cost</th><th>Supplier delivery</th><th>Total paid</th></tr></thead>
-              <tbody>{data.purchases.map((purchase) => <tr key={purchase.id}><td><strong>{purchase.label}</strong><small>{purchase.date}</small></td><td>{purchase.units}</td><td>{formatCurrency(purchase.productsCost)}</td><td>{formatCurrency(purchase.delivery)}</td><td><strong>{formatCurrency(purchase.total)}</strong></td></tr>)}</tbody>
-              <tfoot><tr><td>Total invested in stock</td><td>{data.purchases.reduce((sum, item) => sum + number(item.units), 0)}</td><td></td><td></td><td>{formatCurrency(metrics.purchaseSpend)}</td></tr></tfoot>
-            </table>
-          </div>
-        </article>
       </div>
 
-      <div className="simple-calculation-note">
-        <strong>How the estimated result works:</strong> delivered website sales + offline sales − sold shirts' cost − ads/packing/courier expenses − influencer shirts. Possible returns stay outside stock until you confirm receipt.
-      </div>
+      {/* Add / Edit Drop Modal */}
+      {dropModalOpen && (
+        <div className="tracker-modal-overlay">
+          <div className="tracker-modal">
+            <h2>{editDropId ? 'Edit Drop' : 'Add New Drop'}</h2>
+            <div className="tracker-form-group">
+              <label>Batch Name</label>
+              <input
+                type="text"
+                placeholder="e.g. Supplier batch 4"
+                value={dropForm.name}
+                onChange={(e) => setDropForm({ ...dropForm, name: e.target.value })}
+              />
+            </div>
+            <div className="tracker-form-group">
+              <label>Date</label>
+              <input
+                type="date"
+                value={dropForm.date}
+                onChange={(e) => setDropForm({ ...dropForm, date: e.target.value })}
+              />
+            </div>
+
+            {/* Line Items */}
+            <div className="line-items-section">
+              <div className="line-items-header">
+                <span>Shirts in this batch</span>
+                <button type="button" className="add-item-btn" onClick={handleAddDropLineItem}>
+                  + Add type
+                </button>
+              </div>
+
+              {dropForm.items.map((item, idx) => (
+                <div className="line-item-row" key={item.id || idx}>
+                  <div>
+                    <label>Shirt Type</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Polo, Round Neck"
+                      value={item.name}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setDropForm((prev) => {
+                          const updated = [...prev.items];
+                          updated[idx].name = val;
+                          return { ...prev, items: updated };
+                        });
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label>Qty</label>
+                    <input
+                      type="number"
+                      placeholder="10"
+                      min="1"
+                      value={item.qty}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setDropForm((prev) => {
+                          const updated = [...prev.items];
+                          updated[idx].qty = val;
+                          return { ...prev, items: updated };
+                        });
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label>Cost / Shirt</label>
+                    <input
+                      type="number"
+                      placeholder="950"
+                      min="0"
+                      value={item.costPerShirt}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setDropForm((prev) => {
+                          const updated = [...prev.items];
+                          updated[idx].costPerShirt = val;
+                          return { ...prev, items: updated };
+                        });
+                      }}
+                    />
+                  </div>
+                  <button type="button" className="remove-item-btn" onClick={() => handleRemoveDropLineItem(idx)}>
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <div className="tracker-form-group">
+              <label>Supplier Delivery Cost (PKR)</label>
+              <input
+                type="number"
+                placeholder="e.g. 1000"
+                min="0"
+                value={dropForm.delivery}
+                onChange={(e) => setDropForm({ ...dropForm, delivery: e.target.value })}
+              />
+            </div>
+
+            {/* Preview Box */}
+            <div className="preview-box">
+              <div className="preview-row">
+                <span className="plabel">Total Shirts:</span>
+                <span className="pvalue">{dropFormTotalQty}</span>
+              </div>
+              <div className="preview-row">
+                <span className="plabel">Total Shirt Cost:</span>
+                <span className="pvalue">{formatPKR(dropFormShirtCost)}</span>
+              </div>
+              <div className="preview-row">
+                <span className="plabel">Avg Cost / Shirt (incl. delivery):</span>
+                <span className="pvalue">{formatPKR(dropFormAvgCost)}</span>
+              </div>
+              <div className="preview-total">
+                <span className="plabel">Total Paid:</span>
+                <span className="pvalue">{formatPKR(dropFormTotalPaid)}</span>
+              </div>
+            </div>
+
+            <div className="tracker-modal-actions">
+              <button type="button" className="simple-outline-btn" onClick={() => setDropModalOpen(false)}>
+                Cancel
+              </button>
+              <button type="button" className="simple-primary-btn" style={{ width: 'auto' }} onClick={handleSaveDrop}>
+                Save Drop
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Record Sale Modal */}
+      {saleModalOpen && (
+        <div className="tracker-modal-overlay">
+          <div className="tracker-modal">
+            <h2>Record Sale</h2>
+            <div className="tracker-form-group">
+              <label>Select Shirt</label>
+              <select
+                value={`${saleForm.dropId}|${saleForm.itemId}`}
+                onChange={(e) => {
+                  const [dId, iId] = e.target.value.split('|');
+                  setSaleForm({ ...saleForm, dropId: dId, itemId: iId });
+                }}
+              >
+                {data.drops.map((drop) => (
+                  drop.items.map((item) => {
+                    const sold = getItemSold(data.sales, drop.id, item.id);
+                    const remaining = item.qty - sold;
+                    const effCost = getItemEffectiveCost(drop, item);
+                    return (
+                      <option key={`${drop.id}-${item.id}`} value={`${drop.id}|${item.id}`} disabled={remaining <= 0}>
+                        {item.name} — {formatPKR(effCost)}/shirt ({remaining} left) [{drop.name}]
+                      </option>
+                    );
+                  })
+                ))}
+              </select>
+            </div>
+
+            {selectedSaleItem && (
+              <div className="tracker-form-group">
+                <div style={{ background: 'var(--bg-secondary)', padding: '10px 14px', borderRadius: '8px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                  {selectedSaleRemaining} shirts available · Cost/shirt: {formatPKR(selectedSaleEffCost)}
+                </div>
+              </div>
+            )}
+
+            <div className="tracker-form-row">
+              <div className="tracker-form-group">
+                <label>Number of Shirts Sold</label>
+                <input
+                  type="number"
+                  placeholder="e.g. 5"
+                  min="1"
+                  value={saleForm.qty}
+                  onChange={(e) => setSaleForm({ ...saleForm, qty: e.target.value })}
+                />
+              </div>
+              <div className="tracker-form-group">
+                <label>Sale Price per Shirt (PKR)</label>
+                <input
+                  type="number"
+                  placeholder="e.g. 1500"
+                  min="0"
+                  value={saleForm.price}
+                  onChange={(e) => setSaleForm({ ...saleForm, price: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="tracker-form-group">
+              <label>Note (optional)</label>
+              <input
+                type="text"
+                placeholder="e.g. Sold to Ali, online order"
+                value={saleForm.note}
+                onChange={(e) => setSaleForm({ ...saleForm, note: e.target.value })}
+              />
+            </div>
+
+            {/* Sale Preview */}
+            {(() => {
+              const q = number(saleForm.qty);
+              const p = number(saleForm.price);
+              const rev = q * p;
+              const costBasis = q * selectedSaleEffCost;
+              const profitPerShirt = p - selectedSaleEffCost;
+              const totalProfit = q * profitPerShirt;
+
+              return (
+                <div className="preview-box sale-preview">
+                  <div className="preview-row">
+                    <span className="plabel">Revenue:</span>
+                    <span className="pvalue" style={{ color: '#2563eb' }}>{formatPKR(rev)}</span>
+                  </div>
+                  <div className="preview-row">
+                    <span className="plabel">Cost Basis:</span>
+                    <span className="pvalue">{formatPKR(costBasis)}</span>
+                  </div>
+                  <div className="preview-total">
+                    <span className="plabel">Profit per Shirt:</span>
+                    <span className="pvalue" style={{ color: profitPerShirt >= 0 ? '#16a34a' : '#dc2626' }}>
+                      {profitPerShirt >= 0 ? '+' : ''}{formatPKR(profitPerShirt)}
+                    </span>
+                  </div>
+                </div>
+              );
+            })()}
+
+            <div className="tracker-modal-actions">
+              <button type="button" className="simple-outline-btn" onClick={() => setSaleModalOpen(false)}>
+                Cancel
+              </button>
+              <button type="button" className="simple-primary-btn" style={{ width: 'auto' }} onClick={handleSaveSale}>
+                Save Sale
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Delete Modal */}
+      {confirmModal.open && (
+        <div className="tracker-modal-overlay">
+          <div className="tracker-modal" style={{ maxWidth: '400px', textAlign: 'center' }}>
+            <h2 style={{ fontSize: '1.1rem' }}>
+              {confirmModal.type === 'drop'
+                ? `Delete "${confirmModal.label}" and all its associated sales?`
+                : 'Delete this sale record?'}
+            </h2>
+            <div className="tracker-modal-actions" style={{ justifyContent: 'center' }}>
+              <button type="button" className="simple-outline-btn" onClick={() => setConfirmModal({ open: false, type: '', id: '', label: '' })}>
+                Cancel
+              </button>
+              <button type="button" className="icon-delete" style={{ width: 'auto', padding: '0 20px' }} onClick={handleConfirmDelete}>
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 };
