@@ -19,7 +19,7 @@ import { db } from '../firebase';
 import { formatCurrency } from '../utils/formatCurrency';
 import './SimpleBusinessDashboard.css';
 
-const STORAGE_KEY = 'black_loom_simple_business_dashboard_v2';
+const STORAGE_KEY = 'black_loom_simple_business_dashboard_v3';
 const SIZES = ['S', 'M', 'L', 'XL'];
 
 // Fresh 0-record state with 26 shirts in inventory (value: PKR 27,280)
@@ -145,14 +145,14 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
       }
 
       try {
-        const snapshot = await getDoc(doc(db, 'settings', 'business_dashboard_v2'));
+        const snapshot = await getDoc(doc(db, 'settings', 'business_dashboard_v3'));
         if (active && snapshot.exists()) {
           const normalized = normalizeData(snapshot.data());
           setData(normalized);
           localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
         } else if (active) {
           const initial = createDefaultData();
-          await setDoc(doc(db, 'settings', 'business_dashboard_v2'), initial);
+          await setDoc(doc(db, 'settings', 'business_dashboard_v3'), initial);
         }
       } catch (error) {
         console.warn('Using local dashboard data because Firebase could not be read:', error);
@@ -169,7 +169,7 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
     setSaveState('Saving…');
     try {
-      await setDoc(doc(db, 'settings', 'business_dashboard_v2'), next);
+      await setDoc(doc(db, 'settings', 'business_dashboard_v3'), next);
       setSaveState('Saved');
     } catch (error) {
       console.warn('Dashboard saved locally; Firebase sync failed:', error);
@@ -246,7 +246,7 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
       .reduce((sum, o) => sum + number(o.total), 0);
     const offlineRevenue = (data.manualSales || []).reduce((sum, s) => sum + number(s.revenue), 0);
 
-    const totalCombinedRevenue = tRev + websiteRevenue + offlineRevenue;
+    const totalCombinedRevenue = tRev;
     const tProfit = tRev - tCostSold;
     const avgP = tSold > 0 ? tProfit / tSold : 0;
     const margin = tRev > 0 ? (tProfit / tRev * 100) : 0;
