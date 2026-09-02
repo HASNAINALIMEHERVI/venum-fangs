@@ -12,74 +12,32 @@ import {
   WalletCards,
   Edit2,
   TrendingUp,
-  BarChart2,
-  Layers
+  RefreshCw
 } from 'lucide-react';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { formatCurrency } from '../utils/formatCurrency';
 import './SimpleBusinessDashboard.css';
 
-const STORAGE_KEY = 'black_loom_simple_business_dashboard_v1';
+const STORAGE_KEY = 'black_loom_simple_business_dashboard_v2';
 const SIZES = ['S', 'M', 'L', 'XL'];
 
+// Fresh 0-record state with 26 shirts in inventory (value: PKR 27,280)
 const createDefaultData = () => ({
   inventory: [
-    { id: 'kalakar', name: 'Kalakar', color: 'Cream', unitCost: 1400, stock: { S: 2, M: 1, L: 2, XL: 2 } },
-    { id: 'speed', name: 'Speed', color: 'White', unitCost: 1100, stock: { S: 2, M: 2, L: 2, XL: 1 } },
-    { id: 'gothic-thorn', name: 'Gothic Thorn', color: 'Black', unitCost: 950, stock: { S: 1, M: 0, L: 2, XL: 0 } },
-    { id: 'breathe', name: 'Breathe', color: 'Black', unitCost: 950, stock: { S: 1, M: 0, L: 1, XL: 1 } },
-    { id: 'plain-black', name: 'Plain Shirt', color: 'Black', unitCost: 680, stock: { S: 0, M: 1, L: 0, XL: 0 } },
-    { id: 'plain-white', name: 'Plain Shirt', color: 'White', unitCost: 680, stock: { S: 0, M: 1, L: 0, XL: 0 } },
+    { id: 'kalakar', name: 'Kalakar', color: 'Cream', unitCost: 1400, stock: { S: 2, M: 1, L: 2, XL: 2 } }, // 7
+    { id: 'speed', name: 'Speed', color: 'White', unitCost: 1100, stock: { S: 2, M: 2, L: 2, XL: 1 } }, // 7
+    { id: 'gothic-thorn', name: 'Gothic Thorn', color: 'Black', unitCost: 950, stock: { S: 1, M: 0, L: 2, XL: 0 } }, // 3
+    { id: 'breathe', name: 'Breathe', color: 'Black', unitCost: 950, stock: { S: 1, M: 0, L: 1, XL: 1 } }, // 3
+    { id: 'plain-black', name: 'Plain Shirt', color: 'Black', unitCost: 680, stock: { S: 1, M: 2, L: 2, XL: 1 } }, // 6
   ],
-  possibleReturns: [
-    { id: 'return-speed-xl', productId: 'speed', product: 'Speed', color: 'White', size: 'XL', quantity: 1, status: 'possible' },
-    { id: 'return-plain-black-xl', productId: 'plain-black', product: 'Plain Shirt', color: 'Black', size: 'XL', quantity: 1, status: 'possible' },
-    { id: 'return-gothic-xl', productId: 'gothic-thorn', product: 'Gothic Thorn', color: 'Black', size: 'XL', quantity: 1, status: 'possible' },
-  ],
-  drops: [
-    {
-      id: 'supplier-batch-1',
-      name: 'Supplier batch 1',
-      date: '2026-08-01',
-      delivery: 1000,
-      items: [
-        { id: 'item_1_1', name: 'Polo Shirt', qty: 6, costPerShirt: 950 },
-        { id: 'item_1_2', name: 'Round Neck', qty: 5, costPerShirt: 760 }
-      ]
-    },
-    {
-      id: 'supplier-batch-2',
-      name: 'Supplier batch 2',
-      date: '2026-08-01',
-      delivery: 1100,
-      items: [
-        { id: 'item_2_1', name: 'Oversized Tee', qty: 10, costPerShirt: 1200 },
-        { id: 'item_2_2', name: 'Acid Wash', qty: 8, costPerShirt: 1180 }
-      ]
-    },
-    {
-      id: 'supplier-batch-3',
-      name: 'Supplier batch 3',
-      date: '2026-08-01',
-      delivery: 400,
-      items: [
-        { id: 'item_3_1', name: 'Heavyweight Cotton', qty: 5, costPerShirt: 950 }
-      ]
-    }
-  ],
+  possibleReturns: [],
+  drops: [],
   sales: [],
-  expenses: [
-    { id: 'expense-meta', date: '2026-08-18', category: 'Ads', note: 'Meta advertising', amount: 8700 },
-    { id: 'expense-packing', date: '2026-08-18', category: 'Packing', note: 'Flyers and packing', amount: 5300 },
-    { id: 'expense-courier', date: '2026-08-18', category: 'Courier', note: 'Visible Leopards charges', amount: 1204 },
-  ],
-  manualSales: [
-    { id: 'sale-bl-7524', date: '2026-08-07', label: 'Order BL-7524', type: 'website-history', sourceOrderId: 'BL-7524', productId: 'breathe', size: 'M', quantity: 2, revenue: 3079, cost: 1900 },
-    { id: 'sale-plain-offline', date: '2026-08-18', label: '3 plain shirts sold offline', type: 'offline', productId: 'plain-black', size: 'M', quantity: 3, revenue: 3300, cost: 2040 },
-  ],
-  influencer: { quantity: 2, cost: 1900, note: 'Two shirts given to influencers' },
-  stockBaselineAt: '2026-08-18T23:59:59.999Z',
+  expenses: [],
+  manualSales: [],
+  influencer: { quantity: 0, cost: 0, note: '' },
+  stockBaselineAt: new Date().toISOString(),
   processedOrderIds: [],
 });
 
@@ -120,56 +78,19 @@ const getItemSold = (sales = [], dropId, itemId) => {
 
 const normalizeData = (saved = {}) => {
   const defaults = createDefaultData();
-  let drops = Array.isArray(saved.drops) ? saved.drops : [];
-
-  // Migration from old purchases format if drops is empty
-  if (drops.length === 0 && Array.isArray(saved.purchases) && saved.purchases.length > 0) {
-    drops = saved.purchases.map((p) => ({
-      id: p.id,
-      name: p.label || 'Batch',
-      date: p.date || new Date().toISOString().slice(0, 10),
-      delivery: number(p.delivery),
-      items: [
-        {
-          id: 'item_' + p.id,
-          name: 'Shirt',
-          qty: number(p.units),
-          costPerShirt: number(p.units) > 0 ? number(p.productsCost) / number(p.units) : 0
-        }
-      ]
-    }));
-  }
-
-  if (drops.length === 0) {
-    drops = defaults.drops;
-  }
-
-  // Ensure drops items migration
-  drops.forEach((drop) => {
-    if (!drop.items || drop.items.length === 0) {
-      drop.items = [{ id: 'item_' + drop.id, name: 'Shirt', qty: number(drop.qty || 0), costPerShirt: number(drop.costPerShirt || 0) }];
-    }
-  });
-
-  let sales = Array.isArray(saved.sales) ? saved.sales : defaults.sales;
-  sales.forEach((sale) => {
-    if (!sale.itemId) {
-      const drop = drops.find((d) => d.id === sale.dropId);
-      if (drop && drop.items.length > 0) {
-        sale.itemId = drop.items[0].id;
-      }
-    }
-  });
+  const drops = Array.isArray(saved.drops) ? saved.drops : defaults.drops;
+  const sales = Array.isArray(saved.sales) ? saved.sales : defaults.sales;
+  const inventory = Array.isArray(saved.inventory) && saved.inventory.length > 0 ? saved.inventory : defaults.inventory;
 
   return {
     ...defaults,
     ...saved,
-    inventory: Array.isArray(saved.inventory) ? saved.inventory : defaults.inventory,
-    possibleReturns: Array.isArray(saved.possibleReturns) ? saved.possibleReturns : defaults.possibleReturns,
+    inventory,
+    possibleReturns: Array.isArray(saved.possibleReturns) ? saved.possibleReturns : [],
     drops,
     sales,
-    expenses: Array.isArray(saved.expenses) ? saved.expenses : defaults.expenses,
-    manualSales: Array.isArray(saved.manualSales) ? saved.manualSales : defaults.manualSales,
+    expenses: Array.isArray(saved.expenses) ? saved.expenses : [],
+    manualSales: Array.isArray(saved.manualSales) ? saved.manualSales : [],
     influencer: { ...defaults.influencer, ...(saved.influencer || {}) },
     processedOrderIds: Array.isArray(saved.processedOrderIds) ? saved.processedOrderIds : [],
   };
@@ -216,14 +137,22 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
         } catch (error) {
           console.warn('Could not read saved dashboard data:', error);
         }
+      } else {
+        // First load on v2: initialize fresh 0-record state with 26 shirts
+        const initial = createDefaultData();
+        setData(initial);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(initial));
       }
 
       try {
-        const snapshot = await getDoc(doc(db, 'settings', 'business_dashboard'));
+        const snapshot = await getDoc(doc(db, 'settings', 'business_dashboard_v2'));
         if (active && snapshot.exists()) {
           const normalized = normalizeData(snapshot.data());
           setData(normalized);
           localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
+        } else if (active) {
+          const initial = createDefaultData();
+          await setDoc(doc(db, 'settings', 'business_dashboard_v2'), initial);
         }
       } catch (error) {
         console.warn('Using local dashboard data because Firebase could not be read:', error);
@@ -240,7 +169,7 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
     setSaveState('Saving…');
     try {
-      await setDoc(doc(db, 'settings', 'business_dashboard'), next);
+      await setDoc(doc(db, 'settings', 'business_dashboard_v2'), next);
       setSaveState('Saved');
     } catch (error) {
       console.warn('Dashboard saved locally; Firebase sync failed:', error);
@@ -312,7 +241,6 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
       }
     });
 
-    // Also factor website sales & manual offline sales into summary revenue
     const websiteRevenue = orders
       .filter((o) => String(o.status).toUpperCase() === 'DELIVERED')
       .reduce((sum, o) => sum + number(o.total), 0);
@@ -322,7 +250,10 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
     const tProfit = tRev - tCostSold;
     const avgP = tSold > 0 ? tProfit / tSold : 0;
     const margin = tRev > 0 ? (tProfit / tRev * 100) : 0;
-    const remaining = tShirts - tSold;
+
+    // Current inventory total count & valuation
+    const totalInventoryCount = (data.inventory || []).reduce((sum, item) => sum + totalStock(item), 0);
+    const totalInventoryValue = (data.inventory || []).reduce((sum, item) => sum + totalStock(item) * number(item.unitCost), 0);
 
     return {
       tInvest,
@@ -332,9 +263,18 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
       tProfit,
       margin,
       avgP,
-      remaining
+      totalInventoryCount,
+      totalInventoryValue
     };
   }, [data, orders]);
+
+  // Reset to Fresh Zero State
+  const handleResetToZero = () => {
+    if (window.confirm("Are you sure you want to reset all records to zero? This will clear past sales, drops, expenses, and set inventory to 26 shirts (value: PKR 27,280).")) {
+      const cleanData = createDefaultData();
+      persist(cleanData);
+    }
+  };
 
   // Inventory adjustment controls
   const adjustStock = (productId, size, change) => {
@@ -502,7 +442,7 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
   // Sale Handlers
   const handleOpenSaleModal = () => {
     if (data.drops.length === 0) {
-      alert('Please add a drop first.');
+      alert('Please add a supplier drop first under the Drops tab.');
       return;
     }
     let defaultVal = '';
@@ -519,7 +459,7 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
     }
 
     if (!defaultVal) {
-      alert('No shirts available to sell. All stock is sold out.');
+      alert('No shirts available in recorded drops to sell.');
       return;
     }
 
@@ -599,9 +539,20 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
         <div>
           <span className="simple-eyebrow">BLACK LOOM BUSINESS</span>
           <h2>Shirt Business Tracker</h2>
-          <p>Track your supplier drops, sales records, and item profits seamlessly.</p>
+          <p>Track your supplier drops, sales records, and item profits starting clean.</p>
         </div>
-        <div className="simple-save-state"><Check size={15} /> {saveState}</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <button
+            type="button"
+            className="simple-save-state"
+            style={{ background: 'rgba(239, 68, 68, 0.15)', borderColor: '#ef4444', color: '#fca5a5', cursor: 'pointer' }}
+            onClick={handleResetToZero}
+            title="Reset all sales & drops to 0"
+          >
+            <RefreshCw size={14} /> Reset Records to 0
+          </button>
+          <div className="simple-save-state"><Check size={15} /> {saveState}</div>
+        </div>
       </div>
 
       {/* Summary Cards */}
@@ -609,7 +560,7 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
         <div className="simple-summary-card">
           <div className="simple-card-heading"><span>Total Investment</span><WalletCards size={18} /></div>
           <strong>{formatPKR(summaryMetrics.tInvest)}</strong>
-          <small>{summaryMetrics.tShirts} shirts purchased</small>
+          <small>{summaryMetrics.tShirts} supplier batch shirts</small>
         </div>
 
         <div className="simple-summary-card simple-tone-blue">
@@ -624,10 +575,10 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
           <small>{summaryMetrics.margin.toFixed(1)}% margin</small>
         </div>
 
-        <div className="simple-summary-card">
-          <div className="simple-card-heading"><span>Avg Profit / Shirt</span><Package size={18} /></div>
-          <strong>{formatPKR(summaryMetrics.avgP)}</strong>
-          <small>{summaryMetrics.remaining} in stock</small>
+        <div className="simple-summary-card simple-tone-green" style={{ background: '#ecfdf5', borderColor: '#a7f3d0', color: '#065f46' }}>
+          <div className="simple-card-heading"><span style={{ color: '#047857' }}>Inventory Stock Value</span><Package size={18} /></div>
+          <strong style={{ color: '#047857' }}>{formatPKR(summaryMetrics.totalInventoryValue)}</strong>
+          <small style={{ color: '#059669' }}>{summaryMetrics.totalInventoryCount} shirts in stock</small>
         </div>
       </div>
 
@@ -668,7 +619,7 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
 
           <div className="simple-table-wrap">
             {data.drops.length === 0 ? (
-              <p className="simple-empty">No drops added yet. Click "Add supplier order" to get started.</p>
+              <p className="simple-empty">No supplier drops recorded yet. Click "+ Add supplier order" to record a batch.</p>
             ) : (
               <table className="simple-table">
                 <thead>
@@ -757,7 +708,7 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
             <div className="simple-panel-header">
               <div>
                 <span className="simple-eyebrow">INVENTORY</span>
-                <h3>Remaining Stock</h3>
+                <h3>Remaining Stock (By Drop)</h3>
               </div>
             </div>
 
@@ -775,7 +726,7 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
                 allItems.sort((a, b) => (a.remaining === 0 && b.remaining > 0 ? 1 : a.remaining > 0 && b.remaining === 0 ? -1 : 0));
 
                 if (allItems.length === 0) {
-                  return <p className="simple-empty">No stock items available.</p>;
+                  return <p className="simple-empty">No drop stock items recorded yet. Add a drop to track remaining batch stock.</p>;
                 }
 
                 return allItems.map(({ drop, item, sold, remaining, total }) => {
@@ -821,7 +772,7 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
 
             <div className="simple-table-wrap">
               {data.sales.length === 0 ? (
-                <p className="simple-empty">No sales recorded yet. Add a drop first, then record sales.</p>
+                <p className="simple-empty">No sales recorded yet. Click "+ Record sale" to log a transaction.</p>
               ) : (
                 <table className="simple-table">
                   <thead>
@@ -1016,30 +967,48 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
         {/* Verified Physical Count Inventory */}
         <article className="simple-panel simple-panel-wide">
           <div className="simple-panel-header">
-            <div><span className="simple-eyebrow">VERIFIED PHYSICAL COUNT</span><h3>Current Inventory (Sizes S/M/L/XL)</h3></div>
-            <span className="simple-total-pill">{data.inventory.reduce((sum, item) => sum + totalStock(item), 0)} available</span>
+            <div><span className="simple-eyebrow">VERIFIED PHYSICAL COUNT</span><h3>Current Inventory (26 Shirts Total)</h3></div>
+            <div style={{ textAlign: 'right' }}>
+              <span className="simple-total-pill" style={{ background: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0' }}>
+                {summaryMetrics.totalInventoryCount} available · Value: {formatPKR(summaryMetrics.totalInventoryValue)}
+              </span>
+            </div>
           </div>
           <div className="simple-table-wrap">
             <table className="simple-table inventory-table">
-              <thead><tr><th>Product</th>{SIZES.map((size) => <th key={size}>{size}</th>)}<th>Total</th><th>Unit Cost</th></tr></thead>
+              <thead><tr><th>Product</th>{SIZES.map((size) => <th key={size}>{size}</th>)}<th>Total</th><th>Unit Cost</th><th>Stock Value</th></tr></thead>
               <tbody>
-                {data.inventory.map((item) => (
-                  <tr key={item.id}>
-                    <td><strong>{item.name}</strong><small>{item.color}</small></td>
-                    {SIZES.map((size) => (
-                      <td key={size}>
-                        <div className="stock-stepper">
-                          <button type="button" onClick={() => adjustStock(item.id, size, -1)} aria-label={`Remove one ${item.name} ${size}`}>−</button>
-                          <span className={number(item.stock[size]) < 2 ? 'stock-low' : ''}>{item.stock[size]}</span>
-                          <button type="button" onClick={() => adjustStock(item.id, size, 1)} aria-label={`Add one ${item.name} ${size}`}>+</button>
-                        </div>
-                      </td>
-                    ))}
-                    <td><strong>{totalStock(item)}</strong></td>
-                    <td>{formatCurrency(item.unitCost)}</td>
-                  </tr>
-                ))}
+                {data.inventory.map((item) => {
+                  const qty = totalStock(item);
+                  const val = qty * number(item.unitCost);
+                  return (
+                    <tr key={item.id}>
+                      <td><strong>{item.name}</strong><small>{item.color}</small></td>
+                      {SIZES.map((size) => (
+                        <td key={size}>
+                          <div className="stock-stepper">
+                            <button type="button" onClick={() => adjustStock(item.id, size, -1)} aria-label={`Remove one ${item.name} ${size}`}>−</button>
+                            <span className={number(item.stock[size]) < 2 ? 'stock-low' : ''}>{item.stock[size]}</span>
+                            <button type="button" onClick={() => adjustStock(item.id, size, 1)} aria-label={`Add one ${item.name} ${size}`}>+</button>
+                          </div>
+                        </td>
+                      ))}
+                      <td><strong>{qty}</strong></td>
+                      <td>{formatCurrency(item.unitCost)}</td>
+                      <td><strong style={{ color: '#047857' }}>{formatPKR(val)}</strong></td>
+                    </tr>
+                  );
+                })}
               </tbody>
+              <tfoot>
+                <tr className="total-row">
+                  <td><strong>Total Inventory</strong></td>
+                  <td colSpan={SIZES.length}></td>
+                  <td><strong>{summaryMetrics.totalInventoryCount}</strong></td>
+                  <td></td>
+                  <td><strong style={{ color: '#047857' }}>{formatPKR(summaryMetrics.totalInventoryValue)}</strong></td>
+                </tr>
+              </tfoot>
             </table>
           </div>
         </article>
@@ -1094,10 +1063,14 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
             <button type="submit"><Plus size={16} /> Add expense</button>
           </form>
           <div className="simple-table-wrap">
-            <table className="simple-table">
-              <thead><tr><th>Date</th><th>Category</th><th>Details</th><th>Amount</th><th></th></tr></thead>
-              <tbody>{data.expenses.map((expense) => <tr key={expense.id}><td>{expense.date}</td><td><span className="category-badge">{expense.category}</span></td><td>{expense.note}</td><td><strong>{formatCurrency(expense.amount)}</strong></td><td><button className="icon-delete" onClick={() => persist({ ...data, expenses: data.expenses.filter((item) => item.id !== expense.id) })}><Trash2 size={15} /></button></td></tr>)}</tbody>
-            </table>
+            {data.expenses.length === 0 ? (
+              <p className="simple-empty">No expenses recorded yet.</p>
+            ) : (
+              <table className="simple-table">
+                <thead><tr><th>Date</th><th>Category</th><th>Details</th><th>Amount</th><th></th></tr></thead>
+                <tbody>{data.expenses.map((expense) => <tr key={expense.id}><td>{expense.date}</td><td><span className="category-badge">{expense.category}</span></td><td>{expense.note}</td><td><strong>{formatCurrency(expense.amount)}</strong></td><td><button className="icon-delete" onClick={() => persist({ ...data, expenses: data.expenses.filter((item) => item.id !== expense.id) })}><Trash2 size={15} /></button></td></tr>)}</tbody>
+              </table>
+            )}
           </div>
         </article>
       </div>
@@ -1111,7 +1084,7 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
               <label>Batch Name</label>
               <input
                 type="text"
-                placeholder="e.g. Supplier batch 4"
+                placeholder="e.g. Supplier batch 1"
                 value={dropForm.name}
                 onChange={(e) => setDropForm({ ...dropForm, name: e.target.value })}
               />
@@ -1313,7 +1286,6 @@ const SimpleBusinessDashboard = ({ orders = [] }) => {
               const rev = q * p;
               const costBasis = q * selectedSaleEffCost;
               const profitPerShirt = p - selectedSaleEffCost;
-              const totalProfit = q * profitPerShirt;
 
               return (
                 <div className="preview-box sale-preview">
