@@ -45,6 +45,9 @@ const normalizeOrder = (body) => {
       color: cleanText(item?.color, 50),
       quantity: Math.max(1, Math.min(20, Number.parseInt(item?.quantity, 10) || 1)),
       unitPrice: asMoney(item?.unitPrice),
+      orderType: cleanText(item?.orderType, 20),
+      launchName: cleanText(item?.launchName, 120),
+      expectedDispatchAt: cleanText(item?.expectedDispatchAt, 60),
     })),
     subtotal: asMoney(source.subtotal),
     shippingCost: asMoney(source.shippingCost),
@@ -116,11 +119,15 @@ const renderEmail = (order) => {
   const itemRows = order.items.map((item) => {
     const details = [item.size && `Size: ${item.size}`, item.color && `Color: ${item.color}`]
       .filter(Boolean).join(' · ');
+    const preorder = item.orderType === 'PREORDER'
+      ? `<div style="margin-top:5px;font-size:11px;font-weight:800;letter-spacing:.6px;color:#9a6700">PRE-ORDER${item.expectedDispatchAt ? ` · EXPECTED DISPATCH ${escapeHtml(new Date(item.expectedDispatchAt).toLocaleDateString('en-PK', { day: 'numeric', month: 'short', year: 'numeric' }))}` : ''}</div>`
+      : '';
     return `
       <tr>
         <td style="padding:14px 0;border-bottom:1px solid #e7e7e7;vertical-align:top">
           <div style="font-size:14px;font-weight:700;color:#111">${escapeHtml(item.title)}</div>
           ${details ? `<div style="margin-top:4px;font-size:12px;color:#6b6b6b">${escapeHtml(details)}</div>` : ''}
+          ${preorder}
           <div style="margin-top:4px;font-size:12px;color:#6b6b6b">Quantity: ${item.quantity}</div>
         </td>
         <td style="padding:14px 0 14px 12px;border-bottom:1px solid #e7e7e7;text-align:right;vertical-align:top;white-space:nowrap;font-size:14px;color:#111">${formatMoney(item.unitPrice * item.quantity)}</td>

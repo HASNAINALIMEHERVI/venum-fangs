@@ -7,6 +7,7 @@ import { trackViewContent, trackAddToCart } from '../utils/metaPixel';
 import { trackViewContent as ttqViewContent, trackAddToCart as ttqAddToCart } from '../utils/tiktokPixel';
 import { collection, getDocs, addDoc, Timestamp, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
+import { canPurchaseLaunch, findProductLaunch, formatLaunchDate, getLaunchStatus, getProductSizes, getVariantImages, getVariantStock, statusCopy } from '../utils/launchStatus';
 
 const getColorHex = (colorName) => {
   const name = colorName.toLowerCase().trim();
@@ -32,7 +33,7 @@ const getColorHex = (colorName) => {
   return colorMap[name] || name;
 };
 
-const ProductDetail = ({ products, onAddToCart }) => {
+const ProductDetail = ({ products, launches = [], onAddToCart }) => {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -55,6 +56,11 @@ const ProductDetail = ({ products, onAddToCart }) => {
   const [notifySuccess, setNotifySuccess] = useState(false);
   
   const atcRef = useRef(null);
+  const productLaunch = product ? findProductLaunch(product.id, launches) : null;
+  const launchStatus = productLaunch ? getLaunchStatus(productLaunch) : null;
+  const launchAllowsPurchase = !productLaunch || canPurchaseLaunch(productLaunch);
+  const availableSizes = product ? getProductSizes(product, selectedColor) : [];
+  const selectedStock = product ? getVariantStock(product, selectedColor, selectedSize) : null;
 
   useEffect(() => {
     const found = products.find(p => p.id === id);
@@ -69,10 +75,16 @@ const ProductDetail = ({ products, onAddToCart }) => {
       if (urlColor && found.colors && found.colors.map(c => c.toLowerCase()).includes(urlColor.toLowerCase())) {
         const exactColor = found.colors.find(c => c.toLowerCase() === urlColor.toLowerCase());
         setSelectedColor(exactColor);
+        const sizes = getProductSizes(found, exactColor);
+        if (sizes.length === 1) setSelectedSize(sizes[0]);
       } else if (found.colors && found.colors.length > 0) {
         setSelectedColor(found.colors[0]);
+        const sizes = getProductSizes(found, found.colors[0]);
+        if (sizes.length === 1) setSelectedSize(sizes[0]);
       } else {
         setSelectedColor('Default');
+        const sizes = getProductSizes(found, 'Default');
+        if (sizes.length === 1) setSelectedSize(sizes[0]);
       }
 
     }
@@ -135,19 +147,27 @@ const ProductDetail = ({ products, onAddToCart }) => {
       '@context': 'https://schema.org',
       '@type': 'Product',
       name: product.title,
-      image: product.images?.[0] ? `https://www.wearblackloom.com${product.images[0]}` : undefined,
+      image: product.images?.[0] ? new URL(product.images[0], 'https://www.wearblackloom.com').href : undefined,
       description: product.description?.substring(0, 200),
       brand: { '@type': 'Brand', name: 'Black Loom' },
       offers: {
         '@type': 'Offer',
         price: product.salePrice || product.price,
         priceCurrency: 'PKR',
-        availability: 'https://schema.org/InStock',
+        availability: selectedStock === 0 ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock',
         url: `https://www.wearblackloom.com/product/${product.id}`
       }
     });
     document.head.appendChild(script);
     return () => { if (script.parentNode) script.parentNode.removeChild(script); };
+  }, [product, selectedStock]);
+
+  useEffect(() => {
+    if (!product) return;
+    document.title = `${product.title} — BLACK LOOM`;
+    const description = product.description?.slice(0, 160) || 'Shop BLACK LOOM.';
+    const meta = document.querySelector('meta[name="description"]');
+    if (meta) meta.setAttribute('content', description);
   }, [product]);
 
   const recommendations = React.useMemo(() => {
@@ -200,7 +220,11 @@ const ProductDetail = ({ products, onAddToCart }) => {
       return;
     }
     setSizeError(false);
-    onAddToCart(product, selectedSize, selectedColor);
+    if (!launchAllowsPurchase) {
+      navigate(`/drop/${productLaunch.slug}`);
+      return;
+    }
+    onAddToCart(productLaunch ? { ...product, launchId: productLaunch.id, launchName: productLaunch.name, orderType: launchStatus === 'PREORDER_LIVE' ? 'PREORDER' : 'STANDARD', expectedDispatchAt: productLaunch.expectedDispatchAt || null } : product, selectedSize, selectedColor);
     trackAddToCart(product, selectedSize, 1);
     ttqAddToCart(product, selectedSize, 1);
     setAddedMessage(true);
@@ -209,6 +233,8 @@ const ProductDetail = ({ products, onAddToCart }) => {
 
   const handleColorChange = (color) => {
     setSelectedColor(color);
+    const sizes = getProductSizes(product, color);
+    if (sizes.length === 1) setSelectedSize(sizes[0]);
   };
 
   const handleSubmitReview = async (e) => {
@@ -262,15 +288,7 @@ const ProductDetail = ({ products, onAddToCart }) => {
   };
 
   const getActiveImages = () => {
-    if (!product || !product.images) return [];
-    if (!selectedColor || selectedColor === 'Default') {
-      return product.images;
-    }
-    const filtered = product.images.filter((img, idx) => {
-      const imgColor = product.imageColors?.[idx];
-      return imgColor && imgColor.toLowerCase().trim() === selectedColor.toLowerCase().trim();
-    });
-    return filtered.length > 0 ? filtered : product.images;
+    return getVariantImages(product, selectedColor);
   };
 
   const activeImages = getActiveImages();
@@ -433,10 +451,16 @@ const ProductDetail = ({ products, onAddToCart }) => {
               </div>
 
               {/* Color Swatch Selector */}
+              {productLaunch && (
+                <button type="button" onClick={() => navigate(`/drop/${productLaunch.slug}`)} style={{ width: '100%', textAlign: 'left', padding: '1rem', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', cursor: 'pointer' }}>
+                  <strong style={{ display: 'block', fontSize: '.72rem', letterSpacing: '.08em' }}>{statusCopy[launchStatus]} · {productLaunch.name}</strong>
+                  <span style={{ fontSize: '.72rem', color: 'var(--text-muted)' }}>{productLaunch.expectedDispatchAt ? `Expected dispatch ${formatLaunchDate(productLaunch.expectedDispatchAt, productLaunch.timezone)}` : 'View the complete drop'}</span>
+                </button>
+              )}
               {product.colors && product.colors.length > 0 && (
                 <div>
                   <span style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 500, marginBottom: '0.75rem' }}>
-                    {selectedColor.toUpperCase()}
+                    {product.category === 'Headwear' ? 'BRIM COLOR · ' : ''}{selectedColor.toUpperCase()}
                   </span>
                   <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
                     {product.colors.map(color => (
@@ -485,9 +509,9 @@ const ProductDetail = ({ products, onAddToCart }) => {
 
                 {/* Size Swatches */}
                 <div style={{ display: 'flex', gap: '1.25rem', flexWrap: 'wrap', alignItems: 'center' }}>
-                  {['S', 'M', 'L', 'XL'].map(size => {
-                    const available = product.sizes ? product.sizes.includes(size) : true;
-                    const stock = product.stock ? product.stock[size] : undefined;
+                  {availableSizes.map(size => {
+                    const available = availableSizes.includes(size);
+                    const stock = getVariantStock(product, selectedColor, size);
                     const isOutOfStock = stock === 0 || !available;
                     return (
                       <button
@@ -522,13 +546,13 @@ const ProductDetail = ({ products, onAddToCart }) => {
 
               {/* Add to Cart Action Button */}
               <div style={{ marginTop: '0.5rem' }} ref={atcRef}>
-                {selectedSize && product.stock && product.stock[selectedSize] > 0 && product.stock[selectedSize] <= 5 && (
+                {selectedSize && selectedStock > 0 && selectedStock <= 5 && (
                   <p style={{ color: '#f59e0b', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.75rem', marginTop: 0 }}>
-                    Only {product.stock[selectedSize]} left in size {selectedSize}!
+                    Only {selectedStock} left for this option!
                   </p>
                 )}
 
-                {selectedSize && (product.stock ? product.stock[selectedSize] === 0 : (!product.sizes || !product.sizes.includes(selectedSize))) ? (
+                {selectedSize && selectedStock === 0 ? (
                   <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '1.25rem', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
                     <h4 style={{ margin: '0 0 0.75rem', fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-primary)' }}>NOTIFY ME WHEN BACK IN STOCK</h4>
                     {notifySuccess ? (
@@ -573,7 +597,7 @@ const ProductDetail = ({ products, onAddToCart }) => {
                     }}
                     className="atc-btn-black"
                   >
-                    <span>{addedMessage ? 'ADDED TO BAG' : 'ADD TO CART'}</span>
+                    <span>{addedMessage ? 'ADDED TO BAG' : !launchAllowsPurchase ? 'VIEW DROP STATUS' : launchStatus === 'PREORDER_LIVE' ? 'PRE-ORDER NOW' : 'ADD TO CART'}</span>
                     <ShoppingBag size={18} strokeWidth={1.5} style={{ position: 'absolute', right: '1.5rem' }} />
                   </button>
                 )}

@@ -9,6 +9,7 @@ import Footer from './components/Footer';
 import CartDrawer from './components/CartDrawer';
 import Home from './pages/Home';
 import ProductDetail from './pages/ProductDetail';
+import LaunchPage from './pages/LaunchPage';
 import Admin from './pages/Admin';
 import Checkout from './pages/Checkout';
 import TrackOrder from './pages/TrackOrder';
@@ -28,8 +29,10 @@ import { trackPageView } from './utils/metaPixel';
 
 // Firebase imports
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { doc, getDoc, setDoc, collection, getDocs, deleteDoc, addDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, collection, getDocs, deleteDoc, addDoc, runTransaction } from "firebase/firestore";
 import { auth, db } from "./firebase";
+import { getVariantImages } from './utils/launchStatus';
+import { DEMO_LAUNCH, DEMO_PRODUCTS } from './data/demoLaunch';
 
 // Component to dynamically update canonical tags for SEO
 const CanonicalUpdater = () => {
@@ -37,7 +40,7 @@ const CanonicalUpdater = () => {
 
   useEffect(() => {
     const canonicalLink = document.querySelector('link[rel="canonical"]');
-    const fullUrl = `https://www.wearblackloom.com${location.pathname === '/' && location.search === '' ? '' : location.pathname + location.search}`;
+    const fullUrl = `https://www.wearblackloom.com${location.pathname === '/' ? '' : location.pathname}`;
     
     if (canonicalLink) {
       canonicalLink.setAttribute('href', fullUrl);
@@ -50,7 +53,7 @@ const CanonicalUpdater = () => {
 
     // Fire Meta Pixel PageView on route change
     trackPageView();
-  }, [location.pathname, location.search]);
+  }, [location.pathname]);
 
   return null;
 };
@@ -230,6 +233,10 @@ function App() {
   const [cartOpen, setCartOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [showLogin, setShowLogin] = useState(false);
+  const [launches, setLaunches] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('black_loom_launches') || '[]'); }
+    catch { return []; }
+  });
 
   const [activeTheme, setActiveTheme] = useState(() => {
     try {
@@ -420,10 +427,23 @@ function App() {
       }
     };
 
+    const loadLaunches = async () => {
+      try {
+        const snapshot = await getDocs(collection(db, 'launches'));
+        const data = snapshot.docs.map(item => ({ id: item.id, ...item.data() }));
+        data.sort((a, b) => new Date(b.announceAt || 0) - new Date(a.announceAt || 0));
+        setLaunches(data);
+        localStorage.setItem('black_loom_launches', JSON.stringify(data));
+      } catch (err) {
+        console.error('Error loading launches from Firestore:', err);
+      }
+    };
+
     loadProducts();
     loadOrders();
     loadPromoCodes();
     loadCategories();
+    loadLaunches();
   }, []);
 
   const handleAddPromoCode = async (newCode) => {
@@ -590,7 +610,7 @@ function App() {
           : item
       );
     } else {
-      newCart = [...cartItems, { ...product, selectedSize: size, selectedColor: color, qty: 1 }];
+      newCart = [...cartItems, { ...product, images: getVariantImages(product, color), selectedSize: size, selectedColor: color, qty: 1 }];
     }
     saveCartToStorage(newCart);
     setCartOpen(true);
@@ -686,7 +706,10 @@ function App() {
         size: item.selectedSize,
         color: item.selectedColor,
         quantity: item.qty,
-        unitPrice: item.salePrice || item.price
+        unitPrice: item.salePrice || item.price,
+        orderType: item.orderType || 'STANDARD',
+        launchName: item.launchName || '',
+        expectedDispatchAt: item.expectedDispatchAt || null
       })),
       subtotal: order.subtotal,
       shippingCost: order.shippingCost,
@@ -764,9 +787,41 @@ function App() {
       status: 'PENDING'
     };
 
-    // Persist first. Notifications must never be sent for an order that was not saved.
+    // Reserve limited inventory and create the order atomically to prevent overselling.
     try {
-      await setDoc(doc(db, "orders", orderId), newOrder);
+      await runTransaction(db, async transaction => {
+        const productReads = [];
+        const uniqueIds = [...new Set(cartItems.map(item => item.id))];
+        for (const productId of uniqueIds) {
+          const productRef = doc(db, 'products', productId);
+          productReads.push({ productId, productRef, snapshot: await transaction.get(productRef) });
+        }
+        for (const { productId, productRef, snapshot } of productReads) {
+          if (!snapshot.exists()) throw new Error(`Product ${productId} is no longer available.`);
+          const stored = snapshot.data();
+          let variants = stored.variants ? [...stored.variants] : null;
+          let legacyStock = stored.stock ? { ...stored.stock } : null;
+          for (const item of cartItems.filter(entry => entry.id === productId)) {
+            if (variants?.length) {
+              const index = variants.findIndex(variant => variant.color?.toLowerCase() === item.selectedColor?.toLowerCase());
+              if (index < 0) throw new Error(`${item.selectedColor} is no longer available for ${item.title}.`);
+              const variant = { ...variants[index] };
+              const current = typeof variant.stock === 'number' ? variant.stock : Number(variant.stock?.[item.selectedSize] ?? 0);
+              if (current < item.qty) throw new Error(`Only ${current} ${item.selectedColor} ${item.title} remaining.`);
+              variant.stock = typeof variant.stock === 'number' ? current - item.qty : { ...variant.stock, [item.selectedSize]: current - item.qty };
+              if (item.orderType === 'PREORDER') variant.preordersSold = Number(variant.preordersSold || 0) + item.qty;
+              variants[index] = variant;
+            } else if (legacyStock && Object.prototype.hasOwnProperty.call(legacyStock, item.selectedSize)) {
+              const current = Number(legacyStock[item.selectedSize] || 0);
+              if (current < item.qty) throw new Error(`Only ${current} ${item.title} remaining in ${item.selectedSize}.`);
+              legacyStock[item.selectedSize] = current - item.qty;
+            }
+          }
+          if (variants) transaction.update(productRef, { variants });
+          else if (legacyStock) transaction.update(productRef, { stock: legacyStock });
+        }
+        transaction.set(doc(db, 'orders', orderId), newOrder);
+      });
     } catch (err) {
       console.error("Error saving order to Firestore:", err);
       throw new Error("Could not save order details online. Please contact support.", { cause: err });
@@ -821,18 +876,48 @@ function App() {
     }
   };
 
-  const handleUpdateProduct = async (updatedProd) => {
+  const handleUpdateProduct = async (updatedProd, silent = false) => {
     const updated = products.map(p => p.id === updatedProd.id ? updatedProd : p);
 
     // Update in Firestore first
     try {
       await setDoc(doc(db, "products", updatedProd.id), updatedProd);
       saveProductsToStorage(updated);
-      alert("Product successfully updated!");
+      if (!silent) alert("Product successfully updated!");
     } catch (err) {
       console.error("Error updating product in Firestore:", err);
       alert("Database Error: " + err.message + "\n\nCould not update product online.");
     }
+  };
+
+  const saveLaunchesLocally = updated => {
+    setLaunches(updated);
+    localStorage.setItem('black_loom_launches', JSON.stringify(updated));
+  };
+
+  const handleSaveLaunch = async (launch, existingId = null) => {
+    const id = existingId || launch.slug;
+    const payload = { ...launch, id, updatedAt: new Date().toISOString() };
+    await setDoc(doc(db, 'launches', id), payload);
+    saveLaunchesLocally([payload, ...launches.filter(item => item.id !== id)]);
+    return id;
+  };
+
+  const handleDeleteLaunch = async id => {
+    if (!window.confirm('Delete this launch? Products and orders will remain untouched.')) return;
+    await deleteDoc(doc(db, 'launches', id));
+    saveLaunchesLocally(launches.filter(item => item.id !== id));
+  };
+
+  const handleImportDropProducts = async templates => {
+    const merged = [...products];
+    for (const template of templates) {
+      await setDoc(doc(db, 'products', template.id), template, { merge: true });
+      const index = merged.findIndex(product => product.id === template.id);
+      if (index >= 0) merged[index] = { ...merged[index], ...template };
+      else merged.push(template);
+    }
+    saveProductsToStorage(merged);
   };
 
   // Admin order operations
@@ -926,6 +1011,10 @@ function App() {
   };
 
   const cartTotalItems = cartItems.reduce((acc, item) => acc + item.qty, 0);
+  const previewProducts = import.meta.env.DEV
+    ? [...products, ...DEMO_PRODUCTS.filter(demo => !products.some(product => product.id === demo.id))]
+    : products;
+  const previewLaunches = import.meta.env.DEV && launches.length === 0 ? [DEMO_LAUNCH] : launches;
 
   return (
     <Router>
@@ -952,7 +1041,7 @@ function App() {
         <Header 
           cartCount={cartTotalItems} 
           onCartClick={() => setCartOpen(true)} 
-          products={products}
+          products={previewProducts}
           currentUser={currentUser}
           onLogout={handleLogout}
           categories={categories}
@@ -963,12 +1052,14 @@ function App() {
           <Routes>
             <Route 
               path="/" 
-              element={<Home products={products} productsLoading={productsLoading} onQuickAdd={handleQuickAdd} activeTheme={activeTheme} />} 
+              element={<Home products={previewProducts} launches={previewLaunches} productsLoading={productsLoading} onQuickAdd={handleQuickAdd} activeTheme={activeTheme} />} 
             />
+
+            <Route path="/drop/:slug" element={<LaunchPage launches={previewLaunches} products={previewProducts} onAddToCart={handleAddToCart} />} />
             
             <Route 
               path="/product/:id" 
-              element={<ProductDetail products={products} onAddToCart={handleAddToCart} />} 
+              element={<ProductDetail products={previewProducts} launches={previewLaunches} onAddToCart={handleAddToCart} />} 
             />
             
             <Route 
@@ -981,6 +1072,11 @@ function App() {
                   promoCodes={promoCodes}
                   categories={categories}
                   activeTheme={activeTheme}
+                  launches={launches}
+                  onSaveLaunch={handleSaveLaunch}
+                  onDeleteLaunch={handleDeleteLaunch}
+                  onImportDropProducts={handleImportDropProducts}
+                  onSaveDropProduct={(product) => handleUpdateProduct(product, true)}
                   onSaveTheme={handleSaveTheme}
                   onAddProduct={handleAddProduct} 
                   onDeleteProduct={handleDeleteProduct} 

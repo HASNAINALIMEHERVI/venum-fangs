@@ -217,6 +217,11 @@ const CartDrawer = ({ isOpen, onClose, cartItems, onUpdateQty, onRemoveItem, car
                       <> | Color: <span style={{ fontWeight: 600, color: 'var(--accent)' }}>{item.selectedColor}</span></>
                     )}
                   </span>
+                  {item.orderType === 'PREORDER' && (
+                    <span style={{ fontSize: '.65rem', color: '#9a6700', fontWeight: 800, letterSpacing: '.06em' }}>
+                      PRE-ORDER{item.expectedDispatchAt ? ` · EXPECTED ${new Date(item.expectedDispatchAt).toLocaleDateString('en-PK', { day: 'numeric', month: 'short' }).toUpperCase()}` : ''}
+                    </span>
+                  )}
 
                   {/* Qty + Price */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' }}>

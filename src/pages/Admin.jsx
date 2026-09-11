@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Upload, Trash2, Edit2, Plus, Check, ShoppingBag, User, MapPin, Phone, Mail, Clock, ShieldCheck, Send, ExternalLink, Download, TrendingUp, BarChart2, RefreshCw, Layout, Palette } from 'lucide-react';
+import { Upload, Trash2, Edit2, Plus, Check, ShoppingBag, User, MapPin, Phone, Mail, Clock, ShieldCheck, Send, ExternalLink, Download, TrendingUp, BarChart2, RefreshCw, Layout, Palette, CalendarClock } from 'lucide-react';
 import { collection, getDocs, orderBy, query, doc, getDoc, setDoc } from "firebase/firestore";
 import { db, storage } from "../firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { formatCurrency } from '../utils/formatCurrency';
 import SimpleBusinessDashboard from '../components/SimpleBusinessDashboard';
 import { PRESET_THEMES } from '../utils/themePresets';
+import LaunchManager from '../components/admin/LaunchManager';
 
 const Admin = ({ 
   products, 
@@ -24,7 +25,12 @@ const Admin = ({
   onSaveCategory,
   onDeleteCategory,
   activeTheme = null,
-  onSaveTheme = null
+  onSaveTheme = null,
+  launches = [],
+  onSaveLaunch,
+  onDeleteLaunch,
+  onImportDropProducts,
+  onSaveDropProduct
 }) => {
   const [passwordInput, setPasswordInput] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
@@ -774,6 +780,18 @@ const Admin = ({
             >
               INVENTORY CATALOG ({products.length})
             </button>
+            <button
+              onClick={() => setActiveTab('launches')}
+              style={{
+                background: activeTab === 'launches' ? 'var(--bg-primary)' : 'transparent',
+                color: activeTab === 'launches' ? 'var(--accent)' : 'var(--text-secondary)',
+                border: 'none', padding: '0.6rem 1.25rem', fontSize: '0.75rem', fontWeight: 800,
+                letterSpacing: '0.08em', textTransform: 'uppercase', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: '0.35rem'
+              }}
+            >
+              <CalendarClock size={14} /> DROPS ({launches.length})
+            </button>
             <button 
               onClick={() => setActiveTab('categories')} 
               style={{
@@ -902,6 +920,17 @@ const Admin = ({
         {/* Tab 1: Products Inventory */}
         {activeTab === 'dashboard' && (
           <SimpleBusinessDashboard orders={orders} products={products} />
+        )}
+
+        {activeTab === 'launches' && (
+          <LaunchManager
+            launches={launches}
+            products={products}
+            onSaveLaunch={onSaveLaunch}
+            onDeleteLaunch={onDeleteLaunch}
+            onImportDropProducts={onImportDropProducts}
+            onSaveDropProduct={onSaveDropProduct}
+          />
         )}
 
         {activeTab === 'products' && (
@@ -1685,6 +1714,7 @@ const Admin = ({
                               <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
                                 <strong style={{ fontSize: '0.75rem', color: 'var(--text-primary)', textTransform: 'uppercase' }}>{item.title}</strong>
                                 <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Size: {item.selectedSize} | Qty: {item.qty}</span>
+                                {item.orderType === 'PREORDER' && <span style={{ fontSize: '.62rem', fontWeight: 900, color: '#b7791f', letterSpacing: '.06em' }}>PRE-ORDER{item.expectedDispatchAt ? ` · DISPATCH ${new Date(item.expectedDispatchAt).toLocaleDateString('en-PK')}` : ''}</span>}
                               </div>
                               <span style={{ fontSize: '0.8rem', fontWeight: 700 }}>
                                 Rs. {((item.salePrice || item.price) * item.qty).toLocaleString()}

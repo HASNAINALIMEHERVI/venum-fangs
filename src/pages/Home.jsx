@@ -5,8 +5,9 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import ProductCard from '../components/ProductCard';
 import ProductSkeleton from '../components/ProductSkeleton';
+import { getLaunchStatus, statusCopy, targetForStatus, formatLaunchDate } from '../utils/launchStatus';
 
-const Home = ({ products, productsLoading = false, onQuickAdd, activeTheme = null }) => {
+const Home = ({ products, launches = [], productsLoading = false, onQuickAdd, activeTheme = null }) => {
   const [searchParams] = useSearchParams();
   const categoryFilter = searchParams.get('category');
   const navigate = useNavigate();
@@ -16,11 +17,13 @@ const Home = ({ products, productsLoading = false, onQuickAdd, activeTheme = nul
   const [notifyStatus, setNotifyStatus] = React.useState('idle');
   const [sortBy, setSortBy] = React.useState('default');
   const [filterSize, setFilterSize] = React.useState('ALL');
+  const activeLaunch = React.useMemo(() => launches.find(launch => launch.published && !['ENDED', 'DRAFT'].includes(getLaunchStatus(launch))), [launches]);
 
   // Flatten products by color so each color variant has its own card
   const flattenedProducts = React.useMemo(() => {
     const flat = [];
     products.forEach(p => {
+      if (p.draft) return;
       if (p.colors && p.colors.length > 0) {
         p.colors.forEach(color => {
           flat.push({ ...p, id: `${p.id}-${color}`, originalId: p.id, initialColor: color });
@@ -271,7 +274,7 @@ const Home = ({ products, productsLoading = false, onQuickAdd, activeTheme = nul
         display: 'flex',
         alignItems: 'center'
       }}>
-        <video 
+        {!activeLaunch && <video 
           src="/videos/banner.mp4"
           autoPlay={true}
           loop={true}
@@ -287,7 +290,8 @@ const Home = ({ products, productsLoading = false, onQuickAdd, activeTheme = nul
             opacity: 0.3,
             zIndex: 0
           }}
-        />
+        />}
+        {activeLaunch?.desktopBanner && <picture style={{ position: 'absolute', inset: 0 }}><source media="(max-width: 700px)" srcSet={activeLaunch.mobileBanner || activeLaunch.desktopBanner} /><img src={activeLaunch.desktopBanner} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: .46 }} /></picture>}
         <div style={{
           position: 'absolute',
           width: '50%', height: '70%',
@@ -309,7 +313,7 @@ const Home = ({ products, productsLoading = false, onQuickAdd, activeTheme = nul
             marginBottom: '0.75rem',
             opacity: activeTheme?.themeId === 'azaadi' ? 1 : 0.8
           }}>
-            {activeTheme?.heroTopLabel || 'DROP I: BLACK LOOM'}
+            {activeLaunch ? `LIMITED DROP · ${statusCopy[getLaunchStatus(activeLaunch)]}` : (activeTheme?.heroTopLabel || 'DROP I: BLACK LOOM')}
           </span>
           <h1 style={{
             fontFamily: 'var(--font-sans)',
@@ -321,7 +325,7 @@ const Home = ({ products, productsLoading = false, onQuickAdd, activeTheme = nul
             color: '#fff',
             textTransform: 'uppercase'
           }}>
-            {activeTheme?.heroTitle || 'PREMIUM WEAVES'}
+            {activeLaunch?.heroTitle || activeLaunch?.name || activeTheme?.heroTitle || 'PREMIUM WEAVES'}
           </h1>
           <p style={{
             fontSize: '0.85rem',
@@ -331,7 +335,7 @@ const Home = ({ products, productsLoading = false, onQuickAdd, activeTheme = nul
             margin: '0 auto 0.75rem auto',
             fontWeight: 400
           }}>
-            {activeTheme?.heroSubtitle || 'Experience apparel in its most extreme form. Heavyweight fabrics, acid wash textures and detailed puff-print embellishments.'}
+            {activeLaunch?.heroSubtitle || activeLaunch?.description || activeTheme?.heroSubtitle || 'Experience apparel in its most extreme form. Heavyweight fabrics, acid wash textures and detailed puff-print embellishments.'}
           </p>
           {activeTheme?.heroSubtext && (
             <p style={{
@@ -343,8 +347,9 @@ const Home = ({ products, productsLoading = false, onQuickAdd, activeTheme = nul
               {activeTheme.heroSubtext}
             </p>
           )}
+          {activeLaunch && targetForStatus(activeLaunch) && <p style={{ color: '#fff', fontSize: '.72rem', letterSpacing: '.08em', margin: '.5rem 0 1rem' }}>{formatLaunchDate(targetForStatus(activeLaunch), activeLaunch.timezone)}</p>}
           <button 
-            onClick={() => navigate('/?category=T-Shirts')}
+            onClick={() => navigate(activeLaunch ? `/drop/${activeLaunch.slug}` : '/?category=T-Shirts')}
             className="btn-primary"
             style={{
               fontSize: '0.7rem',
@@ -357,7 +362,7 @@ const Home = ({ products, productsLoading = false, onQuickAdd, activeTheme = nul
               marginTop: activeTheme?.heroSubtext ? '0' : '1rem'
             }}
           >
-            {activeTheme?.heroCta || 'SHOP LATEST DROP'}
+            {activeLaunch ? (getLaunchStatus(activeLaunch) === 'PREORDER_LIVE' ? 'PRE-ORDER THE DROP' : 'VIEW THE DROP') : (activeTheme?.heroCta || 'SHOP LATEST DROP')}
           </button>
         </div>
       </section>

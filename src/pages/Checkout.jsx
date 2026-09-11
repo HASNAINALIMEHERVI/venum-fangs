@@ -699,6 +699,7 @@ const Checkout = ({ cartItems, orders = [], onClearCart, onPlaceOrder, currentUs
                         {item.selectedColor && item.selectedColor !== 'Default' ? item.selectedColor + ' / ' : ''}
                         {item.selectedSize}
                       </span>
+                      {item.orderType === 'PREORDER' && <span style={{ display: 'block', marginTop: '.2rem', fontSize: '.62rem', color: '#9a6700', fontWeight: 800 }}>PRE-ORDER{item.expectedDispatchAt ? ` · EXPECTED DISPATCH ${new Date(item.expectedDispatchAt).toLocaleDateString('en-PK', { day: 'numeric', month: 'short', year: 'numeric' }).toUpperCase()}` : ''}</span>}
                     </div>
 
                     <span style={{ fontSize: '0.88rem', fontWeight: 500, color: '#111', whiteSpace: 'nowrap' }}>
