@@ -316,6 +316,7 @@ const TrackOrder = ({ orders = [] }) => {
                       <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem' }}>
                         <span style={{ color: 'var(--text-primary)' }}>
                           {item.title} <span style={{ color: 'var(--text-secondary)' }}>(Size: {item.selectedSize} × {item.qty})</span>
+                          {item.orderType === 'PREORDER' && <small style={{ display: 'block', color: '#9a6700', fontWeight: 800 }}>PRE-ORDER{item.expectedDispatchAt ? ` · expected dispatch ${new Date(item.expectedDispatchAt).toLocaleDateString('en-PK')}` : ''}</small>}
                         </span>
                         <span style={{ fontWeight: 600 }}>Rs. {((item.salePrice || item.price) * item.qty).toLocaleString()}</span>
                       </div>
