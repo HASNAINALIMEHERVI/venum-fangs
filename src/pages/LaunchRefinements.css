@@ -1,4 +1,22 @@
 .launch-page { overflow-x: clip; }
+.launch-page { background: #fff; }
+.product-breadcrumb { max-width: 1400px; margin: auto; padding: 26px clamp(20px,4vw,64px) 0; display: flex; gap: 10px; flex-wrap: wrap; font-size: 12px; color: #777; }
+.product-breadcrumb a { color: inherit; text-decoration: none; }
+.launch-product-page .launch-shop { padding-top: 28px; }
+.launch-details .launch-product-copy { margin-bottom: 30px; }
+.launch-product-copy h1 { font-size: clamp(28px,3vw,40px); font-weight: 500; letter-spacing: -.035em; margin: 10px 0 14px; line-height: 1.15; }
+.launch-product-copy > strong { font-weight: 500; }
+.launch-details .launch-step { font-size: 12px; letter-spacing: .02em; font-weight: 500; text-transform: none; }
+.launch-details .design-list { grid-template-columns: repeat(5,minmax(0,1fr)); gap: 8px; border: 0; }
+.launch-details .design-list button { display: flex; flex-direction: column; gap: 8px; padding: 4px; border: 1px solid transparent; background: #fff; color: #222; font-weight: 400; letter-spacing: 0; text-transform: none; }
+.launch-details .design-list button.active { border-color: #222; padding: 4px; }
+.design-list button img { width: 100%; aspect-ratio: 1; object-fit: contain; }
+.launch-details .design-list button span { color: inherit; font-size: 11px; }
+.product-fit, .booking-help, .product-info { font-size: 13px; line-height: 1.7; color: #555; }
+.launch-details .dispatch-note { border: 0; background: #f5f5f3; font-size: 13px; }
+.launch-details .launch-cta { font-weight: 600; letter-spacing: .04em; }
+.product-info { border-top: 1px solid #ddd; margin-top: 24px; padding: 18px 0; }
+.product-info summary { cursor: pointer; color: #222; }
 #new-in { scroll-margin-top: 100px; }
 .launch-hero { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); min-height: 0; }
 .launch-hero-copy { min-width: 0; padding: clamp(24px, 4vw, 72px); container-type: inline-size; }

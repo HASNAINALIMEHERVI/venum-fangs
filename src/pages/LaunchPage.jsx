@@ -31,6 +31,7 @@ const Countdown = ({ target, now }) => {
 const LaunchPage = ({ launches = [], products = [], onAddToCart }) => {
   const { slug } = useParams();
   const [searchParams] = useSearchParams();
+  const isProductPage = Boolean(searchParams.get('design'));
   const clock = useSyncExternalStore(subscribeClock, readClock, readServerClock) * 1000;
   const launch = launches.find(item => item.slug === slug);
   const launchProducts = useMemo(() => (launch?.productIds || []).map(id => products.find(p => p.id === id)).filter(Boolean), [launch, products]);
@@ -94,20 +95,21 @@ const LaunchPage = ({ launches = [], products = [], onAddToCart }) => {
     window.setTimeout(() => setNotice(''), 2500);
   };
 
-  return <main className="launch-page">
-    <section className="launch-hero">
+  return <main className={`launch-page${isProductPage ? ' launch-product-page' : ''}`}>
+    {isProductPage && <nav className="product-breadcrumb" aria-label="Breadcrumb"><Link to="/">Home</Link><span>/</span><Link to={`/drop/${slug}`}>Shadebound</Link><span>/</span><span>{product?.title}</span></nav>}
+    {!isProductPage && <section className="launch-hero">
       <div className="launch-hero-copy">
         <span className="launch-eyebrow">LIMITED PRODUCT DROP · {statusCopy[status]}</span>
         <h1>{launch.heroTitle || launch.name}</h1>
         <p>{launch.heroSubtitle || launch.description}</p>
         {launch.showCountdown !== false && <Countdown target={targetForStatus(launch)} now={clock} />}
-        <div className="launch-status-line"><Clock3 size={16} /> <span>{purchasable ? 'Drop closes' : 'Launching'} · {formatLaunchDate(targetForStatus(launch), launch.timezone) || 'Dates announced by BLACK LOOM'} · PKT</span></div>
+        <div className="launch-status-line"><Clock3 size={16} /> <span>{status === 'LIVE' ? 'Drop closes' : 'General release'} · {formatLaunchDate(status === 'LIVE' ? launch.endsAt : launch.liveAt, launch.timezone) || 'Dates announced by BLACK LOOM'} · PKT</span></div>
         <a className="launch-explore" href="#shop-drop">Explore the five Brimdanas ↓</a>
       </div>
       <div className="launch-hero-image">
         {images[0] ? <img src={images[0]} alt={`${product?.title || launch.name} in ${selectedColor}`} /> : <div className="launch-image-placeholder">PRODUCT IMAGE</div>}
       </div>
-    </section>
+    </section>}
 
     <section className="launch-shop" id="shop-drop">
       <div className="launch-gallery">
@@ -115,17 +117,20 @@ const LaunchPage = ({ launches = [], products = [], onAddToCart }) => {
         <div className="launch-thumbnails">{images.map((src, index) => <button key={src} aria-label={`View ${index + 1} of ${product?.title} in ${selectedColor}`} aria-pressed={selectedView === index} onClick={() => setSelectedView(index)}><img src={src} alt="" loading="lazy" /></button>)}</div>
       </div>
       <div className="launch-details">
+      <div className="launch-product-copy"><p className="launch-kicker">SHADEBOUND COLLECTION</p><h1>{product?.title || 'Brimdana'}</h1>{product && <strong>{formatCurrency(product.salePrice || product.price)}</strong>}<p>Paisley bandana with a corduroy brim and adjustable tie.</p></div>
       <div className="launch-selector">
-        <span className="launch-step">01 · SELECT DESIGN</span>
-        <div className="design-list">{launchProducts.map((item, index) => <button className={product?.id === item.id ? 'active' : ''} key={item.id} onClick={() => setSelectedId(item.id)}><span>{String(index + 1).padStart(2, '0')}</span>{item.title}</button>)}</div>
+        <span className="launch-step">Design</span>
+        <div className="design-list">{launchProducts.map((item) => <button className={product?.id === item.id ? 'active' : ''} key={item.id} onClick={() => { setSelectedId(item.id); setSelectedView(0); }}><img src={getVariantImages(item, selectedColor)[0]} alt="" /><span>{item.title.replace(' Brimdana', '')}</span></button>)}</div>
       </div>
       <div className="launch-config">
-        <span className="launch-step">02 · SELECT BRIM</span>
-        <div className="brim-options">{(product?.colors || ['Camel', 'Black']).map(color => <button key={color} className={selectedColor === color ? 'active' : ''} onClick={() => { setSelectedColor(color); trackLaunchEvent('select_brim_color', { launch_id: launch.id, product_id: product?.id, color }); }}><i style={{ background: color.toLowerCase() === 'camel' ? '#b89467' : '#111' }} />{color}{selectedColor === color && <Check size={14} />}</button>)}</div>
+        <span className="launch-step">Brim colour</span>
+        <div className="brim-options">{(product?.colors || ['Camel', 'Black']).map(color => <button key={color} className={selectedColor === color ? 'active' : ''} onClick={() => { setSelectedColor(color); setSelectedView(0); trackLaunchEvent('select_brim_color', { launch_id: launch.id, product_id: product?.id, color }); }}><i style={{ background: color.toLowerCase() === 'camel' ? '#906b35' : '#111' }} />{color}{selectedColor === color && <Check size={14} />}</button>)}</div>
         {sizes.length > 1 && <div className="size-options">{sizes.map(size => <button key={size} className={selectedSize === size ? 'active' : ''} onClick={() => setSelectedSize(size)}>{size}</button>)}</div>}
-        <div className="launch-product-copy"><p className="launch-kicker">{product?.category || 'BLACK LOOM HEADWEAR'}</p><h2>{product?.title || 'Products being prepared'}</h2>{product && <strong>{formatCurrency(product.salePrice || product.price)}</strong>}<p>{product?.description || 'This drop will appear here once products are assigned in Admin.'}</p></div>
+        <p className="product-fit">One size · Adjustable tie</p>
         {launch.expectedDispatchAt && <div className="dispatch-note"><PackageCheck size={19} /><div><strong>{status === 'PREORDER_LIVE' ? 'This is a pre-order' : 'Dispatch estimate'}</strong><span>Expected dispatch: {formatLaunchDate(launch.expectedDispatchAt, launch.timezone)}</span></div></div>}
-        <button className="launch-cta" disabled={!purchasable || !product || soldOut} onClick={add}><ShoppingBag size={18} />{soldOut ? 'SOLD OUT' : status === 'PREORDER_LIVE' ? 'PRE-ORDER NOW' : status === 'LIVE' ? 'ADD TO BAG' : 'NOT YET AVAILABLE'}</button>
+        <button className="launch-cta" disabled={!purchasable || !product || soldOut} onClick={add}><ShoppingBag size={18} />{soldOut ? 'SOLD OUT' : status === 'PREORDER_LIVE' ? 'PRE-BOOK NOW' : status === 'LIVE' ? 'ADD TO BAG' : 'NOT YET AVAILABLE'}</button>
+        {status === 'PREORDER_LIVE' && <p className="booking-help">Prebooking is open. Add your selection to the bag and complete checkout to place your pre-order. General release: {formatLaunchDate(launch.liveAt, launch.timezone)} PKT.</p>}
+        <details className="product-info"><summary>Product details</summary><p>Paisley fabric, corduroy brim and an adjustable tie. Available with a Camel or Black brim. Browse the three photographs for your selected colour.</p></details>
         {notice && <p className="launch-notice">{notice}</p>}
       </div>
       </div>
