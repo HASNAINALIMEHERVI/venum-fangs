@@ -475,7 +475,7 @@ const Home = ({ products, launches = [], productsLoading = false, onQuickAdd, ac
         </div>
       </section>
 
-      {/* Banner 2: Smoke / Eclipse Collection */}
+      {/* Banner 2: Original five-shirt collection */}
       <section style={{
         position: 'relative',
         height: '70vh',
@@ -489,14 +489,14 @@ const Home = ({ products, launches = [], productsLoading = false, onQuickAdd, ac
         marginBottom: '1rem'
       }}>
         <video 
-          src="/videos/smoke.mp4"
+          src="/videos/banner.mp4"
           autoPlay={true}
           loop={true}
           muted={true}
           playsInline={true}
           defaultMuted={true}
           preload="metadata"
-          poster="/images/smoke-poster.webp"
+          poster="/images/banner-poster.webp"
           style={{
             position: 'absolute',
             top: 0, left: 0, width: '100%', height: '100%',
@@ -526,7 +526,7 @@ const Home = ({ products, launches = [], productsLoading = false, onQuickAdd, ac
             marginBottom: '0.75rem',
             opacity: 0.8
           }}>
-            DROP II: THE ECLIPSE COLLECTION
+            BLACK LOOM · DROP I
           </span>
           <h2 style={{
             fontFamily: 'var(--font-sans)',
@@ -538,7 +538,7 @@ const Home = ({ products, launches = [], productsLoading = false, onQuickAdd, ac
             color: '#fff',
             textTransform: 'uppercase'
           }}>
-            DUAL SHADOW & LIGHT
+            PREMIUM WEAVES
           </h2>
           <p style={{
             fontSize: '0.8rem',
@@ -548,20 +548,23 @@ const Home = ({ products, launches = [], productsLoading = false, onQuickAdd, ac
             margin: '0 auto 2rem auto',
             fontWeight: 400
           }}>
-            A raw collision of contrasting forces. Merging absolute dark and stark white silhouettes through Distressed Coal, Ash, and Greyish smoke aesthetics.
+            Spiderman, Kalakar, Speed, Gothic Thorn and Purple Hands. Five graphic tees from the original BLACK LOOM drop.
           </p>
           <button 
-            onClick={() => navigate('/?category=T-Shirts')}
+            onClick={() => {
+              setSelectedDrop('drop1');
+              window.setTimeout(() => document.getElementById('all-products')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
+            }}
             className="btn-primary"
             style={{ fontSize: '0.7rem', padding: '0.8rem 1.8rem', letterSpacing: '0.1em', textTransform: 'uppercase', borderRadius: '0px' }}
           >
-            SHOP ECLIPSE
+            SHOP THE FIVE
           </button>
         </div>
       </section>
 
       {/* ALL PRODUCTS Section Header */}
-      <section style={{ padding: '2.5rem 0 0.5rem 0' }}>
+      <section id="all-products" style={{ padding: '2.5rem 0 0.5rem 0', scrollMarginTop: '90px' }}>
         <div style={{ 
           padding: '0 0.5rem', 
           display: 'flex', 
