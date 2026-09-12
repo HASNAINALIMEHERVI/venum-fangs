@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { Bell, Check, ChevronLeft, Clock3, PackageCheck, ShoppingBag } from 'lucide-react';
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -7,6 +7,7 @@ import { formatCurrency } from '../utils/formatCurrency';
 import { formatLaunchDate, getLaunchStatus, getProductSizes, getVariantImages, getVariantStock, statusCopy, targetForStatus } from '../utils/launchStatus';
 import { trackLaunchEvent } from '../utils/launchAnalytics';
 import './LaunchPage.css';
+import './LaunchRefinements.css';
 
 const subscribeClock = callback => {
   const timer = window.setInterval(callback, 1000);
@@ -29,11 +30,13 @@ const Countdown = ({ target, now }) => {
 
 const LaunchPage = ({ launches = [], products = [], onAddToCart }) => {
   const { slug } = useParams();
+  const [searchParams] = useSearchParams();
   const clock = useSyncExternalStore(subscribeClock, readClock, readServerClock) * 1000;
   const launch = launches.find(item => item.slug === slug);
   const launchProducts = useMemo(() => (launch?.productIds || []).map(id => products.find(p => p.id === id)).filter(Boolean), [launch, products]);
-  const [selectedId, setSelectedId] = useState('');
-  const [selectedColor, setSelectedColor] = useState('Camel');
+  const [selectedId, setSelectedId] = useState(searchParams.get('design') || '');
+  const [selectedColor, setSelectedColor] = useState(searchParams.get('color') === 'Black' ? 'Black' : 'Camel');
+  const [selectedView, setSelectedView] = useState(0);
   const [selectedSize, setSelectedSize] = useState('ONE SIZE');
   const [email, setEmail] = useState('');
   const [waitlistState, setWaitlistState] = useState('idle');
@@ -98,7 +101,8 @@ const LaunchPage = ({ launches = [], products = [], onAddToCart }) => {
         <h1>{launch.heroTitle || launch.name}</h1>
         <p>{launch.heroSubtitle || launch.description}</p>
         {launch.showCountdown !== false && <Countdown target={targetForStatus(launch)} now={clock} />}
-        <div className="launch-status-line"><Clock3 size={16} /> {formatLaunchDate(targetForStatus(launch), launch.timezone) || 'Dates announced by BLACK LOOM'}</div>
+        <div className="launch-status-line"><Clock3 size={16} /> <span>{purchasable ? 'Drop closes' : 'Launching'} · {formatLaunchDate(targetForStatus(launch), launch.timezone) || 'Dates announced by BLACK LOOM'} · PKT</span></div>
+        <a className="launch-explore" href="#shop-drop">Explore the five Brimdanas ↓</a>
       </div>
       <div className="launch-hero-image">
         {images[0] ? <img src={images[0]} alt={`${product?.title || launch.name} in ${selectedColor}`} /> : <div className="launch-image-placeholder">PRODUCT IMAGE</div>}
@@ -106,6 +110,11 @@ const LaunchPage = ({ launches = [], products = [], onAddToCart }) => {
     </section>
 
     <section className="launch-shop" id="shop-drop">
+      <div className="launch-gallery">
+        <img className="launch-gallery-main" src={images[selectedView] || images[0]} alt={`${product?.title} in ${selectedColor}, view ${selectedView + 1}`} />
+        <div className="launch-thumbnails">{images.map((src, index) => <button key={src} aria-label={`View ${index + 1} of ${product?.title} in ${selectedColor}`} aria-pressed={selectedView === index} onClick={() => setSelectedView(index)}><img src={src} alt="" loading="lazy" /></button>)}</div>
+      </div>
+      <div className="launch-details">
       <div className="launch-selector">
         <span className="launch-step">01 · SELECT DESIGN</span>
         <div className="design-list">{launchProducts.map((item, index) => <button className={product?.id === item.id ? 'active' : ''} key={item.id} onClick={() => setSelectedId(item.id)}><span>{String(index + 1).padStart(2, '0')}</span>{item.title}</button>)}</div>
@@ -118,6 +127,7 @@ const LaunchPage = ({ launches = [], products = [], onAddToCart }) => {
         {launch.expectedDispatchAt && <div className="dispatch-note"><PackageCheck size={19} /><div><strong>{status === 'PREORDER_LIVE' ? 'This is a pre-order' : 'Dispatch estimate'}</strong><span>Expected dispatch: {formatLaunchDate(launch.expectedDispatchAt, launch.timezone)}</span></div></div>}
         <button className="launch-cta" disabled={!purchasable || !product || soldOut} onClick={add}><ShoppingBag size={18} />{soldOut ? 'SOLD OUT' : status === 'PREORDER_LIVE' ? 'PRE-ORDER NOW' : status === 'LIVE' ? 'ADD TO BAG' : 'NOT YET AVAILABLE'}</button>
         {notice && <p className="launch-notice">{notice}</p>}
+      </div>
       </div>
     </section>
 

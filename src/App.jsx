@@ -10,6 +10,7 @@ import CartDrawer from './components/CartDrawer';
 import Home from './pages/Home';
 import ProductDetail from './pages/ProductDetail';
 import LaunchPage from './pages/LaunchPage';
+import { nameBrimdana } from './data/brimdanaNames';
 import Admin from './pages/Admin';
 import Checkout from './pages/Checkout';
 import TrackOrder from './pages/TrackOrder';
@@ -1011,9 +1012,9 @@ function App() {
   };
 
   const cartTotalItems = cartItems.reduce((acc, item) => acc + item.qty, 0);
-  const previewProducts = import.meta.env.DEV
+  const previewProducts = (import.meta.env.DEV
     ? [...products, ...DEMO_PRODUCTS.filter(demo => !products.some(product => product.id === demo.id))]
-    : products;
+    : products).map(nameBrimdana);
   const previewLaunches = import.meta.env.DEV && launches.length === 0 ? [DEMO_LAUNCH] : launches;
 
   return (
@@ -1066,7 +1067,7 @@ function App() {
               path="/admin" 
               element={
                 <Admin 
-                  products={products} 
+                  products={products.map(nameBrimdana)}
                   orders={orders}
                   currentUser={currentUser}
                   promoCodes={promoCodes}

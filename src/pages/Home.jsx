@@ -18,12 +18,22 @@ const Home = ({ products, launches = [], productsLoading = false, onQuickAdd, ac
   const [sortBy, setSortBy] = React.useState('default');
   const [filterSize, setFilterSize] = React.useState('ALL');
   const activeLaunch = React.useMemo(() => launches.find(launch => launch.published && !['ENDED', 'DRAFT'].includes(getLaunchStatus(launch))), [launches]);
+  React.useEffect(() => {
+    if (searchParams.get('filter') === 'new' && !productsLoading) {
+      document.getElementById('new-in')?.scrollIntoView({ block: 'start' });
+    }
+  }, [searchParams, productsLoading]);
 
   // Flatten products by color so each color variant has its own card
   const flattenedProducts = React.useMemo(() => {
     const flat = [];
     products.forEach(p => {
-      if (p.draft) return;
+      const launch = launches.find(item => item.published && item.productIds?.includes(p.id));
+      if (p.draft && !launch) return;
+      if (launch) {
+        flat.push({ ...p, originalId: p.id, launchSlug: launch.slug });
+        return;
+      }
       if (p.colors && p.colors.length > 0) {
         p.colors.forEach(color => {
           flat.push({ ...p, id: `${p.id}-${color}`, originalId: p.id, initialColor: color });
@@ -33,7 +43,11 @@ const Home = ({ products, launches = [], productsLoading = false, onQuickAdd, ac
       }
     });
     return flat;
-  }, [products]);
+  }, [products, launches]);
+
+  const newInProducts = activeLaunch
+    ? activeLaunch.productIds.map(id => flattenedProducts.find(p => p.originalId === id)).filter(Boolean)
+    : flattenedProducts.filter(p => p.showInNewIn === true).slice(0, 4);
 
   const filteredProducts = categoryFilter 
     ? flattenedProducts.filter(p => {
@@ -411,7 +425,7 @@ const Home = ({ products, launches = [], productsLoading = false, onQuickAdd, ac
       </section>
 
       {/* NEW IN Section Header */}
-      <section style={{ padding: '2.5rem 0 0.5rem 0' }}>
+      <section id="new-in" style={{ padding: '2.5rem 0 0.5rem 0' }}>
         <div style={{ 
           padding: '0 0.5rem', 
           display: 'flex', 
@@ -429,7 +443,7 @@ const Home = ({ products, launches = [], productsLoading = false, onQuickAdd, ac
           }}>
             NEW IN
           </span>
-          <Link to="/?category=T-Shirts" style={{ 
+          <Link to={activeLaunch ? `/drop/${activeLaunch.slug}` : '/?category=T-Shirts'} style={{
             fontSize: '0.72rem', 
             color: 'var(--text-secondary)', 
             textDecoration: 'none',
@@ -444,14 +458,11 @@ const Home = ({ products, launches = [], productsLoading = false, onQuickAdd, ac
       {/* NEW IN Product Grid (Filtered by showInNewIn) */}
       <section style={{ padding: '0 0 1rem 0' }}>
         <div style={{ padding: '0 0.5rem' }}>
-          <div className="product-grid-tight">
+          <div className={`product-grid-tight ${activeLaunch ? 'brimdana-new-in' : ''}`}>
             {productsLoading ? (
               <ProductSkeleton count={4} />
             ) : (
-              (flattenedProducts.filter(p => p.showInNewIn === true).length > 0
-                ? flattenedProducts.filter(p => p.showInNewIn === true).slice(0, 4)
-                : flattenedProducts.slice(0, 4)
-              ).map((product, idx) => (
+              (newInProducts.length ? newInProducts : flattenedProducts.slice(0, 4)).map((product, idx) => (
                 <ProductCard 
                   key={product.id} 
                   product={product} 
@@ -892,6 +903,7 @@ const Home = ({ products, launches = [], productsLoading = false, onQuickAdd, ac
           gap: 2px;
         }
         @media (min-width: 768px) {
+          .brimdana-new-in { grid-template-columns: repeat(5, minmax(0, 1fr)); }
           .product-grid-tight {
             grid-template-columns: repeat(4, 1fr);
             gap: 2px;

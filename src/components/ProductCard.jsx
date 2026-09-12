@@ -24,7 +24,8 @@ const getColorHex = (colorName) => {
     'navy blue': '#000080',
     blue: '#0000ff',
     'light blue': '#b5d5e5',
-    tan: '#d2b48c'
+    tan: '#d2b48c',
+    camel: '#906b35'
   };
   return colorMap[name] || name;
 };
@@ -42,7 +43,7 @@ const ProductCard = ({ product, onQuickAdd, isAboveTheFold = false, activeTheme 
   const [activeColor, setActiveColor] = useState(product.initialColor || displayColors[0]);
 
   // Determine subtitle
-  const subtitle = (product.category || '').toUpperCase() === 'HOODIES' || (product.category || '').toUpperCase() === 'SWEATSHIRTS'
+  const subtitle = product.category === 'Headwear' ? 'ONE SIZE | ADJUSTABLE TIE' : (product.category || '').toUpperCase() === 'HOODIES' || (product.category || '').toUpperCase() === 'SWEATSHIRTS'
     ? 'RELAXED FIT | MEN' 
     : 'REGULAR FIT | MEN';
 
@@ -71,12 +72,12 @@ const ProductCard = ({ product, onQuickAdd, isAboveTheFold = false, activeTheme 
   const handleCardClick = () => {
     const targetId = product.originalId || product.id;
     const colorParam = activeColor ? `?color=${encodeURIComponent(activeColor)}` : '';
-    navigate(`/product/${targetId}${colorParam}`);
+    navigate(product.launchSlug ? `/drop/${product.launchSlug}?design=${targetId}&color=${encodeURIComponent(activeColor)}#shop-drop` : `/product/${targetId}${colorParam}`);
   };
 
   return (
     <Link 
-      to={`/product/${product.originalId || product.id}${activeColor ? `?color=${encodeURIComponent(activeColor)}` : ''}`}
+      to={product.launchSlug ? `/drop/${product.launchSlug}?design=${product.originalId || product.id}&color=${encodeURIComponent(activeColor)}#shop-drop` : `/product/${product.originalId || product.id}${activeColor ? `?color=${encodeURIComponent(activeColor)}` : ''}`}
       className="fade-in"
       style={{
         display: 'flex',
@@ -100,7 +101,7 @@ const ProductCard = ({ product, onQuickAdd, isAboveTheFold = false, activeTheme 
         overflow: 'hidden', 
         position: 'relative', 
         width: '100%', 
-        aspectRatio: '3 / 4',
+        aspectRatio: product.category === 'Headwear' ? '1 / 1' : '3 / 4',
         backgroundColor: '#f1f2f4' // Light cool grey background matching the screenshot
       }}>
         
@@ -188,7 +189,8 @@ const ProductCard = ({ product, onQuickAdd, isAboveTheFold = false, activeTheme 
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              onQuickAdd(product);
+              if (product.launchSlug) handleCardClick();
+              else onQuickAdd(product);
             }}
             style={{
               width: '100%',
@@ -211,7 +213,7 @@ const ProductCard = ({ product, onQuickAdd, isAboveTheFold = false, activeTheme 
             className="quick-add-btn"
           >
             <ShoppingBag size={12} strokeWidth={1.5} />
-            QUICK ADD
+            {product.launchSlug ? 'VIEW BRIMDANA' : 'QUICK ADD'}
           </button>
         </div>
       </div>

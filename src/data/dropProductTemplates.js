@@ -1,3 +1,5 @@
+import { BRIMDANA_NAMES } from './brimdanaNames';
+
 const variantImages = (design, color) => [1, 2, 3].map(view =>
   `/images/brimdana-drop-v2/${design}-view-${String(view).padStart(2, '0')}-${color.toLowerCase()}.png`
 );
@@ -13,7 +15,7 @@ export const DROP_PRODUCT_TEMPLATES = Array.from({ length: 5 }, (_, index) => {
   const variants = colors(slug);
   return {
     id: `black-loom-${slug}`,
-    title: `Design ${number}`,
+    title: `${BRIMDANA_NAMES[index]} Brimdana`,
     category: 'Headwear',
     subCategory: 'Limited Drops',
     description: 'Limited BLACK LOOM bandana cap. Select a design and choose a Camel or Black brim.',
