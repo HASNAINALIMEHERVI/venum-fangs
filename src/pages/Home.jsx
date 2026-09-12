@@ -12,7 +12,7 @@ const Home = ({ products, launches = [], productsLoading = false, onQuickAdd, ac
   const categoryFilter = searchParams.get('category');
   const navigate = useNavigate();
   const [showManifesto, setShowManifesto] = React.useState(false);
-  const [selectedDrop, setSelectedDrop] = React.useState('all');
+  const [selectedDrop, setSelectedDrop] = React.useState('drop1');
   const [notifyEmail, setNotifyEmail] = React.useState('');
   const [notifyStatus, setNotifyStatus] = React.useState('idle');
   const [sortBy, setSortBy] = React.useState('default');
