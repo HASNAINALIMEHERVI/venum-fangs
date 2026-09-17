@@ -7,12 +7,14 @@ import { formatCurrency } from '../utils/formatCurrency';
 import SimpleBusinessDashboard from '../components/SimpleBusinessDashboard';
 import { PRESET_THEMES } from '../utils/themePresets';
 import LaunchManager from '../components/admin/LaunchManager';
+import DealManager from '../components/admin/DealManager';
 
 const Admin = ({ 
   products, 
   orders = [], 
   currentUser = null,
   promoCodes = [],
+  deals = [],
   onAddProduct, 
   onDeleteProduct, 
   onUpdateProduct,
@@ -21,6 +23,9 @@ const Admin = ({
   onAddPromoCode,
   onDeletePromoCode,
   onTogglePromoCode,
+  onSaveDeal,
+  onDeleteDeal,
+  onToggleDeal,
   categories = [],
   onSaveCategory,
   onDeleteCategory,
@@ -843,6 +848,17 @@ const Admin = ({
             >
               PROMO CODES ({promoCodes.length})
             </button>
+            <button
+              onClick={() => setActiveTab('deals')}
+              style={{
+                background: activeTab === 'deals' ? 'var(--bg-primary)' : 'transparent',
+                color: activeTab === 'deals' ? 'var(--accent)' : 'var(--text-secondary)',
+                border: 'none', padding: '0.6rem 1.25rem', fontSize: '0.75rem', fontWeight: 800,
+                letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer'
+              }}
+            >
+              DEALS ({deals.length})
+            </button>
             <button 
               onClick={() => setActiveTab('settings')} 
               style={{
@@ -930,6 +946,16 @@ const Admin = ({
             onDeleteLaunch={onDeleteLaunch}
             onImportDropProducts={onImportDropProducts}
             onSaveDropProduct={onSaveDropProduct}
+          />
+        )}
+
+        {activeTab === 'deals' && (
+          <DealManager
+            deals={deals}
+            products={products}
+            onSaveDeal={onSaveDeal}
+            onDeleteDeal={onDeleteDeal}
+            onToggleDeal={onToggleDeal}
           />
         )}
 

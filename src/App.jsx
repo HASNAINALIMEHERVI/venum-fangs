@@ -34,6 +34,7 @@ import { doc, getDoc, setDoc, collection, getDocs, deleteDoc, addDoc, runTransac
 import { auth, db } from "./firebase";
 import { getVariantImages } from './utils/launchStatus';
 import { DEMO_LAUNCH, DEMO_PRODUCTS } from './data/demoLaunch';
+import { LIVE_DEAL_SHIRT_IDS } from './utils/dealProducts';
 
 // Component to dynamically update canonical tags for SEO
 const CanonicalUpdater = () => {
@@ -267,7 +268,7 @@ function App() {
 
   const handleSaveTheme = async (newThemeData) => {
     try {
-      await setDoc(doc(db, 'settings', 'active_theme'), newThemeData);
+      await setDoc(doc(db, 'settings', 'active_theme'), newThemeData, { merge: true });
       setActiveTheme(newThemeData);
       localStorage.setItem('black_loom_active_theme', JSON.stringify(newThemeData));
       return true;
@@ -316,6 +317,28 @@ function App() {
     } catch (e) {
       return DEFAULT_PROMO_CODES;
     }
+  });
+
+  const DEFAULT_DEALS = [
+    {
+      id: 'choose-any-2-shirts', title: 'CHOOSE ANY 2 SHIRTS',
+      subtitle: 'Mix your favourite designs and choose each size.',
+      quantity: 2, price: 3300, compareAtPrice: 3580, badge: 'BUNDLE PRICE',
+      productIds: LIVE_DEAL_SHIRT_IDS, heroImage: '/images/deals-five-shirts.png', active: true, featured: false, order: 1
+    },
+    {
+      id: 'choose-any-3-shirts', title: 'CHOOSE ANY 3 SHIRTS',
+      subtitle: 'Build a complete rotation from any eligible shirts.',
+      quantity: 3, price: 5000, compareAtPrice: 5370, badge: 'BEST VALUE',
+      productIds: LIVE_DEAL_SHIRT_IDS, heroImage: '/images/deals-five-shirts.png', active: true, featured: true, order: 2
+    }
+  ];
+
+  const [deals, setDeals] = useState(() => {
+    try {
+      const saved = localStorage.getItem('black_loom_deals');
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
   });
 
   // Initialize products from Firestore with 5-minute TTL client-side caching
@@ -404,6 +427,27 @@ function App() {
       }
     };
 
+    const loadDeals = async () => {
+      try {
+        const snapshot = await getDoc(doc(db, 'settings', 'active_theme'));
+        const storedItems = snapshot.exists() ? snapshot.data().deals : [];
+        if (storedItems?.length) {
+          const savedDeals = storedItems;
+          savedDeals.sort((a, b) => Number(a.order || 0) - Number(b.order || 0));
+          setDeals(savedDeals);
+          localStorage.setItem('black_loom_deals', JSON.stringify(savedDeals));
+        } else {
+          setDeals(DEFAULT_DEALS);
+          localStorage.setItem('black_loom_deals', JSON.stringify(DEFAULT_DEALS));
+        }
+      } catch (err) {
+        console.error('Error loading deals from Firestore:', err);
+        const cached = localStorage.getItem('black_loom_deals');
+        const parsed = cached ? JSON.parse(cached) : [];
+        setDeals(parsed.length ? parsed : DEFAULT_DEALS);
+      }
+    };
+
     const loadCategories = async () => {
       try {
         const catSnap = await getDocs(collection(db, "categories"));
@@ -443,6 +487,7 @@ function App() {
     loadProducts();
     loadOrders();
     loadPromoCodes();
+    loadDeals();
     loadCategories();
     loadLaunches();
   }, []);
@@ -494,6 +539,38 @@ function App() {
     } catch (err) {
       console.error("Error updating promo code status in Firestore:", err);
     }
+  };
+
+  const saveDealsLocally = updated => {
+    const sorted = [...updated].sort((a, b) => Number(a.order || 0) - Number(b.order || 0));
+    setDeals(sorted);
+    localStorage.setItem('black_loom_deals', JSON.stringify(sorted));
+  };
+
+  const handleSaveDeal = async (deal, existingId = null) => {
+    const slug = deal.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    const id = existingId || `${slug}-${Date.now().toString().slice(-5)}`;
+    const payload = { ...deal, id, updatedAt: new Date().toISOString() };
+    const updated = [payload, ...deals.filter(item => item.id !== id)];
+    await setDoc(doc(db, 'settings', 'active_theme'), { deals: updated, dealsUpdatedAt: new Date().toISOString() }, { merge: true });
+    saveDealsLocally(updated);
+    return id;
+  };
+
+  const handleDeleteDeal = async id => {
+    if (!window.confirm('Delete this deal? Existing orders will not be changed.')) return;
+    const updated = deals.filter(item => item.id !== id);
+    await setDoc(doc(db, 'settings', 'active_theme'), { deals: updated, dealsUpdatedAt: new Date().toISOString() }, { merge: true });
+    saveDealsLocally(updated);
+  };
+
+  const handleToggleDeal = async id => {
+    const target = deals.find(item => item.id === id);
+    if (!target) return;
+    const updatedDeal = { ...target, active: target.active === false, updatedAt: new Date().toISOString() };
+    const updated = deals.map(item => item.id === id ? updatedDeal : item);
+    await setDoc(doc(db, 'settings', 'active_theme'), { deals: updated, dealsUpdatedAt: new Date().toISOString() }, { merge: true });
+    saveDealsLocally(updated);
   };
 
   // Category CRUD handlers
@@ -622,9 +699,35 @@ function App() {
     handleAddToCart(product, 'M', defaultColor);
   };
 
+  const handleAddDealToCart = async (deal, selections) => {
+    if (!selections?.length || selections.length !== Number(deal.quantity)) return;
+    const bundleKey = `${deal.id}-${Date.now()}`;
+    const total = Number(deal.price || 0);
+    const baseUnitPrice = Math.floor(total / selections.length);
+    const newItems = selections.map((selection, index) => {
+      const unitPrice = index === selections.length - 1 ? total - (baseUnitPrice * (selections.length - 1)) : baseUnitPrice;
+      return {
+        ...selection.product,
+        images: getVariantImages(selection.product, selection.color),
+        selectedSize: selection.size,
+        selectedColor: selection.color,
+        qty: 1,
+        price: unitPrice,
+        salePrice: unitPrice,
+        originalUnitPrice: Number(selection.product.salePrice || selection.product.price || 0),
+        dealId: deal.id,
+        dealTitle: deal.title,
+        bundleKey
+      };
+    });
+    await saveCartToStorage([...cartItems, ...newItems]);
+    setCartOpen(true);
+  };
+
   const handleUpdateCartQty = (id, size, color, change) => {
     const updated = cartItems.map(item => {
       if (item.id === id && item.selectedSize === size && item.selectedColor === color) {
+        if (item.bundleKey) return item;
         const newQty = item.qty + change;
         return newQty > 0 ? { ...item, qty: newQty } : null;
       }
@@ -634,7 +737,10 @@ function App() {
   };
 
   const handleRemoveCartItem = (id, size, color) => {
-    const updated = cartItems.filter(item => !(item.id === id && item.selectedSize === size && item.selectedColor === color));
+    const target = cartItems.find(item => item.id === id && item.selectedSize === size && item.selectedColor === color);
+    const updated = target?.bundleKey
+      ? cartItems.filter(item => item.bundleKey !== target.bundleKey)
+      : cartItems.filter(item => !(item.id === id && item.selectedSize === size && item.selectedColor === color));
     saveCartToStorage(updated);
   };
 
@@ -1053,7 +1159,7 @@ function App() {
           <Routes>
             <Route 
               path="/" 
-              element={<Home products={previewProducts} launches={previewLaunches} productsLoading={productsLoading} onQuickAdd={handleQuickAdd} activeTheme={activeTheme} />} 
+              element={<Home products={previewProducts} launches={previewLaunches} deals={deals} productsLoading={productsLoading} onQuickAdd={handleQuickAdd} onAddDeal={handleAddDealToCart} activeTheme={activeTheme} />}
             />
 
             <Route path="/drop/:slug" element={<LaunchPage launches={previewLaunches} products={previewProducts} onAddToCart={handleAddToCart} />} />
@@ -1071,6 +1177,7 @@ function App() {
                   orders={orders}
                   currentUser={currentUser}
                   promoCodes={promoCodes}
+                  deals={deals}
                   categories={categories}
                   activeTheme={activeTheme}
                   launches={launches}
@@ -1087,6 +1194,9 @@ function App() {
                   onAddPromoCode={handleAddPromoCode}
                   onDeletePromoCode={handleDeletePromoCode}
                   onTogglePromoCode={handleTogglePromoCode}
+                  onSaveDeal={handleSaveDeal}
+                  onDeleteDeal={handleDeleteDeal}
+                  onToggleDeal={handleToggleDeal}
                   onSaveCategory={handleSaveCategory}
                   onDeleteCategory={handleDeleteCategory}
                 />
