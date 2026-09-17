@@ -331,6 +331,12 @@ function App() {
       subtitle: 'Build a complete rotation from any eligible shirts.',
       quantity: 3, price: 5000, compareAtPrice: 5370, badge: 'BEST VALUE',
       productIds: LIVE_DEAL_SHIRT_IDS, heroImage: '/images/deals-five-shirts.png', active: true, featured: true, order: 2
+    },
+    {
+      id: 'choose-any-5-shirts', title: 'CHOOSE ANY 5 SHIRTS',
+      subtitle: 'The full rotation—choose five shirts and set every size.',
+      quantity: 5, price: 8000, compareAtPrice: 8950, badge: 'MAXIMUM SAVING',
+      productIds: LIVE_DEAL_SHIRT_IDS, heroImage: '/images/deals-five-shirts.png', active: true, featured: false, order: 3
     }
   ];
 
@@ -432,19 +438,31 @@ function App() {
         const snapshot = await getDoc(doc(db, 'settings', 'active_theme'));
         const storedItems = snapshot.exists() ? snapshot.data().deals : [];
         if (storedItems?.length) {
-          const savedDeals = storedItems;
+          const storedVersion = Number(snapshot.data().dealsVersion || 1);
+          const savedDeals = storedVersion < 2 && !storedItems.some(item => item.id === 'choose-any-5-shirts')
+            ? [...storedItems, DEFAULT_DEALS.find(item => item.id === 'choose-any-5-shirts')]
+            : storedItems;
           savedDeals.sort((a, b) => Number(a.order || 0) - Number(b.order || 0));
           setDeals(savedDeals);
           localStorage.setItem('black_loom_deals', JSON.stringify(savedDeals));
+          localStorage.setItem('black_loom_deals_version', '2');
         } else {
           setDeals(DEFAULT_DEALS);
           localStorage.setItem('black_loom_deals', JSON.stringify(DEFAULT_DEALS));
+          localStorage.setItem('black_loom_deals_version', '2');
         }
       } catch (err) {
         console.error('Error loading deals from Firestore:', err);
         const cached = localStorage.getItem('black_loom_deals');
         const parsed = cached ? JSON.parse(cached) : [];
-        setDeals(parsed.length ? parsed : DEFAULT_DEALS);
+        const baseDeals = parsed.length ? parsed : DEFAULT_DEALS;
+        const cachedVersion = Number(localStorage.getItem('black_loom_deals_version') || 1);
+        const merged = cachedVersion < 2 && !baseDeals.some(item => item.id === 'choose-any-5-shirts')
+          ? [...baseDeals, DEFAULT_DEALS.find(item => item.id === 'choose-any-5-shirts')]
+          : baseDeals;
+        setDeals(merged);
+        localStorage.setItem('black_loom_deals', JSON.stringify(merged));
+        localStorage.setItem('black_loom_deals_version', '2');
       }
     };
 
@@ -552,7 +570,7 @@ function App() {
     const id = existingId || `${slug}-${Date.now().toString().slice(-5)}`;
     const payload = { ...deal, id, updatedAt: new Date().toISOString() };
     const updated = [payload, ...deals.filter(item => item.id !== id)];
-    await setDoc(doc(db, 'settings', 'active_theme'), { deals: updated, dealsUpdatedAt: new Date().toISOString() }, { merge: true });
+    await setDoc(doc(db, 'settings', 'active_theme'), { deals: updated, dealsVersion: 2, dealsUpdatedAt: new Date().toISOString() }, { merge: true });
     saveDealsLocally(updated);
     return id;
   };
@@ -560,7 +578,7 @@ function App() {
   const handleDeleteDeal = async id => {
     if (!window.confirm('Delete this deal? Existing orders will not be changed.')) return;
     const updated = deals.filter(item => item.id !== id);
-    await setDoc(doc(db, 'settings', 'active_theme'), { deals: updated, dealsUpdatedAt: new Date().toISOString() }, { merge: true });
+    await setDoc(doc(db, 'settings', 'active_theme'), { deals: updated, dealsVersion: 2, dealsUpdatedAt: new Date().toISOString() }, { merge: true });
     saveDealsLocally(updated);
   };
 
@@ -569,7 +587,7 @@ function App() {
     if (!target) return;
     const updatedDeal = { ...target, active: target.active === false, updatedAt: new Date().toISOString() };
     const updated = deals.map(item => item.id === id ? updatedDeal : item);
-    await setDoc(doc(db, 'settings', 'active_theme'), { deals: updated, dealsUpdatedAt: new Date().toISOString() }, { merge: true });
+    await setDoc(doc(db, 'settings', 'active_theme'), { deals: updated, dealsVersion: 2, dealsUpdatedAt: new Date().toISOString() }, { merge: true });
     saveDealsLocally(updated);
   };
 
