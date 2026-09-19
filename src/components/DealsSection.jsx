@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Check, ChevronRight, X } from 'lucide-react';
+import { ChevronRight, X } from 'lucide-react';
 import { formatCurrency } from '../utils/formatCurrency';
 import { getLiveDealShirts } from '../utils/dealProducts';
 import './DealsSection.css';
@@ -137,46 +137,38 @@ const DealsSection = ({ deals = [], products = [], onAddDeal }) => {
   };
 
   return (
-    <section className="deals-section" id="deals">
-      <div className="deals-section__intro">
-        <span className="deal-eyebrow">More pieces. Better price.</span>
-        <h2>BUILD YOUR ROTATION</h2>
-        <p>Choose the shirts you actually want. Same fit, same quality—priced as a bundle.</p>
-      </div>
-      <div className="deals-grid">
-        {activeDeals.map((deal, index) => {
-          const allowedProducts = eligibleProducts(deal);
-          const displayProducts = allowedProducts.slice(0, 3);
-          const regularPrice = Number(deal.compareAtPrice || (Number(deal.quantity || 1) * 1790));
-          const saving = Math.max(0, regularPrice - Number(deal.price || 0));
+    <section className="deals-section deals-light" id="deals">
+      <header className="deals-light-heading">
+        <h2>The bundle collection</h2>
+        <p>Your favourite designs. Your choice of sizes.</p>
+      </header>
+      <div className="deals-light-grid">
+        {activeDeals.map(deal => {
+          const allowed = eligibleProducts(deal);
+          const quantity = Math.max(1, Number(deal.quantity || 1));
+          const price = Number(deal.price || 0);
+          const regular = Number(deal.compareAtPrice || quantity * 1790);
+          const saving = Math.max(0, regular - price);
           return (
-            <article className={`deal-card ${deal.featured ? 'deal-card--featured' : ''}`} key={deal.id}>
-              <div className="deal-card__visual" style={deal.heroImage ? { backgroundImage: `url(${deal.heroImage})` } : undefined}>
-                {!deal.heroImage && <div className="deal-card__products">
-                  {displayProducts.map((product, productIndex) => (
-                    <img key={product.id} src={product.images?.[0]} alt="" style={{ '--i': productIndex }} />
-                  ))}
-                </div>}
-                <span className="deal-card__index">0{index + 1}</span>
-                <span className="deal-card__badge">{deal.badge || (deal.featured ? 'BEST VALUE' : 'BUNDLE PRICE')}</span>
-              </div>
-              <div className="deal-card__body">
-                <div>
-                  <span className="deal-card__quantity">CHOOSE ANY {deal.quantity}</span>
-                  <h3>{deal.title}</h3>
-                  <p>{deal.subtitle || `Pick any ${deal.quantity} eligible shirts and choose every size.`}</p>
+            <article className="deals-light-item" key={deal.id}>
+              <button className="deals-light-image" type="button"
+                aria-label={`Choose ${quantity} shirts`}
+                disabled={!allowed.length} onClick={() => setSelectedDeal(deal)}>
+                {deal.heroImage
+                  ? <img src={deal.heroImage} alt={`Black Loom ${quantity}-shirt bundle selection`} />
+                  : <div className="deals-light-products">{allowed.slice(0, 3).map(product =>
+                    <img key={product.id} src={product.images?.[0]} alt={product.title} />)}</div>}
+              </button>
+              <div className="deals-light-details">
+                <h3>{deal.title || `Choose any ${quantity} shirts`}</h3>
+                <div className="deals-light-price">
+                  <span>{formatCurrency(price)}</span>
+                  {regular > price && <s>{formatCurrency(regular)}</s>}
                 </div>
-                <div className="deal-card__price-row">
-                  <div><strong>{formatCurrency(Number(deal.price || 0))}</strong><s>{formatCurrency(regularPrice)}</s></div>
-                  {saving > 0 && <span>SAVE {formatCurrency(saving)}</span>}
-                </div>
-                <ul>
-                  <li><Check size={14} /> Mix your favourite designs</li>
-                  <li><Check size={14} /> Choose each shirt's size</li>
-                  <li><Check size={14} /> One fixed bundle price</li>
-                </ul>
-                <button onClick={() => setSelectedDeal(deal)} disabled={!allowedProducts.length}>
-                  {allowedProducts.length ? <>Choose {deal.quantity} shirts <ChevronRight size={17} /></> : 'Products coming soon'}
+                {saving > 0 && <p className="deals-light-saving">Save {formatCurrency(saving)}</p>}
+                <button className="deals-light-choose" type="button"
+                  disabled={!allowed.length} onClick={() => setSelectedDeal(deal)}>
+                  {allowed.length ? 'Choose shirts' : 'Coming soon'}
                 </button>
               </div>
             </article>
