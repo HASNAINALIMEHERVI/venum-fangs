@@ -3,7 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { ShoppingBag, ChevronDown, Check, ArrowLeft, CreditCard, RefreshCw, Truck, X, ChevronLeft, ChevronRight, Star } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
 import { formatCurrency } from '../utils/formatCurrency';
-import { trackViewContent, trackAddToCart } from '../utils/metaPixel';
+import { trackViewContent } from '../utils/metaPixel';
 import { trackViewContent as ttqViewContent, trackAddToCart as ttqAddToCart } from '../utils/tiktokPixel';
 import { collection, getDocs, addDoc, Timestamp, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -225,7 +225,6 @@ const ProductDetail = ({ products, launches = [], onAddToCart }) => {
       return;
     }
     onAddToCart(productLaunch ? { ...product, launchId: productLaunch.id, launchName: productLaunch.name, orderType: launchStatus === 'PREORDER_LIVE' ? 'PREORDER' : 'STANDARD', expectedDispatchAt: productLaunch.expectedDispatchAt || null } : product, selectedSize, selectedColor);
-    trackAddToCart(product, selectedSize, 1);
     ttqAddToCart(product, selectedSize, 1);
     setAddedMessage(true);
     setTimeout(() => setAddedMessage(false), 3000);

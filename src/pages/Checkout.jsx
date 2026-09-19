@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { CheckCircle, ShoppingBag } from 'lucide-react';
 import { doc, getDoc } from "firebase/firestore";
@@ -101,6 +101,7 @@ const FloatingSelect = ({ label, name, value, onChange, options, required = fals
 
 const Checkout = ({ cartItems, orders = [], onClearCart, onPlaceOrder, currentUser, promoCodes = [] }) => {
   const navigate = useNavigate();
+  const checkoutTrackedRef = useRef(false);
   const [completed, setCompleted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmationEmail, setConfirmationEmail] = useState('');
@@ -172,10 +173,11 @@ const Checkout = ({ cartItems, orders = [], onClearCart, onPlaceOrder, currentUs
 
   // Fire InitiateCheckout pixel event when checkout page loads with items
   useEffect(() => {
-    if (cartItems.length > 0) {
-      trackInitiateCheckout(cartItems, subtotal);
+    if (!checkoutTrackedRef.current && cartItems.length > 0) {
+      checkoutTrackedRef.current = true;
+      trackInitiateCheckout(cartItems, total);
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [cartItems, total]);
 
   const handleApplyPromoCode = () => {
     setPromoError('');

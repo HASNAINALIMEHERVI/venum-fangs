@@ -26,7 +26,7 @@ import PaymentModal from './components/PaymentModal';
 import ContactUsModal from './components/ContactUsModal';
 import ShoppingGuideModal from './components/ShoppingGuideModal';
 import ScrollToTop from './components/ScrollToTop';
-import { trackPageView } from './utils/metaPixel';
+import { trackAddToCart, trackAddToCartItems, trackPageView } from './utils/metaPixel';
 
 // Firebase imports
 import { onAuthStateChanged, signOut } from "firebase/auth";
@@ -709,6 +709,7 @@ function App() {
       newCart = [...cartItems, { ...product, images: getVariantImages(product, color), selectedSize: size, selectedColor: color, qty: 1 }];
     }
     saveCartToStorage(newCart);
+    trackAddToCart(product, size, 1);
     setCartOpen(true);
   };
 
@@ -739,6 +740,7 @@ function App() {
       };
     });
     await saveCartToStorage([...cartItems, ...newItems]);
+    trackAddToCartItems(newItems, total, deal.title);
     setCartOpen(true);
   };
 
