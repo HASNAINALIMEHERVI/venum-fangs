@@ -14,3 +14,4 @@ assert.deepEqual(replaceComboUnit([{...shirt,qty:1},{...cap,qty:1}],0),[{...cap,
 assert.equal(replaceComboUnit([{...cap,qty:3},{...shirt,qty:1}],0)[0].qty,2);
 console.log('Passed: combo pricing, sale price, sizes, colours, stock, launch eligibility, and checkout unit replacement in both directions.');
 
+assert.equal(getComboProducts([shirt, {...cap, draft:true}], [{published:true,productIds:[cap.id],liveAt:'2020-01-01'}]).caps.length, 1);

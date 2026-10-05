@@ -12,7 +12,8 @@ export const comboOptions = product => (product.variants?.map(v => v.color) || p
 export const getComboProducts = (products, launches = []) => {
   const available = product => {
     const launch = findProductLaunch(product.id, launches);
-    return !product.draft && comboUnitPrice(product) > 0 && comboOptions(product).length > 0 && (!launch || getLaunchStatus(launch) === 'LIVE');
+    const liveDrop = launch && getLaunchStatus(launch) === 'LIVE';
+    return (!product.draft || liveDrop) && comboUnitPrice(product) > 0 && comboOptions(product).length > 0 && (!launch || liveDrop);
   };
   return { shirts: getLiveDealShirts(products).filter(available), caps: products.filter(p => isComboCap(p) && available(p)) };
 };
@@ -21,4 +22,5 @@ export const makeComboDeal = (shirt, cap) => ({
   price: Math.max(1, comboUnitPrice(shirt) + comboUnitPrice(cap) - COMBO_SAVING)
 });
 export const replaceComboUnit = (cart, index) => cart.flatMap((item, i) => i !== index ? [item] : item.qty > 1 ? [{ ...item, qty: item.qty - 1 }] : []);
+
 
