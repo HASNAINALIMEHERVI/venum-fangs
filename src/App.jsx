@@ -35,6 +35,7 @@ import { auth, db } from "./firebase";
 import { getVariantImages } from './utils/launchStatus';
 import { DEMO_LAUNCH, DEMO_PRODUCTS } from './data/demoLaunch';
 import { LIVE_DEAL_SHIRT_IDS } from './utils/dealProducts';
+import { getComboProducts, comboOptions, makeComboDeal, replaceComboUnit } from './utils/comboDeals';
 
 // Component to dynamically update canonical tags for SEO
 const CanonicalUpdater = () => {
@@ -718,11 +719,28 @@ function App() {
     handleAddToCart(product, 'M', defaultColor);
   };
 
-  const handleAddDealToCart = async (deal, selections) => {
+  const handleAddDealToCart = async (deal, selections, upgradeIndex = null) => {
     if (!selections?.length || selections.length !== Number(deal.quantity)) return;
+    if (deal.id === 'cap-shirt-combo') {
+      const { shirts, caps } = getComboProducts(products, launches);
+      const pools = [shirts, caps];
+      selections = selections.map((selection, index) => {
+        const product = pools[index].find(p => p.id === selection.product.id);
+        if (!product || !comboOptions(product).some(o => o.size === selection.size && o.color === selection.color)) throw new Error('This combo option is no longer available. Please choose another.');
+        return { ...selection, product };
+      });
+      deal = makeComboDeal(selections[0].product, selections[1].product);
+      if (upgradeIndex !== null) {
+        const existing = cartItems[upgradeIndex];
+        if (!existing || existing.bundleKey || existing.orderType === 'PREORDER' || !selections.some(s => s.product.id === existing.id && s.size === existing.selectedSize && s.color === existing.selectedColor)) throw new Error('Your bag changed. Please choose the combo again.');
+      }
+    }
     const bundleKey = `${deal.id}-${Date.now()}`;
     const total = Number(deal.price || 0);
-    const baseUnitPrice = Math.floor(total / selections.length);
+    const regularTotal = selections.reduce((sum, selection) => sum + Number(selection.product.salePrice || selection.product.price || 0), 0);
+    const baseUnitPrice = deal.id === 'cap-shirt-combo'
+      ? Math.round(total * Number(selections[0].product.salePrice || selections[0].product.price) / regularTotal)
+      : Math.floor(total / selections.length);
     const newItems = selections.map((selection, index) => {
       const unitPrice = index === selections.length - 1 ? total - (baseUnitPrice * (selections.length - 1)) : baseUnitPrice;
       return {
@@ -739,9 +757,9 @@ function App() {
         bundleKey
       };
     });
-    await saveCartToStorage([...cartItems, ...newItems]);
+    await saveCartToStorage([...(upgradeIndex === null ? cartItems : replaceComboUnit(cartItems, upgradeIndex)), ...newItems]);
     trackAddToCartItems(newItems, total, deal.title);
-    setCartOpen(true);
+    if (upgradeIndex === null) setCartOpen(true);
   };
 
   const handleUpdateCartQty = (id, size, color, change) => {
@@ -756,11 +774,11 @@ function App() {
     saveCartToStorage(updated);
   };
 
-  const handleRemoveCartItem = (id, size, color) => {
-    const target = cartItems.find(item => item.id === id && item.selectedSize === size && item.selectedColor === color);
+  const handleRemoveCartItem = (id, size, color, bundleKey) => {
+    const target = cartItems.find(item => item.id === id && item.selectedSize === size && item.selectedColor === color && item.bundleKey === bundleKey);
     const updated = target?.bundleKey
       ? cartItems.filter(item => item.bundleKey !== target.bundleKey)
-      : cartItems.filter(item => !(item.id === id && item.selectedSize === size && item.selectedColor === color));
+      : cartItems.filter(item => !(item.id === id && item.selectedSize === size && item.selectedColor === color && !item.bundleKey));
     saveCartToStorage(updated);
   };
 
@@ -1233,6 +1251,9 @@ function App() {
                   onPlaceOrder={handlePlaceOrder}
                   currentUser={currentUser}
                   promoCodes={promoCodes}
+                  products={previewProducts}
+                  launches={previewLaunches}
+                  onUpgradeCombo={handleAddDealToCart}
                 />
               } 
             />

@@ -1,0 +1,22 @@
+.combo-section { padding: 56px 32px; background: #fff; color: #111; }
+.combo-section header { text-align: center; margin-bottom: 28px; }
+.combo-section h2 { font-size: 24px; font-weight: 400; margin-bottom: 10px; }
+.combo-section header p,.combo-section small,.combo-section s { color: #666; }
+.combo-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 24px; max-width: 1240px; margin: auto; }
+.combo-grid article { min-width: 0; text-align: center; }
+.combo-images { border: 0; background: #f5f5f5; display: flex; align-items: center; width: 100%; aspect-ratio: 1; padding: 10px; cursor: pointer; }
+.combo-images img { width: 50%; height: 100%; object-fit: contain; }
+.combo-grid h3 { font-size: 13px; font-weight: 400; line-height: 1.5; margin: 16px 0 8px; }
+.combo-grid p { font-size: 14px; margin: 8px 0; }
+.combo-grid s { margin-left: 8px; }
+.combo-button { display: block; padding: 12px 18px; background: #111; color: #fff; border: 0; cursor: pointer; margin: 16px auto 0; min-height: 44px; }
+.combo-checkout { padding: 20px; border: 1px solid #ddd; margin-bottom: 24px; }
+.combo-checkout h2 { font-size: 18px; }
+.combo-checkout p { font-size: 13px; }
+.combo-pick { display: flex; gap: 16px; margin: 20px 0; }
+.combo-pick img { width: 90px; height: 110px; object-fit: contain; }
+.combo-pick > div { flex: 1; min-width: 0; }
+.combo-pick label { display: block; font-size: 12px; margin-bottom: 10px; }
+.combo-pick select { display: block; width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; background: #fff; color: #111; }
+@media(max-width: 900px) { .combo-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+@media(max-width: 480px) { .combo-section { padding: 32px 16px; } .combo-grid { gap: 24px 12px; } .combo-checkout { padding: 16px; } }
