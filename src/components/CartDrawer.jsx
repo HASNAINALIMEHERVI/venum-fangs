@@ -176,7 +176,7 @@ const CartDrawer = ({ isOpen, onClose, cartItems, onUpdateQty, onRemoveItem, car
                       {item.title}
                     </h4>
                     <button 
-                      onClick={() => onRemoveItem(item.id, item.selectedSize, item.selectedColor)}
+                      onClick={() => onRemoveItem(item.id, item.selectedSize, item.selectedColor, item.bundleKey)}
                       aria-label="Remove item"
                       style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '2px', flexShrink: 0 }}
                       className="remove-btn"

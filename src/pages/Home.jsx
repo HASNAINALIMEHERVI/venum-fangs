@@ -6,6 +6,7 @@ import { db } from '../firebase';
 import ProductCard from '../components/ProductCard';
 import ProductSkeleton from '../components/ProductSkeleton';
 import DealsSection from '../components/DealsSection';
+import ComboDeals from '../components/ComboDeals';
 import { getLaunchStatus, statusCopy, targetForStatus, formatLaunchDate } from '../utils/launchStatus';
 
 const Home = ({ products, launches = [], deals = [], productsLoading = false, onQuickAdd, onAddDeal, activeTheme = null }) => {
@@ -426,6 +427,7 @@ const Home = ({ products, launches = [], deals = [], productsLoading = false, on
       </section>
 
       <DealsSection deals={deals} products={products} onAddDeal={onAddDeal} />
+      <ComboDeals products={products} launches={launches} onAddDeal={onAddDeal} />
 
       {/* NEW IN Section Header */}
       <section id="new-in" style={{ padding: '2.5rem 0 0.5rem 0' }}>

@@ -6,6 +6,8 @@ import { db } from "../firebase";
 import { formatCurrency } from '../utils/formatCurrency';
 import { trackInitiateCheckout, trackPurchase } from '../utils/metaPixel';
 
+import ComboDeals from '../components/ComboDeals';
+
 const PROVINCES = ['Punjab', 'Sindh', 'KPK', 'Balochistan', 'Islamabad', 'AJK', 'Gilgit-Baltistan'];
 
 // Floating label input component (Top-level to preserve input DOM focus across state re-renders)
@@ -99,7 +101,7 @@ const FloatingSelect = ({ label, name, value, onChange, options, required = fals
   </div>
 );
 
-const Checkout = ({ cartItems, orders = [], onClearCart, onPlaceOrder, currentUser, promoCodes = [] }) => {
+const Checkout = ({ cartItems, orders = [], onClearCart, onPlaceOrder, currentUser, promoCodes = [], products = [], launches = [], onUpgradeCombo }) => {
   const navigate = useNavigate();
   const checkoutTrackedRef = useRef(false);
   const [completed, setCompleted] = useState(false);
@@ -664,6 +666,7 @@ const Checkout = ({ cartItems, orders = [], onClearCart, onPlaceOrder, currentUs
           }}>
             <div style={{ maxWidth: '420px' }}>
 
+              <ComboDeals products={products} launches={launches} cartItems={cartItems} onUpgrade={onUpgradeCombo} />
               {/* Cart Items */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
                 {cartItems.map((item, idx) => (
@@ -701,6 +704,7 @@ const Checkout = ({ cartItems, orders = [], onClearCart, onPlaceOrder, currentUs
                         {item.selectedColor && item.selectedColor !== 'Default' ? item.selectedColor + ' / ' : ''}
                         {item.selectedSize}
                       </span>
+                      {item.dealTitle && <span style={{ display: 'block', marginTop: '.3rem', fontSize: '.65rem', color: '#555' }}>BUNDLE · {item.dealTitle}</span>}
                       {item.orderType === 'PREORDER' && <span style={{ display: 'block', marginTop: '.2rem', fontSize: '.62rem', color: '#9a6700', fontWeight: 800 }}>PRE-ORDER{item.expectedDispatchAt ? ` · EXPECTED DISPATCH ${new Date(item.expectedDispatchAt).toLocaleDateString('en-PK', { day: 'numeric', month: 'short', year: 'numeric' }).toUpperCase()}` : ''}</span>}
                     </div>
 
