@@ -7,7 +7,7 @@ import {
 import {
   addDoc, collection, deleteDoc, doc, getDoc, getDocs, serverTimestamp, setDoc
 } from 'firebase/firestore';
-import { db } from '../../firebase';
+import { auth, db } from '../../firebase';
 import { formatCurrency } from '../../utils/formatCurrency';
 import './AdminDashboard.css';
 
@@ -176,10 +176,13 @@ export default function AdminDashboard({ products = [], orders = [], onUpdatePro
     if (!trackingNumbers.length) { setMessage('No tracking numbers are available to sync.'); return; }
     setBusy(true); setMessage('Syncing Leopards tracking and courier charges…');
     try {
+      if (!auth.currentUser) throw new Error('Owner sign-in required');
+      const token = await auth.currentUser.getIdToken();
+      const options = { headers: { Authorization: `Bearer ${token}` } };
       const joined = trackingNumbers.slice(0, 50).join(',');
       const [trackingResponse, chargeResponse] = await Promise.all([
-        fetch(`/api/leopards?action=track&trackingNumbers=${encodeURIComponent(joined)}`),
-        fetch(`/api/leopards?action=charges&trackingNumbers=${encodeURIComponent(joined)}`)
+        fetch(`/api/leopards?action=track&trackingNumbers=${encodeURIComponent(joined)}`, options),
+        fetch(`/api/leopards?action=charges&trackingNumbers=${encodeURIComponent(joined)}`, options)
       ]);
       const trackingData = await trackingResponse.json();
       const chargeData = await chargeResponse.json();
