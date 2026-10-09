@@ -1,10 +1,8 @@
+import { verifyAdmin } from "../server/admin-auth.js";
 const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
 const RATE_LIMIT_MAX = 20;
 const rateBuckets = globalThis.__blackLoomDispatchRateBuckets || new Map();
 globalThis.__blackLoomDispatchRateBuckets = rateBuckets;
-
-const FIREBASE_WEB_API_KEY = 'AIzaSyAFaHu6r78VaTdc3AZc7H7DfmEEr-dnuko';
-const DEFAULT_ADMIN_EMAILS = ['zain8pie@gmail.com', 'abdullah8pie@gmail.com', 'muhammadhadi2704@gmail.com', 'hasnainalimehervi@gmail.com'];
 
 const cleanText = (value, maxLength = 200) => String(value ?? '').trim().slice(0, maxLength);
 
@@ -40,33 +38,6 @@ const isRateLimited = (req) => {
 
   bucket.count += 1;
   return bucket.count > RATE_LIMIT_MAX;
-};
-
-const getAdminEmails = () => {
-  const configured = cleanText(process.env.ADMIN_EMAILS, 1000)
-    .split(',')
-    .map((email) => email.trim().toLowerCase())
-    .filter(Boolean);
-  return configured.length ? configured : DEFAULT_ADMIN_EMAILS;
-};
-
-const verifyAdmin = async (req) => {
-  const authorization = cleanText(req.headers?.authorization, 5000);
-  if (!authorization.startsWith('Bearer ')) return false;
-
-  const idToken = authorization.slice(7).trim();
-  if (!idToken) return false;
-
-  const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${FIREBASE_WEB_API_KEY}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ idToken }),
-  });
-  if (!response.ok) return false;
-
-  const result = await response.json();
-  const email = cleanText(result.users?.[0]?.email, 254).toLowerCase();
-  return Boolean(email && getAdminEmails().includes(email));
 };
 
 const normalizeDispatch = (body) => {

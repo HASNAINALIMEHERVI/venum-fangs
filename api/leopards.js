@@ -1,4 +1,5 @@
 /* global process */
+import { verifyAdmin } from "../server/admin-auth.js";
 const BASE_URLS = {
   production: 'https://merchantapi.leopardscourier.com/api',
   staging: 'https://merchantapistaging.leopardscourier.com/api'
@@ -16,6 +17,8 @@ export default async function handler(request, response) {
   if (request.method !== 'GET' && request.method !== 'POST') {
     return response.status(405).json({ error: 'Method not allowed' });
   }
+
+  if (!await verifyAdmin(request)) return response.status(401).json({ error: "Authorized owner login required." });
 
   const apiKey = process.env.LEOPARDS_API_KEY;
   const apiPassword = process.env.LEOPARDS_API_PASSWORD;
@@ -46,15 +49,15 @@ export default async function handler(request, response) {
       url = `${url}?${params.toString()}`;
       options = { method: 'GET', headers: { Accept: 'application/json' } };
     }
-    const upstream = await fetch(url, options);
+    const upstream = await fetch(url, { ...options, signal: AbortSignal.timeout(15000) });
     const text = await upstream.text();
     let data;
     try { data = JSON.parse(text); } catch { data = { error: 'Leopards returned an unreadable response.' }; }
     if (!upstream.ok || Number(data.status) === 0) {
-      return response.status(502).json({ error: data.error || `Leopards request failed (${upstream.status}).` });
+      return response.status(502).json({ error: `Leopards request failed (${upstream.status}).` });
     }
     return response.status(200).json(data);
-  } catch (error) {
-    return response.status(502).json({ error: `Leopards connection failed: ${error.message}` });
+  } catch {
+    return response.status(502).json({ error: "Leopards connection failed. Please try again." });
   }
 }

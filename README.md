@@ -1,16 +1,15 @@
-# React + Vite
+# Black Loom storefront
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React/Vite storefront and Firebase administration interface. The repository name is `venum-fangs`, while the code and UI use Black Loom branding. Portfolio presentation must identify it as a supplied development project; paid-client delivery, asset ownership and real sales have not been established by this audit.
 
-Currently, two official plugins are available:
+## Local setup
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Use Node.js 22+, then `npm ci` and `npm run dev`. `npm run build` produces `dist`. The frontend currently points to the original Firebase project; use a separate test Firebase project before interacting with orders or administration. Do not submit test orders to the live backend. Vercel-style functions in `api` do not run with the Vite development server alone.
 
-## React Compiler
+Copy `.env.example` to your server environment and configure the Firebase web API key and comma-separated administrator emails. The courier endpoint requires a verified Firebase login for an allowlisted administrator and uses server-only courier credentials. Set up staging credentials first. A Firebase web API key is public application configuration, not an administrator credential.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Validation and limits
 
-## Expanding the ESLint configuration
+The Vite build and existing Node utility tests passed before the changes. Courier authorization checks are tested without contacting couriers. Real shipping, email, payment settlement, Firebase database/storage rules and production deployment are not verified here. Frontend administration controls do not replace database security rules. The repository does not include a complete production ruleset; review it independently before deploying.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+`test_emailjs.mjs` is a manual provider smoke check and sends nothing unless `SEND_TEST_EMAIL=true` and explicit recipient/provider variables are supplied. No email, courier or payment request was made during this audit.
