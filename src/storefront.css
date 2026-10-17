@@ -25,7 +25,7 @@
 .storefront .cart-drawer a,.storefront .cart-drawer textarea,.storefront .cart-drawer input{border-radius:0!important}
 
 /* Split-screen brand entrance, matching the supplied campaign gateway structure. */
-.storefront:has(.brand-gateway) .ticker-wrap,.storefront:has(.brand-gateway) .editorial-footer{display:none}
+.storefront:has(.brand-gateway) .ticker-wrap{display:none}
 .storefront:has(.brand-gateway) .editorial-header{position:absolute;top:0;left:0;right:0;background:transparent;border-bottom:0;color:#fff;z-index:80}
 .storefront:has(.brand-gateway) .editorial-header .header-primary{height:88px}
 .storefront:has(.brand-gateway) .editorial-header:not(.over-campaign){background:#fff;color:#191919}
@@ -54,3 +54,23 @@
  .storefront:has(.brand-gateway) .editorial-header .header-primary{height:70px}
 }
 .brand-gateway:before{content:"";position:absolute;top:0;left:0;right:0;height:130px;background:linear-gradient(rgba(0,0,0,.4),transparent);z-index:2;pointer-events:none}
+
+/* The campaign entrance continues into a compact, functional service footer. */
+.storefront .reference-footer{margin-top:0;background:#fff;border-top:0;color:#111}
+.reference-footer-grid{display:grid;grid-template-columns:2.1fr 1fr 1fr 1fr 1fr;gap:clamp(25px,3vw,65px);padding:72px 40px 65px}
+.storefront .reference-footer h2{font-size:13px;font-weight:600;letter-spacing:0;margin:0 0 36px;line-height:1.5}
+.reference-footer-grid section>a,.reference-footer-grid section>button{display:flex;align-items:center;gap:7px;width:fit-content;max-width:100%;margin:0 0 12px;padding:0;border:0;background:none;text-decoration:none;font-size:13px;line-height:1.5;text-align:left;color:inherit}
+.reference-footer-grid section>a:hover,.reference-footer-grid section>button:hover{text-decoration:underline;text-underline-offset:4px}
+.footer-signup>p{font-size:13px;max-width:340px;line-height:1.7;margin:0 0 20px}
+.footer-signup form{display:flex;flex-wrap:wrap;gap:14px;max-width:340px}
+.footer-signup input{width:100%;border:0;border-bottom:1px solid #bcbcbc;border-radius:0;background:none;min-height:36px;padding:6px 0;font-size:13px}
+.footer-signup form button{display:flex;gap:6px;align-items:center;text-transform:uppercase;font-size:12px;border:0;border-bottom:1px solid currentColor;background:none;padding:0 0 3px}
+.footer-signup small{display:block;max-width:330px;font-size:10px;color:#737373;line-height:1.7;margin-top:16px}
+.footer-market,.footer-language{font-size:13px;margin:0 0 12px}
+.reference-footer-bottom{padding:0 40px 30px;font-size:12px}
+.reference-footer-bottom>span{display:block;margin-bottom:18px}
+.reference-footer-bottom nav{display:flex;flex-wrap:wrap;gap:12px 26px;color:#727272}
+.reference-footer-bottom a,.reference-footer-bottom button{padding:0;border:0;background:none;color:inherit;font-size:12px;text-decoration:none}
+.reference-footer-bottom a:hover,.reference-footer-bottom button:hover{text-decoration:underline}
+@media(max-width:1050px){.reference-footer-grid{grid-template-columns:1.6fr 1fr 1fr;gap:38px}.reference-footer-grid section:nth-child(n+4){grid-column:auto}}
+@media(max-width:760px){.reference-footer-grid{grid-template-columns:1fr 1fr;padding:38px 22px;gap:30px 24px}.reference-footer-grid .footer-signup{grid-column:1/-1}.storefront .reference-footer h2{font-size:12px;margin-bottom:20px}.reference-footer-grid section>a,.reference-footer-grid section>button{font-size:12px;margin-bottom:10px}.footer-signup>p{font-size:12px}.reference-footer-bottom{padding:0 22px 28px}.reference-footer-bottom nav{gap:12px 20px}.reference-footer-bottom a,.reference-footer-bottom button{font-size:11px}}
