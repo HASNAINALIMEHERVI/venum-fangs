@@ -78,7 +78,7 @@
 .gateway-clothing .gateway-image{object-fit:cover;object-position:center 65%;background:#8b8985}
 @media(max-width:760px){.gateway-clothing .gateway-image{object-fit:cover;object-position:center 25%}}
 
-/* Fit one portrait only; never repeat the subject as a background layer. */
+/* Reframed photograph includes crop-safe studio space, with no layered copies. */
 .gateway-clothing{background:#85817c}
-.gateway-clothing .gateway-image{inset:0;width:100%;height:100%;max-width:100%;transform:none;object-fit:contain;object-position:center;mask-image:none;background:none}
+.gateway-clothing .gateway-image{inset:0;width:100%;height:100%;max-width:100%;transform:none;object-fit:cover;object-position:55% center;mask-image:none;background:none}
 .storefront:has(.brand-gateway) .editorial-header{position:fixed}
