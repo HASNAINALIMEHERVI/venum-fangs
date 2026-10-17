@@ -46,7 +46,7 @@ const CartDrawer = ({ isOpen, onClose, cartItems, onUpdateQty, onRemoveItem, car
 
       {/* Drawer */}
       <div 
-        className="slide-in-right"
+        className="slide-in-right cart-drawer"
         role="dialog"
         aria-modal="true"
         aria-label="Shopping cart"
@@ -317,3 +317,4 @@ const CartDrawer = ({ isOpen, onClose, cartItems, onUpdateQty, onRemoveItem, car
 };
 
 export default CartDrawer;
+

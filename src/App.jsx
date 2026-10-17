@@ -5,6 +5,8 @@ import { PRESET_THEMES } from './utils/themePresets';
 import AnnouncementBar from './components/AnnouncementBar';
 import SpiderOverlay from './components/SpiderOverlay';
 import Header from './components/Header';
+import StorefrontShell from './components/StorefrontShell';
+import './storefront.css';
 import Footer from './components/Footer';
 import CartDrawer from './components/CartDrawer';
 import Home from './pages/Home';
@@ -1166,7 +1168,7 @@ function App() {
       <ScrollToTop />
       <CanonicalUpdater />
       <SpiderOverlay active={activeTheme?.enableSpiderAnimation || activeTheme?.themeId === 'spider'} />
-      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', position: 'relative' }}>
+      <StorefrontShell>
         
         {/* Login Modal (only shown when triggered) */}
         {showLogin && !currentUser && (
@@ -1190,10 +1192,11 @@ function App() {
           currentUser={currentUser}
           onLogout={handleLogout}
           categories={categories}
+          launches={previewLaunches}
         />
 
         {/* Main Content pages area */}
-        <main style={{ flexGrow: 1 }}>
+        <main id="main-content" className="site-main" style={{ flexGrow: 1 }}>
           <Routes>
             <Route 
               path="/" 
@@ -1318,9 +1321,10 @@ function App() {
 
 
 
-      </div>
+      </StorefrontShell>
     </Router>
   );
 }
 
 export default App;
+

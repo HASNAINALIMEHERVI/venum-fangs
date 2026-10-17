@@ -95,7 +95,7 @@ const Account = ({ currentUser, onLogout, onLoginClick, orders = [] }) => {
   // If not logged in, show a prompt to login
   if (!currentUser) {
     return (
-      <div style={{
+      <div className="account-page" style={{
         minHeight: '70vh',
         display: 'flex',
         flexDirection: 'column',
@@ -173,7 +173,7 @@ const Account = ({ currentUser, onLogout, onLoginClick, orders = [] }) => {
   };
 
   return (
-    <div style={{
+    <div className="account-page" style={{
       maxWidth: '540px',
       margin: '0 auto',
       padding: '2.5rem 1.25rem 4rem',
@@ -464,3 +464,4 @@ const Account = ({ currentUser, onLogout, onLoginClick, orders = [] }) => {
 };
 
 export default Account;
+

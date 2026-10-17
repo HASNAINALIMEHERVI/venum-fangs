@@ -38,7 +38,7 @@ const ReturnPolicyModal = () => {
         flexDirection: 'column',
         position: 'relative',
         animation: 'modalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
-      }} onClick={(e) => e.stopPropagation()}>
+      }} className="client-service-dialog" onClick={(e) => e.stopPropagation()}>
         
         {/* Close Button */}
         <button 
@@ -176,3 +176,4 @@ const ReturnPolicyModal = () => {
 };
 
 export default ReturnPolicyModal;
+

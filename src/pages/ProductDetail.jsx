@@ -293,7 +293,7 @@ const ProductDetail = ({ products, launches = [], onAddToCart }) => {
   const activeImages = getActiveImages();
 
   return (
-    <div style={{ padding: '1.5rem 0 3rem' }} className="fade-in">
+    <div style={{ padding: '1.5rem 0 3rem' }} className="fade-in product-detail-page">
       <div className="container">
         
         {/* Back */}
@@ -1036,3 +1036,4 @@ const ProductDetail = ({ products, launches = [], onAddToCart }) => {
 };
 
 export default ProductDetail;
+

@@ -397,7 +397,7 @@ const Checkout = ({ cartItems, orders = [], onClearCart, onPlaceOrder, currentUs
   }
 
   return (
-    <div className="fade-in" style={{ fontFamily: 'var(--font-sans)' }}>
+    <div className="fade-in checkout-page" style={{ fontFamily: 'var(--font-sans)' }}>
       
       {completed ? (
         <div style={{
@@ -853,3 +853,4 @@ const Checkout = ({ cartItems, orders = [], onClearCart, onPlaceOrder, currentUs
 };
 
 export default Checkout;
+
