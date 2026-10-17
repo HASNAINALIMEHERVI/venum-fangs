@@ -23,3 +23,34 @@
 @media(prefers-reduced-motion:reduce){.storefront *,.storefront *:before,.storefront *:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 
 .storefront .cart-drawer a,.storefront .cart-drawer textarea,.storefront .cart-drawer input{border-radius:0!important}
+
+/* Split-screen brand entrance, matching the supplied campaign gateway structure. */
+.storefront:has(.brand-gateway) .ticker-wrap,.storefront:has(.brand-gateway) .editorial-footer{display:none}
+.storefront:has(.brand-gateway) .editorial-header{position:absolute;top:0;left:0;right:0;background:transparent;border-bottom:0;color:#fff;z-index:80}
+.storefront:has(.brand-gateway) .editorial-header .header-primary{height:88px}
+.storefront:has(.brand-gateway) .editorial-header:not(.over-campaign){background:#fff;color:#191919}
+.storefront:has(.brand-gateway) .site-main{flex-grow:0!important}
+.brand-gateway{display:grid;grid-template-columns:1fr 1fr;min-height:100svh;background:#292927}
+.gateway-panel{position:relative;min-width:0;height:100svh;min-height:620px;overflow:hidden;isolation:isolate}
+.gateway-image{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;z-index:-2}
+.gateway-clothing .gateway-image{object-position:center 42%}
+.gateway-shadebound .gateway-image{object-position:51% center}
+.gateway-shade{position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(0,0,0,.15),rgba(0,0,0,.04) 30%,rgba(0,0,0,.24) 70%,rgba(0,0,0,.12))}
+.gateway-copy{position:absolute;top:50%;left:11.5%;right:6%;transform:translateY(-10%);color:#fff}
+.gateway-copy>p{font-size:clamp(14px,1.05vw,20px);margin:0 0 18px;line-height:1.4}
+.storefront .gateway-copy h1,.storefront .gateway-copy h2{font-size:clamp(30px,2.25vw,44px);font-weight:600;letter-spacing:-.025em;margin:0 0 20px;color:#fff}
+.gateway-actions{display:flex;flex-wrap:wrap;gap:16px}
+.gateway-actions a{display:inline-flex;justify-content:center;align-items:center;min-height:48px;padding:13px 28px;background:rgba(35,35,33,.56);border:1px solid rgba(255,255,255,.23);color:#fff;text-decoration:none;text-transform:uppercase;font-size:12px;font-weight:600;backdrop-filter:blur(12px);transition:background .2s}
+.gateway-actions a:hover{background:#f3f3ef;color:#171717}
+.clothing-campaign-image{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 40%}
+@media(max-width:760px){
+ .brand-gateway{grid-template-columns:1fr}
+ .gateway-panel{height:70svh;min-height:480px}
+ .gateway-panel:first-child{height:82svh;min-height:560px}
+ .gateway-copy{top:auto;bottom:38px;left:25px;right:20px;transform:none}
+ .gateway-copy>p{font-size:13px;margin-bottom:12px}
+ .storefront .gateway-copy h1,.storefront .gateway-copy h2{font-size:34px;margin-bottom:20px}
+ .gateway-actions{gap:10px}.gateway-actions a{padding:12px 20px;font-size:11px;min-height:44px}
+ .storefront:has(.brand-gateway) .editorial-header .header-primary{height:70px}
+}
+.brand-gateway:before{content:"";position:absolute;top:0;left:0;right:0;height:130px;background:linear-gradient(rgba(0,0,0,.4),transparent);z-index:2;pointer-events:none}

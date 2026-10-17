@@ -18,6 +18,7 @@ export default function Home({ products = [], launches = [], deals = [], product
   const isNew = params.get('filter') === 'new';
   const collection = params.get('collection');
   const isCollection = Boolean(category || drop || isNew || collection);
+  const clothingView = params.get('view') === 'clothing';
   const [sort, setSort] = useState('featured');
   const [size, setSize] = useState('all');
   const [available, setAvailable] = useState(false);
@@ -34,9 +35,9 @@ export default function Home({ products = [], launches = [], deals = [], product
     return p.colors?.length ? p.colors.map(color => ({ ...p, originalId: p.id, id: `${p.id}-${color}`, initialColor: color })) : [{ ...p, originalId: p.id }];
   }), [products, launches]);
   const newProducts = useMemo(() => {
-    const selected = activeLaunch ? catalogue.filter(p => activeLaunch.productIds?.includes(p.originalId)) : catalogue.filter(p => p.showInNewIn);
+    const selected = clothingView ? catalogue.filter(p => !p.launchSlug && p.category !== 'Headwear') : activeLaunch ? catalogue.filter(p => activeLaunch.productIds?.includes(p.originalId)) : catalogue.filter(p => p.showInNewIn);
     return (selected.length ? selected : catalogue).slice(0, 8);
-  }, [activeLaunch, catalogue]);
+  }, [activeLaunch, catalogue, clothingView]);
   const title = category || (isNew ? 'New arrivals' : drop === 'drop1' ? 'The original collection' : drop === 'drop2' ? 'Eclipse' : 'All clothing');
   const visible = useMemo(() => {
     let list = catalogue.filter(p => (!category || [p.category, p.subCategory].some(c => c?.toLowerCase() === category.toLowerCase())) && (!drop || (p.drop || 'drop1') === drop));
@@ -66,14 +67,32 @@ export default function Home({ products = [], launches = [], deals = [], product
     {productsLoading && !catalogue.length ? <div className="editorial-product-grid"><ProductSkeleton count={4} /></div> : visible.length ? <div className={`editorial-product-grid ${density === 'two' ? 'grid-two' : ''}`}>{visible.map((p,i) => <ProductCard key={p.id} product={p} onQuickAdd={onQuickAdd} isAboveTheFold={i < 4} />)}</div> : <section className="collection-empty"><Bell size={25} strokeWidth={1.2} /><h2>{size !== 'all' || available ? 'No pieces match your filters.' : 'Something new is on the way.'}</h2><p>{size !== 'all' || available ? 'Try a different size or clear your filters.' : 'Leave your email to hear when this collection arrives.'}</p>{size !== 'all' || available ? <button className="editorial-button" onClick={() => { setSize('all'); setAvailable(false); }}>Clear filters</button> : notification === 'done' ? <p role="status">You’re on the list.</p> : <form onSubmit={join}><label className="sr-only" htmlFor="collection-email">Email address</label><input id="collection-email" type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="Email address" /><button disabled={notification === 'saving'}>{notification === 'saving' ? 'Joining…' : 'Notify me'}</button>{notification === 'error' && <p role="alert">Could not save. Please try again.</p>}</form>}</section>}
   </div>;
 
+  const clothingProduct = products.find(p => p.id === 'gothic-thorn-oversized-tee-252' && !p.draft) || products.find(p => !p.draft && p.category === 'T-Shirts');
+  const clothingImage = clothingProduct?.images?.[0] || 'https://i.ibb.co/N6ynYbrz/Image-01.webp';
+  const clothingTitle = clothingProduct?.title || 'Gothic Thorn Oversized Tee';
+
+  // The entrance is a two-world campaign gateway; clothing has its own shop home.
+  if (!params.get('view')) return <div className="brand-gateway">
+    <section className="gateway-panel gateway-clothing" aria-labelledby="gateway-clothing-title">
+      <img className="gateway-image" src={clothingImage} alt={clothingTitle + ' — Black Loom original product photograph'} fetchPriority="high" />
+      <div className="gateway-shade" />
+      <div className="gateway-copy"><p>Independent streetwear</p><h1 id="gateway-clothing-title">Black Loom</h1><div className="gateway-actions"><Link to="/?view=clothing">Discover</Link><Link to="/?category=T-Shirts">Graphic tees</Link></div></div>
+    </section>
+    <section className="gateway-panel gateway-shadebound" aria-labelledby="gateway-shadebound-title">
+      <img className="gateway-image" src={activeLaunch?.desktopBanner && !activeLaunch.desktopBanner.includes('brimdana-drop-v2') ? activeLaunch.desktopBanner : '/images/campaign/shadebound-landscape.webp'} alt="Black Loom Shadebound Brimdana outdoor campaign" fetchPriority="high" />
+      <div className="gateway-shade" />
+      <div className="gateway-copy"><p>Under the brim. Beyond the ordinary.</p><h2 id="gateway-shadebound-title">Shadebound</h2><div className="gateway-actions"><Link to={launchLink}>Explore</Link><Link to={launchLink + '#collection-pieces'}>Shop the drop</Link></div></div>
+    </section>
+  </div>;
+
   return <div className="editorial-home">
     <section className="campaign-hero" aria-label="Featured collection">
-      <picture><source media="(max-width: 700px)" srcSet={activeLaunch?.mobileBanner && !activeLaunch.mobileBanner.includes('brimdana-drop-v2') ? activeLaunch.mobileBanner : '/images/campaign/shadebound-landscape.webp'} /><img src={activeLaunch?.desktopBanner && !activeLaunch.desktopBanner.includes('brimdana-drop-v2') ? activeLaunch.desktopBanner : '/images/campaign/shadebound-landscape.webp'} alt="Black Loom Shadebound Brimdana, worn above a forest valley" fetchPriority="high" /></picture>
-      <div className="campaign-shade" /><div className="campaign-caption"><span className="eyebrow">{activeLaunch ? `${statusCopy[getLaunchStatus(activeLaunch)]} · Black Loom` : 'Independent streetwear · Pakistan'}</span><h1>{activeLaunch?.heroTitle || 'SHADEBOUND'}</h1><p>{activeLaunch?.heroSubtitle || 'Under the brim. Beyond the ordinary.'}</p><Link className="campaign-link" to={launchLink}>{activeLaunch && getLaunchStatus(activeLaunch) === 'PREORDER_LIVE' ? 'Explore the pre-order' : 'Discover the collection'}<ArrowUpRight size={18} /></Link></div><span className="campaign-index">01 / BLACK LOOM</span>
+      <img className="clothing-campaign-image" src={clothingImage} alt={clothingTitle} fetchPriority="high" />
+      <div className="campaign-shade" /><div className="campaign-caption"><span className="eyebrow">Black Loom · Independent streetwear</span><h1>Graphic expression.</h1><p>Original graphics. Oversized silhouettes.</p><Link className="campaign-link" to="/?category=T-Shirts">Discover the tees<ArrowUpRight size={18} /></Link></div>
     </section>
     <nav className="discovery-strip" aria-label="Shop highlights"><Link to="/?filter=new">New arrivals<ArrowUpRight size={15} /></Link><Link to="/?category=T-Shirts">Graphic tees<ArrowUpRight size={15} /></Link><Link to={launchLink}>Shadebound<ArrowUpRight size={15} /></Link><Link to="/?collection=all">Shop all<ArrowUpRight size={15} /></Link></nav>
     <section className="merch-section" id="new-in"><SectionHeading eyebrow="The latest chapter" title="New arrivals" to="/?filter=new" />{productsLoading && !catalogue.length ? <div className="editorial-product-grid"><ProductSkeleton count={4} /></div> : <div className="editorial-product-grid">{newProducts.map((p,i) => <ProductCard key={p.id} product={p} onQuickAdd={onQuickAdd} isAboveTheFold={i < 4} />)}</div>}</section>
-    <section className="collection-duo" aria-label="Explore the wardrobe"><Link className="collection-tile" to="/?category=T-Shirts"><div className="collection-tile-image"><img src="/images/loom_tee_back.png" alt="Black Loom graphic T-shirt, back artwork" loading="lazy" /></div><div className="tile-caption"><span><small>The original collection</small><strong>Graphic expression.</strong></span><ArrowUpRight size={23} /></div></Link><Link className="collection-tile" to={launchLink}><div className="collection-tile-image"><img src="/images/brimdana-drop-v2/design-02-view-03-camel.png" alt="Forest Brimdana with paisley fabric and corduroy brim" loading="lazy" /></div><div className="tile-caption"><span><small>Shadebound headwear</small><strong>A different perspective.</strong></span><ArrowUpRight size={23} /></div></Link></section>
+    <section className="collection-duo" aria-label="Explore the wardrobe"><Link className="collection-tile" to="/?category=T-Shirts"><div className="collection-tile-image"><img src={clothingProduct?.images?.[1] || clothingImage} alt={clothingTitle} loading="lazy" /></div><div className="tile-caption"><span><small>The original collection</small><strong>Graphic expression.</strong></span><ArrowUpRight size={23} /></div></Link><Link className="collection-tile" to={launchLink}><div className="collection-tile-image"><img src="/images/brimdana-drop-v2/design-02-view-03-camel.png" alt="Forest Brimdana with paisley fabric and corduroy brim" loading="lazy" /></div><div className="tile-caption"><span><small>Shadebound headwear</small><strong>A different perspective.</strong></span><ArrowUpRight size={23} /></div></Link></section>
     <section className="brand-editorial"><div><span className="eyebrow">The Black Loom approach</span><h2>Wear it your way.</h2></div><div><p>Expressive graphics. Relaxed silhouettes. Pieces that become part of your everyday rotation.</p><p>From oversized cotton tees to the bandana-meets-visor Brimdana, discover a wardrobe with its own point of view.</p><button className="text-link" onClick={() => window.dispatchEvent(new Event('open-about-us-modal'))}>Behind Black Loom<ArrowUpRight size={16} /></button></div></section>
     <section className="merch-section"><SectionHeading eyebrow="Build your rotation" title="Explore the wardrobe" to="/?collection=all" /><div className="editorial-product-grid">{catalogue.filter(p => !p.launchSlug).slice(0, 4).map(p => <ProductCard key={p.id} product={p} onQuickAdd={onQuickAdd} />)}</div></section>
     <div className="storefront-bundles"><DealsSection deals={deals} products={products} onAddDeal={onAddDeal} /><ComboDeals products={products} launches={launches} onAddDeal={onAddDeal} /></div>
