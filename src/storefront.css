@@ -74,3 +74,6 @@
 .reference-footer-bottom a:hover,.reference-footer-bottom button:hover{text-decoration:underline}
 @media(max-width:1050px){.reference-footer-grid{grid-template-columns:1.6fr 1fr 1fr;gap:38px}.reference-footer-grid section:nth-child(n+4){grid-column:auto}}
 @media(max-width:760px){.reference-footer-grid{grid-template-columns:1fr 1fr;padding:38px 22px;gap:30px 24px}.reference-footer-grid .footer-signup{grid-column:1/-1}.storefront .reference-footer h2{font-size:12px;margin-bottom:20px}.reference-footer-grid section>a,.reference-footer-grid section>button{font-size:12px;margin-bottom:10px}.footer-signup>p{font-size:12px}.reference-footer-bottom{padding:0 22px 28px}.reference-footer-bottom nav{gap:12px 20px}.reference-footer-bottom a,.reference-footer-bottom button{font-size:11px}}
+
+.gateway-clothing .gateway-image{object-fit:cover;object-position:center 65%;background:#8b8985}
+@media(max-width:760px){.gateway-clothing .gateway-image{object-fit:cover;object-position:center 25%}}

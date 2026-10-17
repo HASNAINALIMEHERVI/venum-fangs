@@ -74,7 +74,7 @@ export default function Home({ products = [], launches = [], deals = [], product
   // The entrance is a two-world campaign gateway; clothing has its own shop home.
   if (!params.get('view')) return <div className="brand-gateway">
     <section className="gateway-panel gateway-clothing" aria-labelledby="gateway-clothing-title">
-      <img className="gateway-image" src={clothingImage} alt={clothingTitle + ' — Black Loom original product photograph'} fetchPriority="high" />
+      <img className="gateway-image" src="/images/campaign/gothic-thorn-studio.webp" alt="Gothic Thorn tee styled with wide-leg denim — Black Loom studio campaign" fetchPriority="high" />
       <div className="gateway-shade" />
       <div className="gateway-copy"><p>Independent streetwear</p><h1 id="gateway-clothing-title">Black Loom</h1><div className="gateway-actions"><Link to="/?view=clothing">Discover</Link><Link to="/?category=T-Shirts">Graphic tees</Link></div></div>
     </section>
