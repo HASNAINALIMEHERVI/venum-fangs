@@ -18,10 +18,10 @@ export default function Header({ cartCount = 0, onCartClick, products = [], curr
   useDialogFocus(Boolean(panel), close, dialogRef);
   useEffect(() => { setPanel(null); setQuery(''); }, [location.pathname, location.search]);
   useEffect(() => {
-    const scroll = () => setScrolled(window.scrollY > 30);
+    const scroll = () => setScrolled(window.scrollY > (home ? window.innerHeight - 90 : 30));
     scroll(); window.addEventListener('scroll', scroll, { passive: true });
     return () => window.removeEventListener('scroll', scroll);
-  }, []);
+  }, [home]);
   useEffect(() => {
     if (query.trim().length < 2) return;
     const timer = setTimeout(() => trackSearch(query.trim()), 500);

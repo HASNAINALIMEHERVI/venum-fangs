@@ -77,3 +77,10 @@
 
 .gateway-clothing .gateway-image{object-fit:cover;object-position:center 65%;background:#8b8985}
 @media(max-width:760px){.gateway-clothing .gateway-image{object-fit:cover;object-position:center 25%}}
+
+/* Keep the complete portrait visible at every desktop panel ratio. */
+.gateway-clothing{background:#85817c url('/images/campaign/gothic-thorn-studio.webp') center/cover no-repeat}
+.gateway-clothing .gateway-image{height:100%;width:auto;max-width:none;left:50%;right:auto;transform:translateX(-50%);object-fit:initial;object-position:initial;background:none}
+.storefront:has(.brand-gateway) .editorial-header{position:fixed}
+@media(max-width:760px){.gateway-clothing .gateway-image{height:100%;width:auto;max-width:none;object-fit:initial;object-position:initial}}
+.gateway-clothing .gateway-image{height:94%;top:auto;bottom:0;mask-image:linear-gradient(to right,transparent,#000 6%,#000 94%,transparent),linear-gradient(to bottom,transparent,#000 5%,#000);mask-composite:intersect}
