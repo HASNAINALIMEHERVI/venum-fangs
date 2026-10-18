@@ -12,7 +12,7 @@ export default function ProductCard({ product, onQuickAdd, isAboveTheFold = fals
   const id = product.originalId || product.id;
   const href = product.launchSlug ? `/drop/${product.launchSlug}?design=${encodeURIComponent(id)}&color=${encodeURIComponent(color || 'Camel')}` : `/product/${id}${color ? `?color=${encodeURIComponent(color)}` : ''}`;
   const sale = Number(product.salePrice) > 0 && Number(product.salePrice) < Number(product.price);
-  return <article className="product-card">
+  return <article className="product-card" data-product-id={id}>
     <Link className="product-card-media" to={href} aria-label={`View ${product.title}`}>
       {images[0] ? <img src={images[0]} alt={`${product.title}${color ? ` in ${color}` : ''}`} width="600" height="750" loading={isAboveTheFold ? 'eager' : 'lazy'} fetchPriority={isAboveTheFold ? 'high' : undefined} className="product-card-primary" /> : <span className="product-image-placeholder">BLACK LOOM</span>}
       {images[1] && <img className="product-card-alternate" src={images[1]} alt={`${product.title}, alternate view`} width="600" height="750" loading="lazy" />}

@@ -138,3 +138,8 @@
 .storefront .combo-grid article>.combo-button:hover{background:#fff;color:#191919}
 @media(max-width:1050px){.storefront .combo-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}}
 @media(max-width:760px){.storefront .combo-grid{gap:12px}.storefront .combo-grid .combo-images{padding:10px;gap:3px}.storefront .combo-grid h3{padding:12px 12px 8px;min-height:84px;font-size:11px}.storefront .combo-grid .combo-cap-name{font-size:10px}.storefront .combo-grid article>p{padding-inline:12px;font-size:12px;gap:6px}.storefront .combo-grid article>small{padding:4px 12px 12px}.storefront .combo-grid article>.combo-button{margin: auto 12px 12px;width:calc(100% - 24px);font-size:10px;min-height:40px}}
+
+/* Kalakar source photos have tighter internal margins than the other tees. */
+.storefront .product-card[data-product-id="kalakar-oversized-tee-220"] .product-card-media{background:#fff}
+.storefront .product-card[data-product-id="kalakar-oversized-tee-220"] .product-card-media>img{transform:translateY(6%) scale(.84)}
+.storefront .product-card[data-product-id="kalakar-oversized-tee-220"]:hover .product-card-media>img{transform:translateY(6%) scale(.855)}
