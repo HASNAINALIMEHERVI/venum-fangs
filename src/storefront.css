@@ -109,3 +109,15 @@
 @media(max-width:760px){.discover-campaign{height:calc(100svh - 92px);min-height:480px}.discover-campaign>img{object-position:50% center}.graphic-campaign-section>div{align-items:flex-start;flex-direction:column;gap:8px;padding:20px}.campaign-lookbook{padding-top:30px}.campaign-looks{grid-template-columns:repeat(3,minmax(0,1fr))}.campaign-looks span{padding:12px 8px;font-size:10px}.campaign-looks span svg{width:12px}.campaign-front-back{margin-top:24px}.campaign-front-back img{aspect-ratio:3/5}.campaign-front-back h2{font-size:27px}.shadebound-story{margin-top:24px}.shadebound-story>img{aspect-ratio:1/1.2;object-position:58% center}.shadebound-story>div{bottom:24px}}
 
 #graphic-expression{scroll-margin-top:80px}
+
+/* Seasonal campaign is a continuous photograph, with restrained collection copy. */
+.storefront:has(.seasonal-campaign) .editorial-header.over-campaign{background:transparent;border-color:transparent;color:white;margin-bottom:-76px}
+.seasonal-campaign{position:relative;height:calc(100svh - 31px);min-height:600px;overflow:hidden;background:#284353;color:#fff}
+.seasonal-campaign>img{display:block;width:100%;height:100%;object-fit:cover;object-position:50% 50%}
+.seasonal-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(9,22,28,.23),transparent 35%,rgba(8,20,27,.12) 55%,rgba(8,20,27,.64))}
+.seasonal-copy{position:absolute;left:20px;right:20px;bottom:8%;text-align:center;color:white}
+.seasonal-copy .eyebrow{font-size:11px;letter-spacing:.09em}.storefront .seasonal-copy h1{font-size:clamp(32px,3vw,52px);font-weight:500;letter-spacing:-.025em;margin:12px 0;color:white}.seasonal-copy>p{font-size:12px;margin:0 0 26px;color:#eee}.seasonal-copy>div{display:flex;justify-content:center;gap:18px}
+.seasonal-copy a{min-width:145px;display:inline-flex;justify-content:center;align-items:center;min-height:46px;padding:12px 24px;background:rgba(25,36,39,.6);border:1px solid #ffffff55;backdrop-filter:blur(6px);color:white!important;font-size:11px;text-decoration:none;text-transform:uppercase;font-weight:600}.seasonal-copy a:hover{background:#fff;color:#18232b!important}
+#campaign-lookbook{scroll-margin-top:84px}
+@media(max-width:760px){.storefront:has(.seasonal-campaign) .editorial-header.over-campaign{margin-bottom:-61px}.seasonal-campaign{height:78svh;min-height:540px}.seasonal-campaign>img{object-fit:contain;object-position:center 32%;background:#284353}.seasonal-shade{background:linear-gradient(180deg,#142b3c33,transparent 55%,#142b3cdd)}.seasonal-copy{bottom:35px}.seasonal-copy>p{font-size:11px}.seasonal-copy>div{gap:10px}.seasonal-copy a{min-width:132px;padding:12px 18px}}
+@media(max-width:760px){.seasonal-campaign>img{object-fit:cover;object-position:52% center}}

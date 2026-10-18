@@ -12,16 +12,17 @@ export default function Header({ cartCount = 0, onCartClick, products = [], curr
   const location = useLocation();
   const dialogRef = useRef(null);
   const home = location.pathname === '/' && !location.search;
+  const immersive = home || (location.pathname === '/' && new URLSearchParams(location.search).get('view') === 'clothing');
   const published = launches.filter(item => item.published);
   const results = query.trim().length > 1 ? products.filter(p => (!p.draft || published.some(l => l.productIds?.includes(p.id))) && `${p.title} ${p.category}`.toLowerCase().includes(query.trim().toLowerCase())).slice(0, 8) : [];
   const close = () => setPanel(null);
   useDialogFocus(Boolean(panel), close, dialogRef);
   useEffect(() => { setPanel(null); setQuery(''); }, [location.pathname, location.search]);
   useEffect(() => {
-    const scroll = () => setScrolled(window.scrollY > (home ? window.innerHeight - 90 : 30));
+    const scroll = () => setScrolled(window.scrollY > (immersive ? window.innerHeight - 90 : 30));
     scroll(); window.addEventListener('scroll', scroll, { passive: true });
     return () => window.removeEventListener('scroll', scroll);
-  }, [home]);
+  }, [immersive]);
   useEffect(() => {
     if (query.trim().length < 2) return;
     const timer = setTimeout(() => trackSearch(query.trim()), 500);
@@ -32,7 +33,7 @@ export default function Header({ cartCount = 0, onCartClick, products = [], curr
     return launch ? `/drop/${launch.slug}?design=${encodeURIComponent(p.id)}` : `/product/${p.id}`;
   };
   return <>
-    <header className={`editorial-header ${home && !scrolled && !panel ? 'over-campaign' : ''}`}>
+    <header className={`editorial-header ${immersive && !scrolled && !panel ? 'over-campaign' : ''}`}>
       <div className="header-primary">
         <nav className="header-desktop" aria-label="Main navigation">
           <button onClick={() => setPanel('shop')} aria-expanded={panel === 'shop'}>Shop <span>+</span></button>
