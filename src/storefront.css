@@ -120,7 +120,8 @@
 .storefront .seasonal-copy a{min-width:145px;display:inline-flex;justify-content:center;align-items:center;min-height:46px;padding:12px 24px;background:rgba(25,36,39,.6);border:1px solid #ffffff55;backdrop-filter:blur(6px);color:white!important;font-size:11px;text-decoration:none;text-transform:uppercase;font-weight:600}.storefront .seasonal-copy a:hover{background:#fff;color:#18232b!important}
 .storefront #campaign-lookbook{scroll-margin-top:84px}
 @media(max-width:760px){.storefront:has(.seasonal-campaign) .editorial-header.over-campaign{margin-bottom:-61px}.storefront .seasonal-campaign{height:78svh;min-height:540px}.storefront .seasonal-campaign>img{object-fit:contain;object-position:center 32%;background:#284353}.storefront .seasonal-shade{background:linear-gradient(180deg,#142b3c33,transparent 55%,#142b3cdd)}.storefront .seasonal-copy{bottom:35px}.storefront .seasonal-copy>p{font-size:11px}.storefront .seasonal-copy>div{gap:10px}.storefront .seasonal-copy a{min-width:132px;padding:12px 18px}}
-@media(max-width:760px){.storefront .seasonal-campaign>img{object-fit:cover;object-position:52% center}}
+/* Keep the seated campaign lead centered in the narrow mobile crop. */
+@media(max-width:760px){.storefront .seasonal-campaign>img{object-fit:cover;object-position:46% center}}
 
 /* Equal-sized combo product stages and aligned merchandising details. */
 .storefront .combo-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:24px;align-items:stretch}
