@@ -147,3 +147,56 @@
 /* Shadebound campaign: product-led editorial after the collection. */
 .storefront .shadebound-editorial{margin:42px 0 60px}.shadebound-editorial figure{margin:0}.shadebound-still-life{position:relative;background:#393730}.shadebound-still-life>img{display:block;width:100%;height:auto;aspect-ratio:1.85;object-fit:cover;object-position:center 61%}.shadebound-still-life>figcaption{padding:30px var(--page-gutter) 36px;display:grid;grid-template-columns:1fr auto;gap:12px 32px;background:#eeede9}.shadebound-still-life .eyebrow{grid-column:1/-1;color:#777}.shadebound-still-life h2{font-size:clamp(26px,3vw,42px);font-weight:400;letter-spacing:-.04em;margin:0}.shadebound-still-life a{align-self:center;font-size:11px;text-decoration:none;border-bottom:1px solid #777;padding-bottom:7px}.shadebound-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:2px;margin-top:2px}.shadebound-detail-grid img{display:block;width:100%;height:auto;aspect-ratio:1.5;object-fit:cover}.shadebound-detail-grid figcaption{padding:26px var(--page-gutter) 18px}.shadebound-detail-grid .eyebrow{color:#777}.shadebound-detail-grid h3{font-size:25px;font-weight:400;letter-spacing:-.03em;margin:10px 0}.shadebound-detail-grid p{font-size:12px;color:#777;line-height:1.7;margin:0}
 @media(max-width:760px){.storefront .shadebound-editorial{margin:25px 0 35px}.shadebound-still-life>img{aspect-ratio:1.25;object-position:center}.shadebound-still-life>figcaption{display:block;padding:24px 20px 28px}.shadebound-still-life h2{margin:12px 0 20px}.shadebound-still-life a{display:inline-block}.shadebound-detail-grid{grid-template-columns:1fr;gap:20px}.shadebound-detail-grid figcaption{padding:22px 20px 8px}.shadebound-detail-grid h3{font-size:23px}}
+
+/* Final editorial pass: restrained hierarchy, collection rhythm and responsive controls. */
+.storefront .section-heading h2,.storefront .graphic-campaign-section h2{font-weight:400;letter-spacing:-.04em}
+.storefront .section-heading{align-items:flex-end;gap:24px}
+.storefront .section-heading>a{white-space:nowrap;min-height:36px}
+.storefront .product-card{container-type:inline-size}
+.storefront .product-card-add{top:calc(125cqw - 52px)!important;display:flex;align-items:center;justify-content:center;width:36px;height:36px;text-decoration:none;background:#ffffffed;border:1px solid #dededb;transition:background .2s,color .2s}
+.storefront .product-card-add:hover{background:#191919;color:#fff}
+.product-rail-track{display:grid;grid-auto-flow:column;grid-auto-columns:calc((100% - 6px)/4);gap:2px;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x mandatory;scrollbar-width:thin;scrollbar-color:#aaa #eee;padding-bottom:8px}
+.product-rail-track>.product-card{scroll-snap-align:start}
+.product-rail-controls{display:flex;justify-content:space-between;align-items:center;padding:12px var(--page-gutter) 18px;color:#777;font-size:10px}
+.product-rail-controls>div{display:flex;gap:8px}
+.product-rail-controls button{display:flex;align-items:center;justify-content:center;width:38px;height:38px;border:1px solid #ddd;background:white;color:#191919}
+.product-rail-controls button:disabled{opacity:.25}
+.storefront .collection-toolbar nav{min-width:0;overflow-x:auto;scrollbar-width:none;white-space:nowrap}
+.storefront .collection-toolbar nav a[aria-current=page]{color:#171717;border-bottom:1px solid #171717}
+.storefront .collection-display button[aria-pressed=true]{opacity:1;color:#171717}
+.storefront .collection-display button[aria-pressed=false]{opacity:.4}
+.storefront .info-column>div>div:nth-child(2)>span{font-size:14px!important;font-weight:400!important}
+.storefront .info-column .atc-btn-black{transition:background .2s,opacity .2s}
+.storefront .info-column .atc-btn-black:hover{opacity:.85}
+.storefront .launch-gallery-main{display:block;width:100%;height:auto;aspect-ratio:1;object-fit:contain}
+.storefront .launch-thumbnails button[aria-pressed=true]{border-color:#191919}
+.storefront .campaign-front-back>div{z-index:1}
+.storefront .campaign-front-back:after{content:'';position:absolute;inset:50% 0 0;background:linear-gradient(transparent,#0007);pointer-events:none}
+.storefront .mega-main{min-height:40px}
+.storefront .search-results img{object-fit:contain}
+.storefront .reference-footer-grid section>button,.storefront .reference-footer-grid section>a{min-height:29px}
+.storefront #collection-pieces,.storefront #new-in{scroll-margin-top:90px}
+@media(hover:none){.storefront .product-card:hover .product-card-alternate{opacity:0}.storefront .product-card:hover .product-card-media>img{transform:none}.storefront .product-card[data-product-id="kalakar-oversized-tee-220"]:hover .product-card-media>img{transform:translateY(6%) scale(.84)}}
+@media(max-width:1050px) and (min-width:761px){.product-rail-track{grid-auto-columns:calc((100% - 4px)/3)}}
+@media(max-width:760px){
+ .product-rail-track{grid-auto-columns:46%;scroll-padding-left:0}
+ .product-rail-controls{padding:8px 20px 20px}
+ .storefront .product-card-add{width:36px;height:36px;right:9px;top:calc(125cqw - 45px)!important}
+ .storefront .section-heading{gap:15px}.storefront .section-heading>a{font-size:10px;gap:8px}
+ .storefront .collection-toolbar nav{display:flex;flex-wrap:nowrap;gap:24px}
+ .storefront .collection-filters{flex-direction:column}.storefront .collection-filters fieldset{min-width:0;width:100%}
+ .storefront .collection-filters fieldset>div{display:flex;flex-wrap:wrap;gap:7px}
+ .storefront .collection-filters button,.storefront .collection-filters select{min-height:40px}
+ .storefront .campaign-looks{display:grid;grid-auto-flow:column;grid-template-columns:none;grid-auto-columns:76%;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:thin}
+ .storefront .campaign-looks>a{scroll-snap-align:start}.storefront .campaign-looks span{padding:16px 20px;font-size:12px}
+ .storefront .campaign-looks img{aspect-ratio:4/5}
+ .storefront .campaign-front-back>div{bottom:20px;left:20px;right:20px}
+ .storefront .campaign-front-back>div>a{font-size:11px;gap:15px}
+ .storefront .nav-panel{padding-bottom:28px}.storefront .mega-layout{gap:26px 20px}
+ .storefront .mega-main{font-size:14px;min-height:44px}.storefront .mega-sub{min-height:36px}
+ .storefront .header-tools{gap:3px}.storefront .header-tools .icon-button{width:32px;min-height:44px}
+ .storefront .header-primary{padding-inline:14px;gap:6px}.storefront .brand-wordmark{font-size:20px!important}
+ .storefront .footer-signup input{font-size:16px!important}.storefront .search-field input{font-size:16px}
+ .storefront .product-card-copy>a{line-height:1.45;display:block;min-height:32px}
+ .storefront #collection-pieces,.storefront #new-in{scroll-margin-top:70px}
+}

@@ -18,7 +18,7 @@ export default function ProductCard({ product, onQuickAdd, isAboveTheFold = fals
       {images[1] && <img className="product-card-alternate" src={images[1]} alt={`${product.title}, alternate view`} width="600" height="750" loading="lazy" />}
       {sale && <span className="product-card-label">Sale</span>}
     </Link>
-    <button className="product-card-add" aria-label={`Choose options for ${product.title}`} onClick={() => onQuickAdd?.({ ...product, initialColor: color })} style={product.launchSlug ? { display: 'none' } : undefined}><Plus size={17} /></button>
+    {!product.launchSlug && (onQuickAdd ? <button className="product-card-add" aria-label={`Choose options for ${product.title}`} onClick={() => onQuickAdd?.({ ...product, initialColor: color })}><Plus size={17} /></button> : <Link to={href} className="product-card-add" aria-label={`Choose options for ${product.title}`}><Plus size={17} /></Link>)}
     {product.launchSlug && <Link to={href} className="product-card-add" aria-label={`Explore ${product.title}`}><ArrowUpRight size={16} /></Link>}
     <div className="product-card-copy"><Link to={href}>{product.title}</Link><div className="product-card-price">{sale && <s>{formatCurrency(product.price)}</s>}<span>{formatCurrency(sale ? product.salePrice : product.price)}</span></div><p>{color || (product.category === 'Headwear' ? 'Adjustable fit' : product.category)}</p>
       {displayColors.length > 1 && <div className="product-card-colors" aria-label="Available colours">{displayColors.map(c => <button key={c} title={c} aria-label={`${product.title}: ${c}`} aria-pressed={color === c} onClick={() => setColor(c)} style={{ '--swatch': colors[c.toLowerCase()] || '#aaa' }} />)}</div>}

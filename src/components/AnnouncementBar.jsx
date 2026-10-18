@@ -27,7 +27,7 @@ const AnnouncementBar = ({ activeTheme }) => {
     }
   }, [activeTheme]);
 
-  const items = announcementText.split(/\. | — /).filter(Boolean);
+  const items = announcementText.replace(/^🔥\s*/, '').split(/ — |(?<=[.!?])\s+(?=[A-Z])/).filter(Boolean);
 
   return (
     <div className="ticker-wrap" style={{ backgroundColor: activeTheme?.tickerBg || '#1a1a1a' }}>
@@ -45,3 +45,4 @@ const AnnouncementBar = ({ activeTheme }) => {
 };
 
 export default AnnouncementBar;
+
