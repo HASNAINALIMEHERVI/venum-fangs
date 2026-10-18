@@ -3038,7 +3038,7 @@ const Admin = ({
                 <Palette size={22} style={{ color: 'var(--accent)' }} /> THEME MANAGEMENT & SALE TEMPLATES
               </h2>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6, maxWidth: '800px', margin: 0 }}>
-                Switch your entire website aesthetic instantly! Select a pre-configured theme template (Standard or Azaadi Sale) or customize your own banner text and colors. Changes push live to all visitors immediately.
+                Choose Black Loom Editorial for the campaign storefront, or return to the original layout with Standard, Azaadi or Spider. Custom themes retain the selected layout. Saved changes appear for visitors when they load the site.
               </p>
             </div>
 
@@ -3072,6 +3072,7 @@ const Admin = ({
               </div>
             </div>
 
+            <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', marginBottom: '1.5rem', fontSize: '.85rem' }}><a href="/?previewTheme=editorial" target="_blank" rel="noreferrer">Preview Editorial ↗</a><a href="/?previewTheme=default" target="_blank" rel="noreferrer">Preview original layout ↗</a><span style={{ color: 'var(--text-muted)' }}>Previews do not change the live theme.</span></div>
             {/* Theme Presets Grid */}
             <h3 style={{ fontSize: '0.9rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '1.25rem', color: 'var(--text-primary)' }}>
               AVAILABLE THEME TEMPLATES
@@ -3083,6 +3084,15 @@ const Admin = ({
               gap: '1.5rem',
               marginBottom: '3rem'
             }}>
+              <article style={{ background: 'var(--bg-secondary)', border: activeTheme?.themeId === 'editorial' ? '2px solid var(--accent)' : '1px solid var(--border-color)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                <img src="/images/campaign/summer-studio-v3.webp" alt="Black Loom Editorial theme preview" style={{ width: '100%', aspectRatio: '1.8', objectFit: 'cover' }} />
+                <div style={{ padding: '1.75rem', flex: 1, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <h4 style={{ margin: 0, fontSize: '1.1rem' }}>Black Loom Editorial {activeTheme?.themeId === 'editorial' && <small>· ACTIVE</small>}</h4>
+                  <p style={{ fontSize: '.85rem', lineHeight: 1.7, color: 'var(--text-secondary)', margin: 0 }}>The complete campaign storefront: split entrance, summer and graphic stories, scrolling product rows, refined product pages and Shadebound photography. Includes responsive navigation and footer.</p>
+                  <p style={{ fontSize: '.75rem', color: 'var(--text-muted)', margin: 0 }}>Your products, orders and inventory stay shared across themes.</p>
+                  <button disabled={activeTheme?.themeId === 'editorial' || themeSaving} onClick={() => handleApplyPresetTheme('editorial')} style={{ marginTop: 'auto', minHeight: '44px', padding: '12px 20px', background: 'var(--accent)', color: 'var(--bg-primary)', border: 0, fontWeight: 700 }}>{activeTheme?.themeId === 'editorial' ? 'CURRENTLY ACTIVE' : 'ACTIVATE EDITORIAL THEME'}</button>
+                </div>
+              </article>
               {/* Preset 1: Standard Black Loom */}
               <div style={{
                 background: 'var(--bg-secondary)',
@@ -3266,6 +3276,7 @@ const Admin = ({
               </p>
 
               <form onSubmit={handleCustomThemeSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem' }}>
+                <label style={{ gridColumn: '1 / -1', fontSize: '.85rem' }}>Storefront layout<select aria-label="Storefront layout" value={customThemeForm.storefrontLayout || 'editorial'} onChange={e => setCustomThemeForm({ ...customThemeForm, storefrontLayout: e.target.value })} style={{ display: 'block', width: '100%', padding: '12px', marginTop: '8px', background: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }}><option value="editorial">Editorial campaign storefront</option><option value="legacy">Original Black Loom storefront</option></select><small style={{ display: 'block', marginTop: '8px', color: 'var(--text-muted)' }}>Hero text fields below customize the original layout. Editorial uses the summer and Shadebound campaign images.</small></label>
                 <div style={{ gridColumn: '1 / -1' }}>
                   <label style={adminLabelStyle}>Ticker Text (Top Scrolling Bar)</label>
                   <textarea

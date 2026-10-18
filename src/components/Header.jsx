@@ -11,7 +11,9 @@ export default function Header({ cartCount = 0, onCartClick, products = [], curr
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
   const dialogRef = useRef(null);
-  const home = location.pathname === '/' && !location.search;
+  const pageParams = new URLSearchParams(location.search);
+  pageParams.delete('previewTheme');
+  const home = location.pathname === '/' && !pageParams.toString();
   const immersive = home || (location.pathname === '/' && new URLSearchParams(location.search).get('view') === 'clothing');
   const published = launches.filter(item => item.published);
   const visibleProducts = products.filter(p => !p.draft || published.some(l => l.productIds?.includes(p.id)));
