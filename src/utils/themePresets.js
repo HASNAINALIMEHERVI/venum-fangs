@@ -1,6 +1,24 @@
 export const PRESET_THEMES = {
+  editorial: {
+    themeId: 'editorial',
+    storefrontLayout: 'editorial',
+    name: 'Black Loom Editorial',
+    tickerText: 'BLACK LOOM — The summer edit & Shadebound — Explore the collections',
+    tickerBg: '#171717',
+    tickerColor: '#ffffff',
+    heroTopLabel: 'Black Loom · The summer edit',
+    heroTitle: 'Summer collection',
+    heroSubtitle: 'Original graphics. Long days. Your own expression.',
+    heroSubtext: '',
+    heroCta: 'Shop summer',
+    heroCtaBg: '#18232b',
+    saleBadgeText: 'Sale',
+    saleBadgeBg: '#171717',
+    enableSpiderAnimation: false
+  },
   default: {
     themeId: 'default',
+    storefrontLayout: 'legacy',
     name: 'Black Loom Standard',
     tickerText: '🔥 BUY 3 SHIRTS & SAVE RS. 500 INSTANTLY! — Drop I is now live — Shop the collection. 100% Heavyweight Combed Cotton (240 GSM). Flat Shipping Rate: 299 PKR. Limited Drop — No Restocks',
     tickerBg: '#1a1a1a',
@@ -18,6 +36,7 @@ export const PRESET_THEMES = {
   },
   azaadi: {
     themeId: 'azaadi',
+    storefrontLayout: 'legacy',
     name: '🇵🇰 Azaadi Sale (14 August)',
     tickerText: '🇵🇰 AZAADI SALE — FLAT 15% OFF ON EVERYTHING — 14-15 AUGUST ONLY — Use Code: AZAADI15 — FREE SHIPPING OVER RS. 5,000 — 🇵🇰 AZAADI SALE — FLAT 15% OFF ON EVERYTHING',
     tickerBg: '#01411C',
@@ -35,6 +54,7 @@ export const PRESET_THEMES = {
   },
   spider: {
     themeId: 'spider',
+    storefrontLayout: 'legacy',
     name: '🕷️ Black Widow / Spider Theme',
     tickerText: '🕷️ BLACK LOOM SPIDER DROP — EXCLUSIVE HEAVYWEIGHT TEES & COBWEB APPAREL — 100% COMBED COTTON — FREE SHIPPING OVER RS. 5,000 — 🕷️ LIMITED DROP',
     tickerBg: '#09090b',
@@ -53,3 +73,12 @@ export const PRESET_THEMES = {
   }
 };
 
+
+
+// This release activates Editorial for stores with pre-layout theme settings.
+// Every selection made by the updated admin stores an explicit layout, so a
+// subsequent switch to Standard, Azaadi, Spider or Custom remains authoritative.
+export const resolveStorefrontTheme = theme => {
+  if (theme?.storefrontLayout === 'legacy' || theme?.storefrontLayout === 'editorial') return theme;
+  return { ...PRESET_THEMES.editorial };
+};

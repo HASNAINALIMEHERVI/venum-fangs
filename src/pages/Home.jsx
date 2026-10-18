@@ -1,942 +1,109 @@
-import React from 'react';
-import { useSearchParams, useNavigate, Link } from 'react-router-dom';
-import { Clock, Bell, Truck, CreditCard, RefreshCw, CheckCircle } from 'lucide-react';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { ArrowUpRight, ArrowRight, SlidersHorizontal, Grid2X2, Columns2, X, Bell } from 'lucide-react';
+import { collection as firestoreCollection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import ProductCard from '../components/ProductCard';
 import ProductSkeleton from '../components/ProductSkeleton';
+import ProductRail from '../components/ProductRail';
 import DealsSection from '../components/DealsSection';
 import ComboDeals from '../components/ComboDeals';
-import { getLaunchStatus, statusCopy, targetForStatus, formatLaunchDate } from '../utils/launchStatus';
+import { getLaunchStatus, getVariantStock, getProductSizes, statusCopy } from '../utils/launchStatus';
 
-const Home = ({ products, launches = [], deals = [], productsLoading = false, onQuickAdd, onAddDeal, activeTheme = null }) => {
-  const [searchParams] = useSearchParams();
-  const categoryFilter = searchParams.get('category');
-  const navigate = useNavigate();
-  const [showManifesto, setShowManifesto] = React.useState(false);
-  const [selectedDrop, setSelectedDrop] = React.useState('drop1');
-  const [notifyEmail, setNotifyEmail] = React.useState('');
-  const [notifyStatus, setNotifyStatus] = React.useState('idle');
-  const [sortBy, setSortBy] = React.useState('default');
-  const [filterSize, setFilterSize] = React.useState('ALL');
-  const activeLaunch = React.useMemo(() => launches.find(launch => launch.published && !['ENDED', 'DRAFT'].includes(getLaunchStatus(launch))), [launches]);
-  React.useEffect(() => {
-    if (searchParams.get('filter') === 'new' && !productsLoading) {
-      document.getElementById('new-in')?.scrollIntoView({ block: 'start' });
-    }
-  }, [searchParams, productsLoading]);
+const SectionHeading = ({ eyebrow, title, to, label = 'View all' }) => <div className="section-heading"><div>{eyebrow && <span className="eyebrow">{eyebrow}</span>}<h2>{title}</h2></div>{to && <Link to={to}>{label}<ArrowUpRight size={16} /></Link>}</div>;
 
-  // Flatten products by color so each color variant has its own card
-  const flattenedProducts = React.useMemo(() => {
-    const flat = [];
-    products.forEach(p => {
-      const launch = launches.find(item => item.published && item.productIds?.includes(p.id));
-      if (p.draft && !launch) return;
-      if (launch) {
-        flat.push({ ...p, originalId: p.id, launchSlug: launch.slug });
-        return;
-      }
-      if (p.colors && p.colors.length > 0) {
-        p.colors.forEach(color => {
-          flat.push({ ...p, id: `${p.id}-${color}`, originalId: p.id, initialColor: color });
-        });
-      } else {
-        flat.push({ ...p, originalId: p.id });
-      }
-    });
-    return flat;
-  }, [products, launches]);
+const GraphicCampaign = () => <section className="graphic-campaign-section" aria-label="Graphic Expression campaign"><Link to="/?category=T-Shirts"><img src="/images/campaign/graphic-expression-blue.webp" alt="Six Black Loom campaign panels featuring BREATHE, Gothic Thorn, SPEED, Kalakar and Great Power front and back" loading="lazy" /></Link><div><h2>Graphic expression.</h2><Link to="/?category=T-Shirts">Explore the graphic tees<ArrowUpRight size={17} /></Link></div></section>;
+const campaignLooks = [
+  ['look-gothic.webp', 'Gothic Thorn', 'gothic-thorn-oversized-tee-252'],
+  ['look-speed.webp', 'SPEED', 'the-speed-halftone-oversized-tee-670'],
+  ['look-kalakar.webp', 'Kalakar', 'kalakar-oversized-tee-220'],
+];
 
-  const newInProducts = activeLaunch
-    ? activeLaunch.productIds.map(id => flattenedProducts.find(p => p.originalId === id)).filter(Boolean)
-    : flattenedProducts.filter(p => p.showInNewIn === true).slice(0, 4);
-
-  const filteredProducts = categoryFilter 
-    ? flattenedProducts.filter(p => {
-        const cat = p.category.toLowerCase();
-        const subCat = p.subCategory ? p.subCategory.toLowerCase() : '';
-        const filter = categoryFilter.toLowerCase();
-        if (filter === 't-shirts') {
-          return cat === 't-shirts';
-        }
-        return cat === filter || subCat === filter;
-      })
-    : flattenedProducts;
-
-  const allProductsGrid = React.useMemo(() => {
-    let list = selectedDrop === 'all' 
-      ? flattenedProducts 
-      : flattenedProducts.filter(p => (p.drop || 'drop1') === selectedDrop);
-
-    if (filterSize !== 'ALL') {
-      list = list.filter(p => p.sizes && p.sizes.includes(filterSize));
-    }
-
-    if (sortBy === 'price-asc') {
-      list = [...list].sort((a, b) => a.price - b.price);
-    } else if (sortBy === 'price-desc') {
-      list = [...list].sort((a, b) => b.price - a.price);
-    } else if (sortBy === 'newest') {
-      list = [...list].sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
-    }
-
+export default function Home({ products = [], launches = [], deals = [], productsLoading = false, onQuickAdd, onAddDeal, activeTheme }) {
+  const [params, setParams] = useSearchParams();
+  const category = params.get('category') || '';
+  const drop = params.get('drop') || '';
+  const isNew = params.get('filter') === 'new';
+  const collection = params.get('collection');
+  const isCollection = Boolean(category || drop || isNew || collection);
+  const clothingView = params.get('view') === 'clothing';
+  const [sort, setSort] = useState('featured');
+  const [size, setSize] = useState('all');
+  const [available, setAvailable] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [density, setDensity] = useState('four');
+  const [email, setEmail] = useState('');
+  const [notification, setNotification] = useState('idle');
+  const activeLaunch = launches.find(l => l.published && !['DRAFT', 'ENDED'].includes(getLaunchStatus(l)));
+  const launchLink = activeLaunch ? `/drop/${activeLaunch.slug}` : '/?category=Headwear';
+  const catalogue = useMemo(() => products.flatMap(p => {
+    const launch = launches.find(l => l.published && l.productIds?.includes(p.id));
+    if (p.draft && !launch) return [];
+    if (launch) return [{ ...p, originalId: p.id, launchSlug: launch.slug }];
+    return p.colors?.length ? p.colors.map(color => ({ ...p, originalId: p.id, id: `${p.id}-${color}`, initialColor: color })) : [{ ...p, originalId: p.id }];
+  }), [products, launches]);
+  const availableCategories = ['T-Shirts', 'Hoodies', 'Sweatshirts', 'Headwear'].filter(name => catalogue.some(p => [p.category, p.subCategory].includes(name)));
+  const headwearProducts = catalogue.filter(p => p.launchSlug || p.category === 'Headwear');
+  const newProducts = useMemo(() => {
+    const selected = clothingView ? catalogue.filter(p => !p.launchSlug && p.category !== 'Headwear') : activeLaunch ? catalogue.filter(p => activeLaunch.productIds?.includes(p.originalId)) : catalogue.filter(p => p.showInNewIn);
+    return (selected.length ? selected : catalogue).slice(0, 8);
+  }, [activeLaunch, catalogue, clothingView]);
+  const title = category || (isNew ? 'New arrivals' : drop === 'drop1' ? 'The original collection' : drop === 'drop2' ? 'Eclipse' : 'All clothing');
+  const visible = useMemo(() => {
+    let list = catalogue.filter(p => (!category || [p.category, p.subCategory].some(c => c?.toLowerCase() === category.toLowerCase())) && (!drop || (p.drop || 'drop1') === drop));
+    if (isNew) list = list.filter(p => p.showInNewIn || p.launchSlug);
+    if (size !== 'all') list = list.filter(p => getProductSizes(p, p.initialColor || p.colors?.[0]).includes(size));
+    if (available) list = list.filter(p => getProductSizes(p, p.initialColor || p.colors?.[0]).some(s => { const stock = getVariantStock(p, p.initialColor || p.colors?.[0], s); return stock === null || stock > 0; }));
+    if (sort === 'low') list = [...list].sort((a,b) => (a.salePrice || a.price) - (b.salePrice || b.price));
+    if (sort === 'high') list = [...list].sort((a,b) => (b.salePrice || b.price) - (a.salePrice || a.price));
+    if (sort === 'newest') list = [...list].sort((a,b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
     return list;
-  }, [flattenedProducts, selectedDrop, filterSize, sortBy]);
+  }, [catalogue, category, drop, isNew, size, available, sort]);
+  useEffect(() => { setSize('all'); setAvailable(false); setFiltersOpen(false); }, [category, drop, isNew]);
+  useEffect(() => { document.title = isCollection ? `${title} — BLACK LOOM` : 'BLACK LOOM — Independent Streetwear'; }, [isCollection, title]);
+  const join = async e => {
+    e.preventDefault(); setNotification('saving');
+    try { await addDoc(collectionRef(), { email: email.trim(), category: title, createdAt: serverTimestamp() }); setNotification('done'); }
+    catch { setNotification('error'); }
+  };
+  // Keep collection naming independent of the URL's collection parameter.
+  const collectionRef = () => firestoreCollection(db, 'drop_notifications');
 
-  // Category view layout
-  if (categoryFilter) {
-    return (
-      <div>
-        <section style={{ padding: '2rem 0 0.5rem 0' }}>
-          <div style={{ 
-            padding: '0 0.5rem', 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center',
-            borderBottom: '1px solid var(--border-color)',
-            paddingBottom: '0.5rem'
-          }}>
-            <span style={{ 
-              fontSize: '0.72rem', 
-              fontWeight: 500, 
-              letterSpacing: '0.1em', 
-              textTransform: 'uppercase',
-              color: 'var(--text-primary)'
-            }}>
-              {categoryFilter.toUpperCase()}
-            </span>
-            <Link to="/" style={{ 
-              fontSize: '0.72rem', 
-              color: 'var(--text-secondary)', 
-              textDecoration: 'none',
-              fontWeight: 400,
-              transition: 'color 0.2s'
-            }} className="more-link">
-              Back to Home
-            </Link>
-          </div>
-        </section>
+  if (isCollection) return <div className="collection-page">
+    {category === 'T-Shirts' && <GraphicCampaign />}
+    <div className="collection-intro"><nav className="breadcrumb" aria-label="Breadcrumb"><Link to="/">Home</Link><span>/</span><span>{title}</span></nav><div><h1>{title}<sup>{visible.length}</sup></h1><p>{category === 'Headwear' ? 'Paisley fabric. Corduroy brims. Make it your own.' : 'Graphic statements and considered essentials. The Black Loom wardrobe.'}</p></div></div>
+    <div className="collection-toolbar"><nav aria-label="Browse categories"><Link to="/?collection=all" aria-current={!category && !drop && !isNew ? 'page' : undefined}>View all</Link>{availableCategories.map(c => <Link key={c} to={`/?category=${encodeURIComponent(c)}`} aria-current={category === c ? 'page' : undefined}>{c}</Link>)}</nav><div><span className="result-count">{visible.length} pieces</span><button onClick={() => setFiltersOpen(!filtersOpen)} aria-expanded={filtersOpen}><SlidersHorizontal size={16} /> Filter & sort</button></div></div>
+    {filtersOpen && <div className="collection-filters"><label>Sort by<select value={sort} onChange={e => setSort(e.target.value)}><option value="featured">Featured</option><option value="newest">Newest first</option><option value="low">Price: low to high</option><option value="high">Price: high to low</option></select></label><fieldset><legend>Size</legend><div>{['all', 'S', 'M', 'L', 'XL', 'ONE SIZE'].map(s => <button className={s === size ? 'active' : ''} key={s} onClick={() => setSize(s)} aria-pressed={size === s}>{s === 'all' ? 'All sizes' : s}</button>)}</div></fieldset><label className="stock-filter"><input type="checkbox" checked={available} onChange={e => setAvailable(e.target.checked)} /> In stock only</label><button onClick={() => { setSize('all'); setAvailable(false); setSort('featured'); }}>Reset filters</button></div>}
+    <div className="collection-display"><div><button aria-label="Four-column grid" aria-pressed={density === 'four'} onClick={() => setDensity('four')}><Grid2X2 size={17} /></button><button aria-label="Two-column grid" aria-pressed={density === 'two'} onClick={() => setDensity('two')}><Columns2 size={17} /></button></div>{(size !== 'all' || available) && <button onClick={() => { setSize('all'); setAvailable(false); }}>Clear filters <X size={13} /></button>}</div>
+    {productsLoading && !catalogue.length ? <div className="editorial-product-grid"><ProductSkeleton count={4} /></div> : visible.length ? <div className={`editorial-product-grid ${density === 'two' ? 'grid-two' : ''}`}>{visible.map((p,i) => <ProductCard key={p.id} product={p} onQuickAdd={onQuickAdd} isAboveTheFold={i < 4} />)}</div> : <section className="collection-empty"><Bell size={25} strokeWidth={1.2} /><h2>{size !== 'all' || available ? 'No pieces match your filters.' : 'Something new is on the way.'}</h2><p>{size !== 'all' || available ? 'Try a different size or clear your filters.' : 'Leave your email to hear when this collection arrives.'}</p>{size !== 'all' || available ? <button className="editorial-button" onClick={() => { setSize('all'); setAvailable(false); }}>Clear filters</button> : notification === 'done' ? <p role="status">You’re on the list.</p> : <form onSubmit={join}><label className="sr-only" htmlFor="collection-email">Email address</label><input id="collection-email" type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="Email address" /><button disabled={notification === 'saving'}>{notification === 'saving' ? 'Joining…' : 'Notify me'}</button>{notification === 'error' && <p role="alert">Could not save. Please try again.</p>}</form>}</section>}
+  </div>;
 
-        <section style={{ padding: '0 0 4rem 0' }}>
-          <div style={{ padding: '0 0.5rem' }}>
-            {productsLoading ? (
-              <div className="product-grid-tight">
-                <ProductSkeleton count={4} />
-              </div>
-            ) : filteredProducts.length > 0 ? (
-              <div className="product-grid-tight">
-                {filteredProducts.map((product, idx) => (
-                  <ProductCard 
-                    key={product.id} 
-                    product={product} 
-                    onQuickAdd={onQuickAdd} 
-                    isAboveTheFold={idx < 4}
-                    activeTheme={activeTheme}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: '6rem 2rem',
-                textAlign: 'center'
-              }}>
-                <div style={{
-                  width: '64px',
-                  height: '64px',
-                  border: '2px solid var(--border-color)',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginBottom: '1.5rem'
-                }}>
-                  <Clock size={28} strokeWidth={1.5} style={{ color: 'var(--text-muted)' }} />
-                </div>
-                <h2 style={{
-                  fontFamily: 'var(--font-sans)',
-                  fontSize: '1.4rem',
-                  fontWeight: 700,
-                  letterSpacing: '0.15em',
-                  textTransform: 'uppercase',
-                  color: 'var(--text-primary)',
-                  margin: '0 0 0.75rem 0'
-                }}>
-                  COMING SOON
-                </h2>
-                <p style={{
-                  fontFamily: 'var(--font-sans)',
-                  fontSize: '0.8rem',
-                  color: 'var(--text-muted)',
-                  maxWidth: '360px',
-                  lineHeight: 1.6,
-                  margin: '0 0 2rem 0'
-                }}>
-                  We're working on something special for this collection. Stay tuned for the drop.
-                </p>
+  // The entrance is a two-world campaign gateway; clothing has its own shop home.
+  if (!params.get('view')) return <div className="brand-gateway">
+    <section className="gateway-panel gateway-clothing" aria-labelledby="gateway-clothing-title">
+      <img className="gateway-image" src="/images/campaign/gothic-thorn-studio-v2.webp" alt="Gothic Thorn tee styled with wide-leg denim — Black Loom studio campaign" fetchPriority="high" />
+      <div className="gateway-shade" />
+      <div className="gateway-copy"><p>Independent streetwear</p><h1 id="gateway-clothing-title">Black Loom</h1><div className="gateway-actions"><Link to="/?view=clothing">Discover</Link><Link to="/?category=T-Shirts">Graphic tees</Link></div></div>
+    </section>
+    <section className="gateway-panel gateway-shadebound" aria-labelledby="gateway-shadebound-title">
+      <img className="gateway-image" src={activeLaunch?.desktopBanner && !activeLaunch.desktopBanner.includes('brimdana-drop-v2') ? activeLaunch.desktopBanner : '/images/campaign/shadebound-landscape.webp'} alt="Black Loom Shadebound Brimdana outdoor campaign" fetchPriority="high" />
+      <div className="gateway-shade" />
+      <div className="gateway-copy"><p>Under the brim. Beyond the ordinary.</p><h2 id="gateway-shadebound-title">Shadebound</h2><div className="gateway-actions"><Link to={launchLink}>Explore</Link><Link to={launchLink + '#collection-pieces'}>Shop the drop</Link></div></div>
+    </section>
+  </div>;
 
-                {/* Email Notify Form */}
-                <div style={{ width: '100%', maxWidth: '340px', marginBottom: '2rem' }}>
-                  <p style={{ fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>
-                    <Bell size={13} strokeWidth={1.5} style={{ verticalAlign: 'middle', marginRight: '0.35rem' }} />
-                    Get notified when this drops
-                  </p>
-                  {notifyStatus === 'success' ? (
-                    <p style={{ fontSize: '0.8rem', color: '#16a34a', fontWeight: 600 }}>You're on the list! We'll notify you.</p>
-                  ) : (
-                    <form onSubmit={async (e) => {
-                      e.preventDefault();
-                      if (!notifyEmail || !notifyEmail.includes('@')) return;
-                      setNotifyStatus('loading');
-                      try {
-                        await addDoc(collection(db, 'drop_notifications'), {
-                          email: notifyEmail,
-                          category: categoryFilter,
-                          createdAt: serverTimestamp()
-                        });
-                        setNotifyStatus('success');
-                        setNotifyEmail('');
-                      } catch (err) {
-                        console.error('Notification signup error:', err);
-                        setNotifyStatus('idle');
-                      }
-                    }} style={{ display: 'flex', gap: '0' }}>
-                      <input
-                        type="email"
-                        placeholder="Enter your email"
-                        value={notifyEmail}
-                        onChange={(e) => setNotifyEmail(e.target.value)}
-                        required
-                        style={{
-                          flex: 1,
-                          padding: '0.75rem 1rem',
-                          border: '1px solid var(--border-color)',
-                          borderRight: 'none',
-                          fontSize: '0.8rem',
-                          fontFamily: 'var(--font-sans)',
-                          outline: 'none'
-                        }}
-                      />
-                      <button type="submit" disabled={notifyStatus === 'loading'} style={{
-                        backgroundColor: '#000',
-                        color: '#fff',
-                        border: 'none',
-                        padding: '0.75rem 1.25rem',
-                        fontSize: '0.7rem',
-                        fontWeight: 700,
-                        letterSpacing: '0.08em',
-                        textTransform: 'uppercase',
-                        cursor: 'pointer',
-                        fontFamily: 'var(--font-sans)',
-                        opacity: notifyStatus === 'loading' ? 0.6 : 1
-                      }}>
-                        {notifyStatus === 'loading' ? '...' : 'NOTIFY ME'}
-                      </button>
-                    </form>
-                  )}
-                </div>
-
-                <Link to="/" style={{
-                  fontFamily: 'var(--font-sans)',
-                  fontSize: '0.7rem',
-                  fontWeight: 600,
-                  letterSpacing: '0.1em',
-                  textTransform: 'uppercase',
-                  color: 'var(--text-secondary)',
-                  textDecoration: 'none',
-                  transition: 'color 0.2s'
-                }}>
-                  ← EXPLORE OTHER COLLECTIONS
-                </Link>
-              </div>
-            )}
-          </div>
-        </section>
-        
-        <style dangerouslySetInnerHTML={{__html: `
-          .product-grid-tight {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 2px;
-          }
-          @media (min-width: 768px) {
-            .product-grid-tight {
-              grid-template-columns: repeat(4, 1fr);
-              gap: 2px;
-            }
-          }
-          .more-link:hover {
-            color: var(--text-primary) !important;
-          }
-        `}} />
-      </div>
-    );
-  }
-
-  // Full homepage layout: Banner 1 -> New In -> Banner 2 -> All Products
-  return (
-    <div>
-      {/* Banner 1: Venomous Silhouettes */}
-      <section style={{
-        position: 'relative',
-        height: '70vh',
-        minHeight: '420px',
-        maxHeight: '620px',
-        backgroundColor: '#0a0a0a',
-        overflow: 'hidden',
-        display: 'flex',
-        alignItems: 'center'
-      }}>
-        {!activeLaunch && <video 
-          src="/videos/banner.mp4"
-          autoPlay={true}
-          loop={true}
-          muted={true}
-          playsInline={true}
-          defaultMuted={true}
-          preload="metadata"
-          poster="/images/banner-poster.webp"
-          style={{
-            position: 'absolute',
-            top: 0, left: 0, width: '100%', height: '100%',
-            objectFit: 'cover',
-            opacity: 0.3,
-            zIndex: 0
-          }}
-        />}
-        {activeLaunch?.desktopBanner && <picture style={{ position: 'absolute', inset: 0 }}><source media="(max-width: 700px)" srcSet={activeLaunch.mobileBanner || activeLaunch.desktopBanner} /><img src={activeLaunch.desktopBanner} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: .46 }} /></picture>}
-        <div style={{
-          position: 'absolute',
-          width: '50%', height: '70%',
-          right: '5%', top: '15%',
-          borderRadius: '50%',
-          background: activeTheme?.heroGlow || 'rgba(26, 140, 71, 0.08)',
-          filter: 'blur(120px)',
-          pointerEvents: 'none',
-          zIndex: 2
-        }} />
-        <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: '800px', margin: '0 auto', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <span style={{
-            color: activeTheme?.heroTopLabelColor || (activeTheme?.themeId === 'azaadi' ? '#4ade80' : '#fff'),
-            fontSize: '0.65rem',
-            fontWeight: 600,
-            letterSpacing: '0.2em',
-            textTransform: 'uppercase',
-            display: 'block',
-            marginBottom: '0.75rem',
-            opacity: activeTheme?.themeId === 'azaadi' ? 1 : 0.8
-          }}>
-            {activeLaunch ? `LIMITED DROP · ${statusCopy[getLaunchStatus(activeLaunch)]}` : (activeTheme?.heroTopLabel || 'DROP I: BLACK LOOM')}
-          </span>
-          <h1 style={{
-            fontFamily: 'var(--font-sans)',
-            fontSize: 'clamp(2.2rem, 6vw, 4rem)',
-            fontWeight: 700,
-            letterSpacing: '-0.02em',
-            lineHeight: 1.05,
-            marginBottom: '1.25rem',
-            color: '#fff',
-            textTransform: 'uppercase'
-          }}>
-            {activeLaunch?.heroTitle || activeLaunch?.name || activeTheme?.heroTitle || 'PREMIUM WEAVES'}
-          </h1>
-          <p style={{
-            fontSize: '0.85rem',
-            color: 'rgba(255,255,255,0.7)',
-            lineHeight: 1.6,
-            maxWidth: '480px',
-            margin: '0 auto 0.75rem auto',
-            fontWeight: 400
-          }}>
-            {activeLaunch?.heroSubtitle || activeLaunch?.description || activeTheme?.heroSubtitle || 'Experience apparel in its most extreme form. Heavyweight fabrics, acid wash textures and detailed puff-print embellishments.'}
-          </p>
-          {activeTheme?.heroSubtext && (
-            <p style={{
-              fontSize: '0.7rem',
-              color: 'rgba(255,255,255,0.4)',
-              margin: '0 auto 1.5rem auto',
-              fontWeight: 400
-            }}>
-              {activeTheme.heroSubtext}
-            </p>
-          )}
-          {activeLaunch && targetForStatus(activeLaunch) && <p style={{ color: '#fff', fontSize: '.72rem', letterSpacing: '.08em', margin: '.5rem 0 1rem' }}>{formatLaunchDate(targetForStatus(activeLaunch), activeLaunch.timezone)}</p>}
-          <button 
-            onClick={() => navigate(activeLaunch ? `/drop/${activeLaunch.slug}` : '/?category=T-Shirts')}
-            className="btn-primary"
-            style={{
-              fontSize: '0.7rem',
-              padding: '0.8rem 1.8rem',
-              letterSpacing: '0.1em',
-              textTransform: 'uppercase',
-              borderRadius: '0px',
-              backgroundColor: activeTheme?.heroCtaBg || '#000',
-              border: 'none',
-              marginTop: activeTheme?.heroSubtext ? '0' : '1rem'
-            }}
-          >
-            {activeLaunch ? (getLaunchStatus(activeLaunch) === 'PREORDER_LIVE' ? 'PRE-ORDER THE DROP' : 'VIEW THE DROP') : (activeTheme?.heroCta || 'SHOP LATEST DROP')}
-          </button>
-        </div>
-      </section>
-
-      {/* Trust Badges Bar */}
-      <section style={{
-        borderTop: '1px solid var(--border-color)',
-        borderBottom: '1px solid var(--border-color)',
-        backgroundColor: 'var(--bg-secondary)',
-        padding: '1rem 0'
-      }}>
-        <div className="container trust-badges-grid" style={{ 
-          maxWidth: '1200px', 
-          margin: '0 auto',
-          padding: '0 0.5rem'
-        }}>
-          {[
-            { icon: <Truck size={18} />, text: "FREE DELIVERY OVER RS. 5,000" },
-            { icon: <CreditCard size={18} />, text: "COD AVAILABLE NATIONWIDE" },
-            { icon: <RefreshCw size={18} />, text: "14-DAY EASY EXCHANGE" },
-            { icon: <CheckCircle size={18} />, text: "PREMIUM 220 GSM QUALITY" }
-          ].map((badge, i) => (
-            <div key={i} style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '0.5rem',
-              textAlign: 'center',
-              color: 'var(--text-secondary)'
-            }}>
-              <div style={{ color: 'var(--text-primary)' }}>
-                {badge.icon}
-              </div>
-              <span style={{
-                fontSize: '0.7rem',
-                fontWeight: 700,
-                letterSpacing: '0.05em',
-                textTransform: 'uppercase'
-              }}>
-                {badge.text}
-              </span>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <DealsSection deals={deals} products={products} onAddDeal={onAddDeal} />
-      <ComboDeals products={products} launches={launches} onAddDeal={onAddDeal} />
-
-      {/* NEW IN Section Header */}
-      <section id="new-in" style={{ padding: '2.5rem 0 0.5rem 0' }}>
-        <div style={{ 
-          padding: '0 0.5rem', 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center',
-          borderBottom: '1px solid var(--border-color)',
-          paddingBottom: '0.5rem'
-        }}>
-          <span style={{ 
-            fontSize: '0.72rem', 
-            fontWeight: 500, 
-            letterSpacing: '0.1em', 
-            textTransform: 'uppercase',
-            color: 'var(--text-primary)'
-          }}>
-            NEW IN
-          </span>
-          <Link to={activeLaunch ? `/drop/${activeLaunch.slug}` : '/?category=T-Shirts'} style={{
-            fontSize: '0.72rem', 
-            color: 'var(--text-secondary)', 
-            textDecoration: 'none',
-            fontWeight: 400,
-            transition: 'color 0.2s'
-          }} className="more-link">
-            More
-          </Link>
-        </div>
-      </section>
-
-      {/* NEW IN Product Grid (Filtered by showInNewIn) */}
-      <section style={{ padding: '0 0 1rem 0' }}>
-        <div style={{ padding: '0 0.5rem' }}>
-          <div className={`product-grid-tight ${activeLaunch ? 'brimdana-new-in' : ''}`}>
-            {productsLoading ? (
-              <ProductSkeleton count={4} />
-            ) : (
-              (newInProducts.length ? newInProducts : flattenedProducts.slice(0, 4)).map((product, idx) => (
-                <ProductCard 
-                  key={product.id} 
-                  product={product} 
-                  onQuickAdd={onQuickAdd} 
-                  isAboveTheFold={idx < 4}
-                />
-              ))
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* Banner 2: Original five-shirt collection */}
-      <section style={{
-        position: 'relative',
-        height: '70vh',
-        minHeight: '420px',
-        maxHeight: '620px',
-        backgroundColor: '#0d0d0d',
-        overflow: 'hidden',
-        display: 'flex',
-        alignItems: 'center',
-        marginTop: '2.5rem',
-        marginBottom: '1rem'
-      }}>
-        <video 
-          src="/videos/banner.mp4"
-          autoPlay={true}
-          loop={true}
-          muted={true}
-          playsInline={true}
-          defaultMuted={true}
-          preload="metadata"
-          poster="/images/banner-poster.webp"
-          style={{
-            position: 'absolute',
-            top: 0, left: 0, width: '100%', height: '100%',
-            objectFit: 'cover',
-            opacity: 0.35,
-            zIndex: 0
-          }}
-        />
-        <div style={{
-          position: 'absolute',
-          width: '50%', height: '70%',
-          right: '5%', top: '15%',
-          borderRadius: '50%',
-          background: 'rgba(255, 255, 255, 0.05)',
-          filter: 'blur(120px)',
-          pointerEvents: 'none',
-          zIndex: 2
-        }} />
-        <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: '800px', margin: '0 auto', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <span style={{
-            color: '#fff',
-            fontSize: '0.65rem',
-            fontWeight: 500,
-            letterSpacing: '0.15em',
-            textTransform: 'uppercase',
-            display: 'block',
-            marginBottom: '0.75rem',
-            opacity: 0.8
-          }}>
-            BLACK LOOM · DROP I
-          </span>
-          <h2 style={{
-            fontFamily: 'var(--font-sans)',
-            fontSize: 'clamp(2rem, 5vw, 3.5rem)',
-            fontWeight: 700,
-            letterSpacing: '-0.02em',
-            lineHeight: 1.05,
-            marginBottom: '1.25rem',
-            color: '#fff',
-            textTransform: 'uppercase'
-          }}>
-            PREMIUM WEAVES
-          </h2>
-          <p style={{
-            fontSize: '0.8rem',
-            color: 'rgba(255,255,255,0.55)',
-            lineHeight: 1.6,
-            maxWidth: '480px',
-            margin: '0 auto 2rem auto',
-            fontWeight: 400
-          }}>
-            Spiderman, Kalakar, Speed, Gothic Thorn and Purple Hands. Five graphic tees from the original BLACK LOOM drop.
-          </p>
-          <button 
-            onClick={() => {
-              setSelectedDrop('drop1');
-              window.setTimeout(() => document.getElementById('all-products')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
-            }}
-            className="btn-primary"
-            style={{ fontSize: '0.7rem', padding: '0.8rem 1.8rem', letterSpacing: '0.1em', textTransform: 'uppercase', borderRadius: '0px' }}
-          >
-            SHOP THE FIVE
-          </button>
-        </div>
-      </section>
-
-      {/* ALL PRODUCTS Section Header */}
-      <section id="all-products" style={{ padding: '2.5rem 0 0.5rem 0', scrollMarginTop: '90px' }}>
-        <div style={{ 
-          padding: '0 0.5rem', 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center',
-          borderBottom: '1px solid var(--border-color)',
-          paddingBottom: '0.5rem'
-        }}>
-          <span style={{ 
-            fontSize: '0.72rem', 
-            fontWeight: 500, 
-            letterSpacing: '0.1em', 
-            textTransform: 'uppercase',
-            color: 'var(--text-primary)'
-          }}>
-            ALL PRODUCTS
-          </span>
-          <Link to="/" style={{ 
-            fontSize: '0.72rem', 
-            color: 'var(--text-secondary)', 
-            textDecoration: 'none',
-            fontWeight: 400,
-            transition: 'color 0.2s'
-          }} className="more-link">
-            More
-          </Link>
-        </div>
-      </section>
-
-      {/* Drop/Collection filter buttons */}
-      <section style={{ padding: '1rem 0 1rem 0', overflowX: 'auto', display: 'flex', gap: '0.5rem', paddingLeft: '0.5rem', paddingRight: '0.5rem', scrollbarWidth: 'none' }} className="hide-scrollbar">
-        {[
-          { id: 'all', label: 'ALL ITEMS' },
-          { id: 'drop1', label: 'DROP I: BLACK LOOM' },
-          { id: 'drop2', label: 'DROP II: ECLIPSE' },
-          { id: 'none', label: 'BASICS' }
-        ].map(dropItem => {
-          const isActive = selectedDrop === dropItem.id;
-          return (
-            <button
-              key={dropItem.id}
-              onClick={() => setSelectedDrop(dropItem.id)}
-              style={{
-                backgroundColor: isActive ? 'var(--text-primary)' : 'var(--bg-secondary)',
-                color: isActive ? '#fff' : 'var(--text-secondary)',
-                border: `1px solid ${isActive ? 'var(--text-primary)' : 'var(--border-color)'}`,
-                padding: '0.5rem 1.25rem',
-                fontSize: '0.68rem',
-                fontWeight: 800,
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase',
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-                borderRadius: '0px',
-                flexShrink: 0
-              }}
-            >
-              {dropItem.label}
-            </button>
-          );
-        })}
-      </section>
-
-      {/* Sort & Filter Toolbar */}
-      <section style={{ padding: '0 0.5rem 1rem 0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-        <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-          {['ALL', 'S', 'M', 'L', 'XL'].map(size => (
-            <button
-              key={size}
-              onClick={() => setFilterSize(size)}
-              style={{
-                backgroundColor: filterSize === size ? 'var(--accent)' : 'var(--bg-secondary)',
-                color: filterSize === size ? '#000' : 'var(--text-primary)',
-                border: `1px solid ${filterSize === size ? 'var(--accent)' : 'var(--border-color)'}`,
-                padding: '0.3rem 0.75rem',
-                fontSize: '0.65rem',
-                fontWeight: 700,
-                borderRadius: '4px',
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-                fontFamily: 'var(--font-sans)',
-              }}
-            >
-              {size}
-            </button>
-          ))}
-        </div>
-        <select 
-          value={sortBy} 
-          onChange={(e) => setSortBy(e.target.value)}
-          style={{
-            backgroundColor: 'var(--bg-secondary)',
-            color: 'var(--text-primary)',
-            border: '1px solid var(--border-color)',
-            padding: '0.4rem 0.75rem',
-            fontSize: '0.7rem',
-            fontFamily: 'var(--font-sans)',
-            borderRadius: '4px',
-            outline: 'none',
-            cursor: 'pointer'
-          }}
-        >
-          <option value="default">Default</option>
-          <option value="price-asc">Price: Low to High</option>
-          <option value="price-desc">Price: High to Low</option>
-          <option value="newest">Newest First</option>
-        </select>
-      </section>
-
-      {/* ALL PRODUCTS Grid */}
-      <section style={{ padding: '0 0 1.5rem 0' }}>
-        <div style={{ padding: '0 0.5rem' }}>
-          <div className="product-grid-tight">
-            {productsLoading ? (
-              <ProductSkeleton count={4} />
-            ) : (
-              allProductsGrid.map(product => (
-                <ProductCard 
-                  key={product.id} 
-                  product={product} 
-                  onQuickAdd={onQuickAdd} 
-                />
-              ))
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* EXPERIENCE MORE button */}
-      <section style={{ padding: '0.5rem 0 4rem 0', display: 'flex', justifyContent: 'center' }}>
-        <button 
-          onClick={() => navigate('/?category=T-Shirts')}
-          style={{
-            background: 'transparent',
-            border: '1px solid var(--text-primary)',
-            color: 'var(--text-primary)',
-            padding: '0.55rem 1.6rem',
-            fontSize: '0.625rem',
-            fontWeight: 500,
-            letterSpacing: '0.12em',
-            textTransform: 'uppercase',
-            cursor: 'pointer',
-            fontFamily: 'var(--font-sans)',
-            borderRadius: '0px',
-            transition: 'all 0.25s ease'
-          }}
-          className="experience-btn"
-        >
-          EXPERIENCE MORE
-        </button>
-      </section>
-
-      {/* Brand Story SEO Section */}
-      <section style={{ 
-        borderTop: '1px solid var(--border-color)', 
-        padding: '5rem 1.5rem',
-        backgroundColor: 'var(--bg-secondary)',
-        fontFamily: 'var(--font-sans)'
-      }} id="about-brand">
-        <div className="container" style={{ maxWidth: '800px', margin: '0 auto' }}>
-          
-          <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-            <span style={{
-              fontSize: '0.625rem',
-              fontWeight: 800,
-              letterSpacing: '0.3em',
-              textTransform: 'uppercase',
-              color: 'var(--text-muted)',
-              display: 'block',
-              marginBottom: '0.75rem'
-            }}>
-              Brand Manifesto
-            </span>
-            <h2 style={{
-              fontFamily: '"Didot", "Bodoni MT", "Georgia", serif',
-              fontSize: '1.8rem',
-              fontWeight: 900,
-              color: 'var(--text-primary)',
-              letterSpacing: '0.05em',
-              textTransform: 'uppercase',
-              margin: '0 0 1rem 0',
-              lineHeight: '1.2'
-            }}>
-              BLACK LOOM: The Apex of Streetwear in Pakistan
-            </h2>
-            <h3 style={{
-              fontSize: '0.95rem',
-              fontWeight: 600,
-              color: 'var(--text-secondary)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-              margin: '0 0 2rem 0'
-            }}>
-              Premium Weaves: Apparel in Its Most Extreme Form
-            </h3>
-          </div>
-
-          <div className="brand-seo-content" style={{
-            color: 'var(--text-secondary)',
-            fontSize: '0.875rem',
-            lineHeight: '1.8',
-            textAlign: 'left'
-          }}>
-            <p style={{ marginBottom: '1.5rem', fontSize: '0.95rem', color: 'var(--text-primary)', fontWeight: 500 }}>
-              BLACK LOOM redefines the fashion landscape as the definitive <strong>premium streetwear brand</strong> in Pakistan. We invite discerning gentlemen to experience apparel that transcends the ordinary.
-            </p>
-
-            <p style={{ marginBottom: '1.5rem' }}>
-              Our collections are a testament to superior craftsmanship, featuring heavyweight fabrics, unique acid wash textures, and detailed puff-print embellishments. Each piece is meticulously designed to offer an unparalleled statement of style and quality, setting a new standard for high-end urban fashion.
-            </p>
-
-            {/* Collapsible Content */}
-            <div style={{
-              maxHeight: showManifesto ? '2500px' : '0px',
-              overflow: 'hidden',
-              transition: 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
-              opacity: showManifesto ? 1 : 0
-            }}>
-              <h2 style={{
-                fontSize: '1.1rem',
-                fontWeight: 700,
-                color: 'var(--text-primary)',
-                textTransform: 'uppercase',
-                marginTop: '2rem',
-                marginBottom: '1rem',
-                letterSpacing: '0.05em',
-                borderBottom: '1px solid var(--border-color)',
-                paddingBottom: '0.3rem'
-              }}>
-                Discover Our Signature Collections
-              </h2>
-              <p style={{ marginBottom: '1.5rem' }}>
-                As a leading destination for <strong>streetwear Pakistan</strong>, we offer an exclusive selection of garments conceived for the modern man. Our commitment to excellence is evident in every thread, from our iconic heavyweight hoodies to our sought-after oversized t-shirts. We offer a curated experience for those who demand the best.
-              </p>
-
-              <h3 style={{
-                fontSize: '0.95rem',
-                fontWeight: 700,
-                color: 'var(--text-primary)',
-                textTransform: 'uppercase',
-                marginTop: '1.5rem',
-                marginBottom: '0.75rem',
-                letterSpacing: '0.05em'
-              }}>
-                The Definitive Source for Oversized T-Shirts in Pakistan
-              </h3>
-              <p style={{ marginBottom: '1.5rem' }}>
-                Our collection of <strong>oversized t-shirts pakistan</strong> is crafted for superior comfort and a formidable silhouette. Made from premium, heavyweight cotton, these tees provide a structured yet relaxed fit, making them a cornerstone of any contemporary wardrobe. Explore various designs, from minimalist signature tees to bold, graphic-embellished pieces that capture the essence of modern streetwear.
-              </p>
-
-              <h3 style={{
-                fontSize: '0.95rem',
-                fontWeight: 700,
-                color: 'var(--text-primary)',
-                textTransform: 'uppercase',
-                marginTop: '1.5rem',
-                marginBottom: '0.75rem',
-                letterSpacing: '0.05em'
-              }}>
-                Unrivaled Quality and Design
-              </h3>
-              <p style={{ marginBottom: '1.5rem' }}>
-                BLACK LOOM stands apart as a <strong>premium streetwear brand</strong> committed to innovation and quality. Our design philosophy merges raw, contrasting forces with refined aesthetics. The Eclipse Collection, for example, explores the collision of absolute dark and stark white silhouettes through distressed and smoke-inspired textures, delivering a powerful visual narrative. When you choose BLACK LOOM, you choose a brand that elevates <strong>streetwear Pakistan</strong> to an art form.
-              </p>
-
-              <h2 style={{
-                fontSize: '1.1rem',
-                fontWeight: 700,
-                color: 'var(--text-primary)',
-                textTransform: 'uppercase',
-                marginTop: '2rem',
-                marginBottom: '1rem',
-                letterSpacing: '0.05em',
-                borderBottom: '1px solid var(--border-color)',
-                paddingBottom: '0.3rem'
-              }}>
-                Why Choose BLACK LOOM?
-              </h2>
-              <ul style={{ 
-                listStyle: 'none', 
-                padding: 0, 
-                margin: '0 0 1.5rem 0',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '1rem'
-              }}>
-                <li style={{ paddingLeft: '1.5rem', position: 'relative' }}>
-                  <span style={{ position: 'absolute', left: 0, color: 'var(--text-primary)' }}>•</span>
-                  <strong>Exceptional Fabrics:</strong> We utilize only premium, heavyweight materials for lasting comfort and durability.
-                </li>
-                <li style={{ paddingLeft: '1.5rem', position: 'relative' }}>
-                  <span style={{ position: 'absolute', left: 0, color: 'var(--text-primary)' }}>•</span>
-                  <strong>Exclusive Designs:</strong> Our collections feature unique acid washes, puff-prints, and curated aesthetics you will not find elsewhere.
-                </li>
-                <li style={{ paddingLeft: '1.5rem', position: 'relative' }}>
-                  <span style={{ position: 'absolute', left: 0, color: 'var(--text-primary)' }}>•</span>
-                  <strong>The Ultimate Fit:</strong> From drop shoulder tees to perfectly proportioned hoodies, every garment is designed for a modern, commanding fit.
-                </li>
-                <li style={{ paddingLeft: '1.5rem', position: 'relative' }}>
-                  <span style={{ position: 'absolute', left: 0, color: 'var(--text-primary)' }}>•</span>
-                  <strong>Trusted by Fashion Connoisseurs:</strong> BLACK LOOM is the preferred choice for men seeking the finest <strong>oversized t-shirts pakistan</strong> and premium apparel.
-                </li>
-              </ul>
-            </div>
-
-            {/* Toggle Button */}
-            <div style={{ textAlign: 'center', marginTop: '2rem' }}>
-              <button 
-                onClick={() => setShowManifesto(!showManifesto)}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  color: 'var(--text-primary)',
-                  fontSize: '0.72rem',
-                  fontWeight: 600,
-                  letterSpacing: '0.15em',
-                  textTransform: 'uppercase',
-                  cursor: 'pointer',
-                  padding: '0.5rem 1rem',
-                  borderBottom: '1px solid var(--text-primary)',
-                  fontFamily: 'var(--font-sans)',
-                  transition: 'opacity 0.2s'
-                }}
-                onMouseOver={(e) => e.target.style.opacity = '0.7'}
-                onMouseOut={(e) => e.target.style.opacity = '1'}
-              >
-                {showManifesto ? 'Collapse Story -' : 'Read Full Manifesto +'}
-              </button>
-            </div>
-
-          </div>
-        </div>
-      </section>
-
-      <style dangerouslySetInnerHTML={{__html: `
-        .product-grid-tight {
-          display: grid;
-          grid-template-columns: repeat(2, 1fr);
-          gap: 2px;
-        }
-        @media (min-width: 768px) {
-          .brimdana-new-in { grid-template-columns: repeat(5, minmax(0, 1fr)); }
-          .product-grid-tight {
-            grid-template-columns: repeat(4, 1fr);
-            gap: 2px;
-          }
-        }
-        .trust-badges-grid {
-          display: grid;
-          grid-template-columns: repeat(2, 1fr);
-          gap: 1.5rem 1rem;
-        }
-        @media (min-width: 768px) {
-          .trust-badges-grid {
-            grid-template-columns: repeat(4, 1fr);
-          }
-        }
-        .experience-btn:hover {
-          background-color: var(--text-primary) !important;
-          color: var(--bg-primary) !important;
-        }
-        .more-link:hover {
-          color: var(--text-primary) !important;
-        }
-      `}} />
-    </div>
-  );
-};
-
-export default Home;
+  return <div className="editorial-home">
+    <section className="seasonal-campaign" aria-label="Black Loom summer collection"><img src="/images/campaign/summer-studio-v3.webp" alt="Black Loom summer campaign: BREATHE model seated on the studio floor with Kalakar, SPEED and Great Power models behind against a dusty-blue studio backdrop" fetchPriority="high" /><div className="seasonal-shade" /><div className="seasonal-copy"><span className="eyebrow">Black Loom · The summer edit</span><h1>Summer collection</h1><p>Original graphics. Long days. Your own expression.</p><div><Link to="/?category=T-Shirts">Shop summer</Link><a href="#campaign-lookbook">View lookbook</a></div></div></section>
+    <section className="discover-campaign" aria-label="BREATHE campaign"><img src="/images/campaign/breathe-blue-hero.webp" alt="BREATHE graphic tee campaign: full-body model centered against Black Loom’s dusty blue graffiti wall" loading="lazy" /><a className="discover-scroll" href="#graphic-expression">Explore the collection ↓</a></section>
+    <nav className="discovery-strip" aria-label="Shop highlights"><Link to="/?filter=new">New arrivals<ArrowUpRight size={15} /></Link><Link to="/?category=T-Shirts">Graphic tees<ArrowUpRight size={15} /></Link><Link to={launchLink}>Shadebound<ArrowUpRight size={15} /></Link><Link to="/?collection=all">Shop all<ArrowUpRight size={15} /></Link></nav>
+    <section className="merch-section" id="new-in"><SectionHeading eyebrow="The latest chapter" title="The summer rotation" to="/?category=T-Shirts" />{productsLoading && !catalogue.length ? <div className="editorial-product-grid"><ProductSkeleton count={4} /></div> : <ProductRail products={newProducts} onQuickAdd={onQuickAdd} label="summer pieces" />}</section>
+    <div id="graphic-expression"><GraphicCampaign /></div>
+    <section id="campaign-lookbook" className="campaign-lookbook" aria-labelledby="campaign-lookbook-title"><SectionHeading eyebrow="The Black Loom edit" title="Wear your expression." to="/?category=T-Shirts" /><div className="campaign-looks">{campaignLooks.map(([image,label,id]) => <Link to={`/product/${id}`} key={id}><img src={`/images/campaign/${image}`} alt={`${label} tee styled in the Black Loom campaign`} loading="lazy" /><span>{label}<ArrowUpRight size={18} /></span></Link>)}</div></section>
+    <section className="campaign-front-back" aria-label="Great Power front and back"><Link to="/product/spiderman-scratched--730"><img src="/images/campaign/look-greatpower-front.webp" alt="Great Power tee: sketch graphic front" loading="lazy" /></Link><Link to="/product/spiderman-scratched--730"><img src="/images/campaign/look-greatpower-back.webp" alt="Great Power tee: gothic typography back" loading="lazy" /></Link><div><span className="eyebrow">A statement from every angle</span><h2>Front to back.</h2><Link to="/product/spiderman-scratched--730">Explore Great Power<ArrowUpRight size={17} /></Link></div></section>
+    <section className="shadebound-story"><img src="/images/campaign/shadebound-landscape.webp" alt="Shadebound Brimdana in the outdoors" loading="lazy" /><div><span className="eyebrow">Shadebound</span><h2>Beyond the ordinary.</h2><Link to={launchLink}>Explore the drop<ArrowUpRight size={17} /></Link></div></section>
+    <section className="brand-editorial"><div><span className="eyebrow">The Black Loom approach</span><h2>Wear it your way.</h2></div><div><p>Expressive graphics. Relaxed silhouettes. Pieces that become part of your everyday rotation.</p><p>From oversized cotton tees to the bandana-meets-visor Brimdana, discover a wardrobe with its own point of view.</p><button className="text-link" onClick={() => window.dispatchEvent(new Event('open-about-us-modal'))}>Behind Black Loom<ArrowUpRight size={16} /></button></div></section>
+    {headwearProducts.length > 0 && <section className="merch-section"><SectionHeading eyebrow="Under the brim" title="The Shadebound edit" to={launchLink} label="Shop the drop" /><ProductRail products={headwearProducts} onQuickAdd={onQuickAdd} label="Shadebound designs" /></section>}
+    <div className="storefront-bundles"><DealsSection deals={deals} products={products} onAddDeal={onAddDeal} /><ComboDeals products={products} launches={launches} onAddDeal={onAddDeal} /></div>
+    <section className="service-strip"><div><span>Made for your rotation</span><p>Explore the complete Black Loom wardrobe.</p></div><Link to="/track">Track an order<ArrowRight size={16} /></Link><button onClick={() => window.dispatchEvent(new Event('open-shipping-modal'))}>Delivery information<ArrowRight size={16} /></button><button onClick={() => window.dispatchEvent(new Event('open-return-policy-modal'))}>Exchanges & returns<ArrowRight size={16} /></button></section>
+  </div>;
+}

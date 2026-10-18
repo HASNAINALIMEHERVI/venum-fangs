@@ -8,7 +8,7 @@ const PrivacyPolicy = () => {
   }, []);
 
   return (
-    <div style={{
+    <div className="support-page privacy-page" style={{
       maxWidth: '800px',
       margin: '0 auto',
       padding: '2.5rem 1.25rem 4rem',
@@ -91,3 +91,4 @@ const PrivacyPolicy = () => {
 };
 
 export default PrivacyPolicy;
+

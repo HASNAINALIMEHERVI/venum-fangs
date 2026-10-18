@@ -75,7 +75,7 @@ const TrackOrder = ({ orders = [] }) => {
   const progressPercent = currentStep <= 1 ? '0%' : currentStep === 2 ? '25%' : currentStep === 3 ? '50%' : currentStep === 4 ? '75%' : '100%';
 
   return (
-    <div style={{ padding: '4rem 0', minHeight: '75vh' }} className="fade-in">
+    <div style={{ padding: '4rem 0', minHeight: '75vh' }} className="fade-in support-page">
       <div className="container" style={{ maxWidth: '680px' }}>
         
         {/* Back Link */}
@@ -361,3 +361,4 @@ const TrackOrder = ({ orders = [] }) => {
 };
 
 export default TrackOrder;
+

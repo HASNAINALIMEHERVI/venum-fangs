@@ -1,10 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { formatCurrency } from './utils/formatCurrency';
-import { PRESET_THEMES } from './utils/themePresets';
+import { PRESET_THEMES, resolveStorefrontTheme } from './utils/themePresets';
 import AnnouncementBar from './components/AnnouncementBar';
 import SpiderOverlay from './components/SpiderOverlay';
 import Header from './components/Header';
+import LegacyHeader from './components/LegacyHeader';
+import LegacyFooter from './components/LegacyFooter';
+import LegacyAnnouncementBar from './components/LegacyAnnouncementBar';
+import LegacyHome from './pages/LegacyHome';
+import LegacyLaunchPage from './pages/LegacyLaunchPage';
+import LegacyProductDetail from './pages/LegacyProductDetail';
+import { StorefrontThemeContext } from './utils/storefrontTheme';
+import StorefrontShell from './components/StorefrontShell';
+import './storefront.css';
 import Footer from './components/Footer';
 import CartDrawer from './components/CartDrawer';
 import Home from './pages/Home';
@@ -241,12 +250,15 @@ function App() {
     catch { return []; }
   });
 
+  // Previewing a preset never changes the live theme setting.
+  const [previewTheme] = useState(() => PRESET_THEMES[new URLSearchParams(window.location.search).get('previewTheme')] || null);
+
   const [activeTheme, setActiveTheme] = useState(() => {
     try {
       const saved = localStorage.getItem('black_loom_active_theme');
-      return saved ? JSON.parse(saved) : PRESET_THEMES.default;
+      return resolveStorefrontTheme(saved ? JSON.parse(saved) : null);
     } catch (e) {
-      return PRESET_THEMES.default;
+      return resolveStorefrontTheme(null);
     }
   });
 
@@ -256,7 +268,7 @@ function App() {
         const docRef = doc(db, 'settings', 'active_theme');
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
-          const themeData = docSnap.data();
+          const themeData = resolveStorefrontTheme(docSnap.data());
           setActiveTheme(themeData);
           localStorage.setItem('black_loom_active_theme', JSON.stringify(themeData));
         }
@@ -269,7 +281,7 @@ function App() {
 
   const handleSaveTheme = async (newThemeData) => {
     try {
-      await setDoc(doc(db, 'settings', 'active_theme'), newThemeData, { merge: true });
+      await setDoc(doc(db, 'settings', 'active_theme'), newThemeData);
       setActiveTheme(newThemeData);
       localStorage.setItem('black_loom_active_theme', JSON.stringify(newThemeData));
       return true;
@@ -1161,12 +1173,22 @@ function App() {
     : products).map(nameBrimdana);
   const previewLaunches = import.meta.env.DEV && launches.length === 0 ? [DEMO_LAUNCH] : launches;
 
+  const presentationTheme = previewTheme || activeTheme;
+  const editorial = presentationTheme?.storefrontLayout === 'editorial';
+  const ThemeHeader = editorial ? Header : LegacyHeader;
+  const ThemeFooter = editorial ? Footer : LegacyFooter;
+  const ThemeHome = editorial ? Home : LegacyHome;
+  const ThemeLaunchPage = editorial ? LaunchPage : LegacyLaunchPage;
+  const ThemeProductDetail = editorial ? ProductDetail : LegacyProductDetail;
+  const ThemeAnnouncementBar = editorial ? AnnouncementBar : LegacyAnnouncementBar;
+
   return (
     <Router>
       <ScrollToTop />
       <CanonicalUpdater />
-      <SpiderOverlay active={activeTheme?.enableSpiderAnimation || activeTheme?.themeId === 'spider'} />
-      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', position: 'relative' }}>
+      <SpiderOverlay active={presentationTheme?.enableSpiderAnimation || presentationTheme?.themeId === 'spider'} />
+      <StorefrontThemeContext.Provider value={editorial ? 'editorial' : 'legacy'}>
+      <StorefrontShell editorial={editorial}>
         
         {/* Login Modal (only shown when triggered) */}
         {showLogin && !currentUser && (
@@ -1180,31 +1202,32 @@ function App() {
         )}
 
         {/* Banner ticker top */}
-        <AnnouncementBar activeTheme={activeTheme} />
+        <ThemeAnnouncementBar activeTheme={presentationTheme} />
 
         {/* Brand header */}
-        <Header 
+        <ThemeHeader 
           cartCount={cartTotalItems} 
           onCartClick={() => setCartOpen(true)} 
           products={previewProducts}
           currentUser={currentUser}
           onLogout={handleLogout}
           categories={categories}
+          launches={previewLaunches}
         />
 
         {/* Main Content pages area */}
-        <main style={{ flexGrow: 1 }}>
+        <main id="main-content" className="site-main" style={{ flexGrow: 1 }}>
           <Routes>
             <Route 
               path="/" 
-              element={<Home products={previewProducts} launches={previewLaunches} deals={deals} productsLoading={productsLoading} onQuickAdd={handleQuickAdd} onAddDeal={handleAddDealToCart} activeTheme={activeTheme} />}
+              element={<ThemeHome products={previewProducts} launches={previewLaunches} deals={deals} productsLoading={productsLoading} onQuickAdd={handleQuickAdd} onAddDeal={handleAddDealToCart} activeTheme={presentationTheme} />}
             />
 
-            <Route path="/drop/:slug" element={<LaunchPage launches={previewLaunches} products={previewProducts} onAddToCart={handleAddToCart} />} />
+            <Route path="/drop/:slug" element={<ThemeLaunchPage launches={previewLaunches} products={previewProducts} onAddToCart={handleAddToCart} />} />
             
             <Route 
               path="/product/:id" 
-              element={<ProductDetail products={previewProducts} launches={previewLaunches} onAddToCart={handleAddToCart} />} 
+              element={<ThemeProductDetail products={previewProducts} launches={previewLaunches} onAddToCart={handleAddToCart} />} 
             />
             
             <Route 
@@ -1280,7 +1303,7 @@ function App() {
         </main>
 
         {/* Global Footer */}
-        <Footer currentUser={currentUser} />
+        <ThemeFooter currentUser={currentUser} />
 
         {/* Slide-out Cart Panel overlay */}
         <CartDrawer 
@@ -1318,9 +1341,11 @@ function App() {
 
 
 
-      </div>
+      </StorefrontShell>
+      </StorefrontThemeContext.Provider>
     </Router>
   );
 }
 
 export default App;
+

@@ -293,7 +293,7 @@ const ProductDetail = ({ products, launches = [], onAddToCart }) => {
   const activeImages = getActiveImages();
 
   return (
-    <div style={{ padding: '1.5rem 0 3rem' }} className="fade-in">
+    <div style={{ padding: '1.5rem 0 3rem' }} className="fade-in product-detail-page">
       <div className="container">
         
         {/* Back */}
@@ -414,7 +414,7 @@ const ProductDetail = ({ products, launches = [], onAddToCart }) => {
                   color: 'var(--text-primary)',
                   textTransform: 'uppercase'
                 }}>
-                  {product.title.toUpperCase()}
+                  {product.title}
                 </h1>
                 <span style={{ 
                   fontSize: '0.72rem', 
@@ -596,7 +596,7 @@ const ProductDetail = ({ products, launches = [], onAddToCart }) => {
                     }}
                     className="atc-btn-black"
                   >
-                    <span>{addedMessage ? 'ADDED TO BAG' : !launchAllowsPurchase ? 'VIEW DROP STATUS' : launchStatus === 'PREORDER_LIVE' ? 'PRE-ORDER NOW' : 'ADD TO CART'}</span>
+                    <span>{addedMessage ? 'ADDED TO BAG' : !launchAllowsPurchase ? 'VIEW DROP STATUS' : launchStatus === 'PREORDER_LIVE' ? 'PRE-ORDER NOW' : 'ADD TO BAG'}</span>
                     <ShoppingBag size={18} strokeWidth={1.5} style={{ position: 'absolute', right: '1.5rem' }} />
                   </button>
                 )}
@@ -1036,3 +1036,4 @@ const ProductDetail = ({ products, launches = [], onAddToCart }) => {
 };
 
 export default ProductDetail;
+
