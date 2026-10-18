@@ -122,6 +122,13 @@ const LaunchPage = ({ launches = [], products = [], onAddToCart }) => {
       <div className="collection-display"><span className="eyebrow">All designs</span><span className="eyebrow">Camel / Black</span></div>
       <div className="editorial-product-grid">{launchProducts.map((item, index) => <ProductCard key={item.id} product={{ ...item, launchSlug: launch.slug }} isAboveTheFold={index < 4} />)}</div>
     </section>}
+    {!isProductPage && slug === 'shadebound' && <section className="shadebound-editorial" aria-label="Shadebound campaign">
+      <figure className="shadebound-still-life"><img src="/images/campaign/shadebound-studio-pair.webp" alt="Black paisley and forest green Shadebound brimdanas on charcoal stone" loading="lazy" width="1536" height="1024" /><figcaption><span className="eyebrow">BLACK LOOM / SHADEBOUND</span><h2>A different kind of headwear.</h2><a href="#collection-pieces">Explore the designs ↑</a></figcaption></figure>
+      <div className="shadebound-detail-grid">
+        <figure><img src="/images/campaign/shadebound-forest.webp" alt="Forest green paisley brimdana with camel corduroy brim resting on a forest rock" loading="lazy" width="1536" height="1024" /><figcaption><span className="eyebrow">OUT IN THE ELEMENTS</span><h3>Take the long way.</h3></figcaption></figure>
+        <figure><img src="/images/campaign/shadebound-material.webp" alt="Close detail of green paisley cotton, camel corduroy brim and Black Loom label" loading="lazy" width="1536" height="1024" /><figcaption><span className="eyebrow">UP CLOSE</span><h3>Paisley meets corduroy.</h3><p>Soft bandana fabric. A textured brim. An adjustable tie.</p></figcaption></figure>
+      </div>
+    </section>}
     {isProductPage && <section className="launch-shop" id="shop-drop">
       <div className="launch-gallery">
         <img className="launch-gallery-main" src={images[selectedView] || images[0]} alt={`${product?.title} in ${selectedColor}, view ${selectedView + 1}`} />
