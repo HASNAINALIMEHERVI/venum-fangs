@@ -62,8 +62,9 @@ export default function ComboDeals({ products = [], launches = [], cartItems, on
     {cartItems ? <button className="combo-button" onClick={() => setSelected({ shirt: buyingCap ? shirts[0] : shirts.find(p => p.id === existing.id), cap: buyingCap ? caps.find(p => p.id === existing.id) : caps[0] })}>Choose your {buyingCap ? 'shirt' : 'cap'}</button> : <div className="combo-grid">{pairs.map(({ shirt, cap }, i) => {
       const deal = makeComboDeal(shirt, cap);
       return <article key={i}><button className="combo-images" onClick={() => setSelected({ shirt, cap })} aria-label={`Choose ${shirt.title} and ${cap.title}`}><img src={shirt.images?.[0]} alt={shirt.title}/><img src={getVariantImages(cap, comboOptions(cap)[0].color)[0]} alt={cap.title}/></button>
-        <h3>{shirt.title} + {cap.title}</h3><p>{formatCurrency(deal.price)} <s>{formatCurrency(deal.price + COMBO_SAVING)}</s></p><small>Save {formatCurrency(COMBO_SAVING)}</small><button className="combo-button" onClick={() => setSelected({ shirt, cap })}>Choose combo</button></article>;
+        <h3><span>{shirt.title}</span><span className="combo-cap-name">+ {cap.title}</span></h3><p>{formatCurrency(deal.price)} <s>{formatCurrency(deal.price + COMBO_SAVING)}</s></p><small>Save {formatCurrency(COMBO_SAVING)}</small><button className="combo-button" onClick={() => setSelected({ shirt, cap })}>Choose combo</button></article>;
     })}</div>}
     {selected && <ComboPicker shirts={shirts} caps={caps} initialShirt={selected.shirt} initialCap={selected.cap} existing={existing} onClose={() => setSelected(null)} onAdd={(deal, picks) => cartItems ? onUpgrade(deal, picks, existingIndex) : onAddDeal(deal, picks)}/>}
   </section>;
 }
+
