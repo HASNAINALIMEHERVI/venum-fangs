@@ -222,6 +222,11 @@ const DEFAULT_ORDERS = [
   }
 ];
 
+function StorefrontOnly({ children }) {
+  const { pathname } = useLocation();
+  return pathname.startsWith('/admin') ? null : children;
+}
+
 function App() {
   const [products, setProducts] = useState(() => {
     try {
@@ -1200,6 +1205,7 @@ function App() {
         )}
 
         {/* Banner ticker top */}
+        <StorefrontOnly>
         <ThemeAnnouncementBar activeTheme={presentationTheme} />
 
         {/* Brand header */}
@@ -1212,6 +1218,7 @@ function App() {
           categories={categories}
           launches={previewLaunches}
         />
+        </StorefrontOnly>
 
         {/* Main Content pages area */}
         <main id="main-content" className="site-main" style={{ flexGrow: 1 }}>
@@ -1301,7 +1308,7 @@ function App() {
         </main>
 
         {/* Global Footer */}
-        <ThemeFooter currentUser={currentUser} />
+        <StorefrontOnly><ThemeFooter currentUser={currentUser} /></StorefrontOnly>
 
         {/* Slide-out Cart Panel overlay */}
         <CartDrawer 
