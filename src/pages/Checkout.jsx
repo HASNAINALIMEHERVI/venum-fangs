@@ -101,7 +101,7 @@ const FloatingSelect = ({ label, name, value, onChange, options, required = fals
   </div>
 );
 
-const Checkout = ({ cartItems, orders = [], onClearCart, onPlaceOrder, currentUser, promoCodes = [], products = [], launches = [], onUpgradeCombo }) => {
+const Checkout = ({ cartItems, orders = [], onClearCart, onPlaceOrder, currentUser, products = [], launches = [], onUpgradeCombo }) => {
   const navigate = useNavigate();
   const checkoutTrackedRef = useRef(false);
   const [completed, setCompleted] = useState(false);
@@ -154,6 +154,7 @@ const Checkout = ({ cartItems, orders = [], onClearCart, onPlaceOrder, currentUs
   const [promoCodeInput, setPromoCodeInput] = useState('');
   const [appliedPromo, setAppliedPromo] = useState(null);
   const [promoError, setPromoError] = useState('');
+  const [isCheckingPromo, setIsCheckingPromo] = useState(false);
 
   const subtotal = cartItems.reduce((acc, item) => {
     const price = item.salePrice || item.price;
@@ -181,7 +182,7 @@ const Checkout = ({ cartItems, orders = [], onClearCart, onPlaceOrder, currentUs
     }
   }, [cartItems, total]);
 
-  const handleApplyPromoCode = () => {
+  const handleApplyPromoCode = async () => {
     setPromoError('');
     const cleanInput = promoCodeInput.trim().toUpperCase();
     if (!cleanInput) {
@@ -189,20 +190,23 @@ const Checkout = ({ cartItems, orders = [], onClearCart, onPlaceOrder, currentUs
       return;
     }
 
-    if (!promoCodes || promoCodes.length === 0) {
-      setPromoError('Invalid promo code.');
+    // Read the code by document ID at the time it is applied. A collection query
+    // may be unavailable to shoppers, and the list can be stale across browsers.
+    setIsCheckingPromo(true);
+    let found;
+    try {
+      const promoSnap = await getDoc(doc(db, 'promocodes', cleanInput));
+      if (!promoSnap.exists()) {
+        setPromoError('Invalid promo code.');
+        return;
+      }
+      found = { id: promoSnap.id, ...promoSnap.data() };
+    } catch (err) {
+      console.error('Could not validate promo code:', err);
+      setPromoError('Could not check this promo code right now. Please try again.');
       return;
-    }
-
-    const found = promoCodes.find(pc => {
-      if (!pc) return false;
-      const codeStr = (pc.code || pc.id || '').toString().trim().toUpperCase();
-      return codeStr === cleanInput;
-    });
-
-    if (!found) {
-      setPromoError('Invalid promo code.');
-      return;
+    } finally {
+      setIsCheckingPromo(false);
     }
 
     if (found.active === false) {
@@ -723,7 +727,7 @@ const Checkout = ({ cartItems, orders = [], onClearCart, onPlaceOrder, currentUs
                     placeholder="Discount code or promo code"
                     value={promoCodeInput}
                     onChange={(e) => setPromoCodeInput(e.target.value.toUpperCase())}
-                    disabled={!!appliedPromo}
+                    disabled={!!appliedPromo || isCheckingPromo}
                     style={{
                       flexGrow: 1,
                       padding: '0.75rem 0.85rem',
@@ -759,6 +763,7 @@ const Checkout = ({ cartItems, orders = [], onClearCart, onPlaceOrder, currentUs
                     <button 
                       type="button" 
                       onClick={handleApplyPromoCode}
+                      disabled={isCheckingPromo}
                       style={{
                         padding: '0.75rem 1.25rem',
                         fontSize: '0.75rem',

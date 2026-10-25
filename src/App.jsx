@@ -534,15 +534,13 @@ function App() {
       active: true
     };
 
-    const updated = [formattedCode, ...promoCodes.filter(c => c.id !== id)];
-    setPromoCodes(updated);
-    localStorage.setItem('black_loom_promocodes', JSON.stringify(updated));
-
-    try {
-      await setDoc(doc(db, "promocodes", id), formattedCode);
-    } catch (err) {
-      console.error("Error saving promo code to Firestore:", err);
-    }
+    // Only show a code as active after it is available to other browsers.
+    await setDoc(doc(db, 'promocodes', id), formattedCode);
+    setPromoCodes(previous => {
+      const updated = [formattedCode, ...previous.filter(c => c.id !== id)];
+      localStorage.setItem('black_loom_promocodes', JSON.stringify(updated));
+      return updated;
+    });
   };
 
   const handleDeletePromoCode = async (codeId) => {
