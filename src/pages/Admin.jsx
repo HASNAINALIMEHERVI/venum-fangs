@@ -2738,15 +2738,20 @@ const Admin = ({
               <h2 style={{ fontFamily: 'Outfit', fontSize: '1.2rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '1.5rem', color: 'var(--text-primary)' }}>
                 🏷️ CREATE NEW PROMO CODE
               </h2>
-              <form onSubmit={(e) => {
+              <form onSubmit={async (e) => {
                 e.preventDefault();
                 if (!newPromoData.code || !newPromoData.value) {
                   alert('PLEASE FILL IN PROMO CODE NAME AND VALUE');
                   return;
                 }
-                onAddPromoCode(newPromoData);
-                setNewPromoData({ code: '', type: 'percent', value: '', minOrder: '' });
-                alert(`PROMO CODE CREATED SUCCESSFULLY!`);
+                try {
+                  await onAddPromoCode(newPromoData);
+                  setNewPromoData({ code: '', type: 'percent', value: '', minOrder: '' });
+                  alert('PROMO CODE CREATED SUCCESSFULLY!');
+                } catch (err) {
+                  console.error('Could not save promo code:', err);
+                  alert('Could not save this promo code. Please try again.');
+                }
               }} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.1em', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>PROMO CODE NAME *</label>
