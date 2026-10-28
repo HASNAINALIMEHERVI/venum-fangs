@@ -203,3 +203,7 @@
 }
 
 .legacy-storefront{display:flex;flex-direction:column;min-height:100vh}
+
+/* Theme the shared admin header/footer without restyling the dashboard. */
+.storefront.admin-site-chrome{display:contents;min-height:0}
+.admin-shell{display:flex;flex-direction:column;min-height:100vh}

@@ -15,3 +15,11 @@ export default function StorefrontShell({ children, editorial = false }) {
     {children}
   </div>;
 }
+
+// Shared storefront chrome still needs its theme on admin routes. Keep the
+// dashboard outside this scope so its tables, forms and typography stay intact.
+export function StorefrontChrome({ children, editorial = false }) {
+  const { pathname } = useLocation();
+  if (!editorial || !pathname.startsWith('/admin')) return children;
+  return <div className="storefront admin-site-chrome">{children}</div>;
+}

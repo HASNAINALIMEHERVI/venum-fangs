@@ -12,7 +12,7 @@ import LegacyHome from './pages/LegacyHome';
 import LegacyLaunchPage from './pages/LegacyLaunchPage';
 import LegacyProductDetail from './pages/LegacyProductDetail';
 import { StorefrontThemeContext } from './utils/storefrontTheme';
-import StorefrontShell from './components/StorefrontShell';
+import StorefrontShell, { StorefrontChrome } from './components/StorefrontShell';
 import './storefront.css';
 import Footer from './components/Footer';
 import CartDrawer from './components/CartDrawer';
@@ -1199,6 +1199,7 @@ function App() {
           </div>
         )}
 
+        <StorefrontChrome editorial={editorial}>
         {/* Banner ticker top */}
         <ThemeAnnouncementBar activeTheme={presentationTheme} />
 
@@ -1212,6 +1213,8 @@ function App() {
           categories={categories}
           launches={previewLaunches}
         />
+
+        </StorefrontChrome>
 
         {/* Main Content pages area */}
         <main id="main-content" className="site-main" style={{ flexGrow: 1 }}>
@@ -1300,6 +1303,7 @@ function App() {
           </Routes>
         </main>
 
+        <StorefrontChrome editorial={editorial}>
         {/* Global Footer */}
         <ThemeFooter currentUser={currentUser} />
 
@@ -1339,6 +1343,7 @@ function App() {
 
 
 
+        </StorefrontChrome>
       </StorefrontShell>
       </StorefrontThemeContext.Provider>
     </Router>
