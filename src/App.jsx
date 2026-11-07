@@ -942,7 +942,8 @@ function App() {
       status: 'PENDING'
     };
 
-    // Reserve limited inventory and create the order atomically to prevent overselling.
+    // Check current inventory before saving the order. Product stock changes require an admin
+    // and will be handled separately; shoppers must not need product write permission.
     try {
       await runTransaction(db, async transaction => {
         const productReads = [];
@@ -972,8 +973,6 @@ function App() {
               legacyStock[item.selectedSize] = current - item.qty;
             }
           }
-          if (variants) transaction.update(productRef, { variants });
-          else if (legacyStock) transaction.update(productRef, { stock: legacyStock });
         }
         transaction.set(doc(db, 'orders', orderId), newOrder);
       });
