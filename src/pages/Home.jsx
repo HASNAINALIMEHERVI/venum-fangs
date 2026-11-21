@@ -8,30 +8,11 @@ import ProductSkeleton from '../components/ProductSkeleton';
 import ProductRail from '../components/ProductRail';
 import DealsSection from '../components/DealsSection';
 import ComboDeals from '../components/ComboDeals';
-import { getLaunchStatus, getVariantStock, getProductSizes } from '../utils/launchStatus';
+import { getLaunchStatus, getVariantStock, getProductSizes, statusCopy } from '../utils/launchStatus';
 
-const SectionHeading = ({ eyebrow, title, to, label = 'View all' }) => (
-  <div className="section-heading">
-    <div>
-      {eyebrow && <span className="eyebrow">{eyebrow}</span>}
-      <h2>{title}</h2>
-    </div>
-    {to && <Link to={to}>{label}<ArrowUpRight size={16} /></Link>}
-  </div>
-);
+const SectionHeading = ({ eyebrow, title, to, label = 'View all' }) => <div className="section-heading"><div>{eyebrow && <span className="eyebrow">{eyebrow}</span>}<h2>{title}</h2></div>{to && <Link to={to}>{label}<ArrowUpRight size={16} /></Link>}</div>;
 
-const GraphicCampaign = () => (
-  <section className="graphic-campaign-section" aria-label="Graphic Expression campaign">
-    <Link to="/?category=T-Shirts">
-      <img src="/images/campaign/graphic-expression-blue.webp" alt="Six Black Loom campaign panels" loading="lazy" />
-    </Link>
-    <div>
-      <h2>Graphic expression.</h2>
-      <Link to="/?category=T-Shirts">Explore the graphic tees<ArrowUpRight size={17} /></Link>
-    </div>
-  </section>
-);
-
+const GraphicCampaign = () => <section className="graphic-campaign-section" aria-label="Graphic Expression campaign"><Link to="/?category=T-Shirts"><img src="/images/campaign/graphic-expression-blue.webp" alt="Six Black Loom campaign panels featuring BREATHE, Gothic Thorn, SPEED, Kalakar and Great Power front and back" loading="lazy" /></Link><div><h2>Graphic expression.</h2><Link to="/?category=T-Shirts">Explore the graphic tees<ArrowUpRight size={17} /></Link></div></section>;
 const campaignLooks = [
   ['look-gothic.webp', 'Gothic Thorn', 'gothic-thorn-oversized-tee-252'],
   ['look-speed.webp', 'SPEED', 'the-speed-halftone-oversized-tee-670'],
@@ -40,8 +21,8 @@ const campaignLooks = [
 
 const SLIDE_INTERVAL_MS = 4500;
 
-export default function Home({ products = [], launches = [], deals = [], productsLoading = false, onQuickAdd, onAddDeal }) {
-  const [params] = useSearchParams();
+export default function Home({ products = [], launches = [], deals = [], productsLoading = false, onQuickAdd, onAddDeal, activeTheme }) {
+  const [params, setParams] = useSearchParams();
   const category = params.get('category') || '';
   const drop = params.get('drop') || '';
   const isNew = params.get('filter') === 'new';
@@ -67,12 +48,13 @@ export default function Home({ products = [], launches = [], deals = [], product
       id: 'gateway-clothing',
       titleId: 'gateway-clothing-title',
       className: 'gateway-clothing',
-      image: '/images/campaign/gothic-thorn-studio-v2.webp',
-      alt: 'Gothic Thorn tee styled with wide-leg denim — Black Loom studio campaign',
+      // Updated the image path to your new image and adjusted the framing
+      image: '/images/campaign/graffiti-wall-hero.jpg', 
+      alt: 'Black Loom models in graphic tees against graffiti wall',
       eyebrow: 'Independent streetwear',
       title: 'Black Loom',
       headingTag: 'h1',
-      objectPosition: '55% center',
+      objectPosition: 'center 20%', // This keeps the models' faces in frame!
       actions: [
         { label: 'Discover', to: '/?view=clothing' },
         { label: 'Graphic tees', to: '/?category=T-Shirts' },
@@ -111,17 +93,13 @@ export default function Home({ products = [], launches = [], deals = [], product
     if (launch) return [{ ...p, originalId: p.id, launchSlug: launch.slug }];
     return p.colors?.length ? p.colors.map(color => ({ ...p, originalId: p.id, id: `${p.id}-${color}`, initialColor: color })) : [{ ...p, originalId: p.id }];
   }), [products, launches]);
-  
   const availableCategories = ['T-Shirts', 'Hoodies', 'Sweatshirts', 'Headwear'].filter(name => catalogue.some(p => [p.category, p.subCategory].includes(name)));
   const headwearProducts = catalogue.filter(p => p.launchSlug || p.category === 'Headwear');
-  
   const newProducts = useMemo(() => {
     const selected = clothingView ? catalogue.filter(p => !p.launchSlug && p.category !== 'Headwear') : activeLaunch ? catalogue.filter(p => activeLaunch.productIds?.includes(p.originalId)) : catalogue.filter(p => p.showInNewIn);
     return (selected.length ? selected : catalogue).slice(0, 8);
   }, [activeLaunch, catalogue, clothingView]);
-  
   const title = category || (isNew ? 'New arrivals' : drop === 'drop1' ? 'The original collection' : drop === 'drop2' ? 'Eclipse' : 'All clothing');
-  
   const visible = useMemo(() => {
     let list = catalogue.filter(p => (!category || [p.category, p.subCategory].some(c => c?.toLowerCase() === category.toLowerCase())) && (!drop || (p.drop || 'drop1') === drop));
     if (isNew) list = list.filter(p => p.showInNewIn || p.launchSlug);
@@ -132,84 +110,24 @@ export default function Home({ products = [], launches = [], deals = [], product
     if (sort === 'newest') list = [...list].sort((a,b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
     return list;
   }, [catalogue, category, drop, isNew, size, available, sort]);
-
   useEffect(() => { setSize('all'); setAvailable(false); setFiltersOpen(false); }, [category, drop, isNew]);
   useEffect(() => { document.title = isCollection ? `${title} – BLACK LOOM` : 'BLACK LOOM – Independent Streetwear'; }, [isCollection, title]);
-  
   const join = async e => {
     e.preventDefault(); setNotification('saving');
-    try { await addDoc(firestoreCollection(db, 'drop_notifications'), { email: email.trim(), category: title, createdAt: serverTimestamp() }); setNotification('done'); }
+    try { await addDoc(collectionRef(), { email: email.trim(), category: title, createdAt: serverTimestamp() }); setNotification('done'); }
     catch { setNotification('error'); }
   };
+  // Keep collection naming independent of the URL's collection parameter.
+  const collectionRef = () => firestoreCollection(db, 'drop_notifications');
 
-  if (isCollection) return (
-    <div className="collection-page">
-      {category === 'T-Shirts' && <GraphicCampaign />}
-      <div className="collection-intro">
-        <nav className="breadcrumb" aria-label="Breadcrumb"><Link to="/">Home</Link><span>/</span><span>{title}</span></nav>
-        <h1>{title}<sup>{visible.length}</sup></h1>
-        <p>{category === 'Headwear' ? 'Paisley fabric. Corduroy brims. Make it your own.' : 'Graphic statements and considered essentials. The Black Loom wardrobe.'}</p>
-      </div>
-      <div className="collection-toolbar">
-        <nav aria-label="Browse categories">
-          <Link to="/?collection=all" aria-current={!category && !drop && !isNew ? 'page' : undefined}>View all</Link>
-          {availableCategories.map(c => <Link key={c} to={`/?category=${encodeURIComponent(c)}`} aria-current={category === c ? 'page' : undefined}>{c}</Link>)}
-        </nav>
-        <span className="result-count">{visible.length} pieces</span>
-        <button onClick={() => setFiltersOpen(!filtersOpen)} aria-expanded={filtersOpen}><SlidersHorizontal size={16} /> Filter & sort</button>
-      </div>
-      {filtersOpen && (
-        <div className="collection-filters">
-          <label>Sort by
-            <select value={sort} onChange={e => setSort(e.target.value)}>
-              <option value="featured">Featured</option>
-              <option value="newest">Newest first</option>
-              <option value="low">Price: low to high</option>
-              <option value="high">Price: high to low</option>
-            </select>
-          </label>
-          <fieldset>
-            <legend>Size</legend>
-            <div>{['all', 'S', 'M', 'L', 'XL', 'ONE SIZE'].map(s => <button className={s === size ? 'active' : ''} key={s} onClick={() => setSize(s)} aria-pressed={size === s}>{s === 'all' ? 'All sizes' : s}</button>)}</div>
-          </fieldset>
-          <label className="stock-filter"><input type="checkbox" checked={available} onChange={e => setAvailable(e.target.checked)} /> In stock only</label>
-          <button onClick={() => { setSize('all'); setAvailable(false); setSort('featured'); }}>Reset filters</button>
-        </div>
-      )}
-      <div className="collection-display">
-        <div>
-          <button aria-label="Four-column grid" aria-pressed={density === 'four'} onClick={() => setDensity('four')}><Grid2X2 size={17} /></button>
-          <button aria-label="Two-column grid" aria-pressed={density === 'two'} onClick={() => setDensity('two')}><Columns2 size={17} /></button>
-        </div>
-        {(size !== 'all' || available) && <button onClick={() => { setSize('all'); setAvailable(false); }}>Clear filters <X size={13} /></button>}
-      </div>
-      {productsLoading && !catalogue.length ? (
-        <div className="editorial-product-grid"><ProductSkeleton count={4} /></div>
-      ) : visible.length ? (
-        <div className={`editorial-product-grid ${density === 'two' ? 'grid-two' : ''}`}>
-          {visible.map((p,i) => <ProductCard key={p.id} product={p} onQuickAdd={onQuickAdd} isAboveTheFold={i < 4} />)}
-        </div>
-      ) : (
-        <section className="collection-empty">
-          <Bell size={25} strokeWidth={1.2} />
-          <h2>{size !== 'all' || available ? 'No pieces match your filters.' : 'Something new is on the way.'}</h2>
-          <p>{size !== 'all' || available ? 'Try a different size or clear your filters.' : 'Leave your email to hear when this collection arrives.'}</p>
-          {size !== 'all' || available ? (
-            <button className="editorial-button" onClick={() => { setSize('all'); setAvailable(false); }}>Clear filters</button>
-          ) : notification === 'done' ? (
-            <p role="status">You're on the list.</p>
-          ) : (
-            <form onSubmit={join}>
-              <label className="sr-only" htmlFor="collection-email">Email address</label>
-              <input id="collection-email" type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="Email address" />
-              <button disabled={notification === 'saving'}>{notification === 'saving' ? 'Joining...' : 'Notify me'}</button>
-              {notification === 'error' && <p role="alert">Could not save. Please try again.</p>}
-            </form>
-          )}
-        </section>
-      )}
-    </div>
-  );
+  if (isCollection) return <div className="collection-page">
+    {category === 'T-Shirts' && <GraphicCampaign />}
+    <div className="collection-intro"><nav className="breadcrumb" aria-label="Breadcrumb"><Link to="/">Home</Link><span>/</span><span>{title}</span></nav><h1>{title}<sup>{visible.length}</sup></h1><p>{category === 'Headwear' ? 'Paisley fabric. Corduroy brims. Make it your own.' : 'Graphic statements and considered essentials. The Black Loom wardrobe.'}</p></div>
+    <div className="collection-toolbar"><nav aria-label="Browse categories"><Link to="/?collection=all" aria-current={!category && !drop && !isNew ? 'page' : undefined}>View all</Link>{availableCategories.map(c => <Link key={c} to={`/?category=${encodeURIComponent(c)}`} aria-current={category === c ? 'page' : undefined}>{c}</Link>)}</nav><span className="result-count">{visible.length} pieces</span><button onClick={() => setFiltersOpen(!filtersOpen)} aria-expanded={filtersOpen}><SlidersHorizontal size={16} /> Filter & sort</button></div>
+    {filtersOpen && <div className="collection-filters"><label>Sort by<select value={sort} onChange={e => setSort(e.target.value)}><option value="featured">Featured</option><option value="newest">Newest first</option><option value="low">Price: low to high</option><option value="high">Price: high to low</option></select></label><fieldset><legend>Size</legend><div>{['all', 'S', 'M', 'L', 'XL', 'ONE SIZE'].map(s => <button className={s === size ? 'active' : ''} key={s} onClick={() => setSize(s)} aria-pressed={size === s}>{s === 'all' ? 'All sizes' : s}</button>)}</div></fieldset><label className="stock-filter"><input type="checkbox" checked={available} onChange={e => setAvailable(e.target.checked)} /> In stock only</label><button onClick={() => { setSize('all'); setAvailable(false); setSort('featured'); }}>Reset filters</button></div>}
+    <div className="collection-display"><div><button aria-label="Four-column grid" aria-pressed={density === 'four'} onClick={() => setDensity('four')}><Grid2X2 size={17} /></button><button aria-label="Two-column grid" aria-pressed={density === 'two'} onClick={() => setDensity('two')}><Columns2 size={17} /></button></div>{(size !== 'all' || available) && <button onClick={() => { setSize('all'); setAvailable(false); }}>Clear filters <X size={13} /></button>}</div>
+    {productsLoading && !catalogue.length ? <div className="editorial-product-grid"><ProductSkeleton count={4} /></div> : visible.length ? <div className={`editorial-product-grid ${density === 'two' ? 'grid-two' : ''}`}>{visible.map((p,i) => <ProductCard key={p.id} product={p} onQuickAdd={onQuickAdd} isAboveTheFold={i < 4} />)}</div> : <section className="collection-empty"><Bell size={25} strokeWidth={1.2} /><h2>{size !== 'all' || available ? 'No pieces match your filters.' : 'Something new is on the way.'}</h2><p>{size !== 'all' || available ? 'Try a different size or clear your filters.' : 'Leave your email to hear when this collection arrives.'}</p>{size !== 'all' || available ? <button className="editorial-button" onClick={() => { setSize('all'); setAvailable(false); }}>Clear filters</button> : notification === 'done' ? <p role="status">You're on the list.</p> : <form onSubmit={join}><label className="sr-only" htmlFor="collection-email">Email address</label><input id="collection-email" type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="Email address" /><button disabled={notification === 'saving'}>{notification === 'saving' ? 'Joining...' : 'Notify me'}</button>{notification === 'error' && <p role="alert">Could not save. Please try again.</p>}</form>}</section>}
+  </div>;
 
   // Full-bleed auto-rotating hero banner carousel (Outfitters-style full-screen slider)
   if (!params.get('view')) {
