@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ArrowUpRight, ArrowRight, SlidersHorizontal, Grid2X2, Columns2, X, Bell, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowUpRight, ArrowRight, SlidersHorizontal, Grid2X2, Columns2, X, Bell } from 'lucide-react';
 import { collection as firestoreCollection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import ProductCard from '../components/ProductCard';
@@ -19,7 +19,8 @@ const campaignLooks = [
   ['look-kalakar.webp', 'Kalakar', 'kalakar-oversized-tee-220'],
 ];
 
-const SLIDE_INTERVAL_MS = 4500;
+// Changed to 7 seconds
+const SLIDE_INTERVAL_MS = 7000;
 
 export default function Home({ products = [], launches = [], deals = [], productsLoading = false, onQuickAdd, onAddDeal, activeTheme }) {
   const [params, setParams] = useSearchParams();
@@ -48,13 +49,11 @@ export default function Home({ products = [], launches = [], deals = [], product
       id: 'gateway-clothing',
       titleId: 'gateway-clothing-title',
       className: 'gateway-clothing',
-      // Updated the image path to your new image and adjusted the framing
       image: '/images/campaign/graffiti-wall-hero.jpg', 
       alt: 'Black Loom models in graphic tees against graffiti wall',
       eyebrow: 'Independent streetwear',
       title: 'Black Loom',
       headingTag: 'h1',
-      objectPosition: 'center 20%', // This keeps the models' faces in frame!
       actions: [
         { label: 'Discover', to: '/?view=clothing' },
         { label: 'Graphic tees', to: '/?category=T-Shirts' },
@@ -71,7 +70,6 @@ export default function Home({ products = [], launches = [], deals = [], product
       eyebrow: 'Under the brim. Beyond the ordinary.',
       title: 'Shadebound',
       headingTag: 'h2',
-      objectPosition: '51% center',
       actions: [
         { label: 'Explore', to: launchLink },
         { label: 'Shop the drop', to: `${launchLink}#collection-pieces` },
@@ -117,7 +115,6 @@ export default function Home({ products = [], launches = [], deals = [], product
     try { await addDoc(collectionRef(), { email: email.trim(), category: title, createdAt: serverTimestamp() }); setNotification('done'); }
     catch { setNotification('error'); }
   };
-  // Keep collection naming independent of the URL's collection parameter.
   const collectionRef = () => firestoreCollection(db, 'drop_notifications');
 
   if (isCollection) return <div className="collection-page">
@@ -129,7 +126,6 @@ export default function Home({ products = [], launches = [], deals = [], product
     {productsLoading && !catalogue.length ? <div className="editorial-product-grid"><ProductSkeleton count={4} /></div> : visible.length ? <div className={`editorial-product-grid ${density === 'two' ? 'grid-two' : ''}`}>{visible.map((p,i) => <ProductCard key={p.id} product={p} onQuickAdd={onQuickAdd} isAboveTheFold={i < 4} />)}</div> : <section className="collection-empty"><Bell size={25} strokeWidth={1.2} /><h2>{size !== 'all' || available ? 'No pieces match your filters.' : 'Something new is on the way.'}</h2><p>{size !== 'all' || available ? 'Try a different size or clear your filters.' : 'Leave your email to hear when this collection arrives.'}</p>{size !== 'all' || available ? <button className="editorial-button" onClick={() => { setSize('all'); setAvailable(false); }}>Clear filters</button> : notification === 'done' ? <p role="status">You're on the list.</p> : <form onSubmit={join}><label className="sr-only" htmlFor="collection-email">Email address</label><input id="collection-email" type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="Email address" /><button disabled={notification === 'saving'}>{notification === 'saving' ? 'Joining...' : 'Notify me'}</button>{notification === 'error' && <p role="alert">Could not save. Please try again.</p>}</form>}</section>}
   </div>;
 
-  // Full-bleed auto-rotating hero banner carousel (Outfitters-style full-screen slider)
   if (!params.get('view')) {
     const handleTouchStart = e => setTouchStartX(e.touches[0].clientX);
     const handleTouchEnd = e => {
@@ -143,16 +139,7 @@ export default function Home({ products = [], launches = [], deals = [], product
 
     return (
       <div
-        className="brand-gateway"
-        style={{
-          display: 'block',
-          position: 'relative',
-          width: '100%',
-          height: '100svh',
-          minHeight: '620px',
-          overflow: 'hidden',
-          background: '#191919',
-        }}
+        className="brand-gateway-wrapper"
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
         onTouchStart={handleTouchStart}
@@ -160,15 +147,109 @@ export default function Home({ products = [], launches = [], deals = [], product
         aria-roledescription="carousel"
         aria-label="Featured campaigns"
       >
+        <style>{`
+          .brand-gateway-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100svh;
+            min-height: 620px;
+            overflow: hidden;
+            background: #191919;
+          }
+          .gateway-slider-track {
+            display: flex;
+            height: 100%;
+            transition: transform 900ms cubic-bezier(0.22, 1, 0.36, 1);
+            will-change: transform;
+          }
+          .gateway-panel {
+            position: relative;
+            height: 100%;
+            overflow: hidden;
+            isolation: isolate;
+          }
+          .gateway-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+          }
+          /* Desktop Image Framing */
+          .img-gateway-clothing { object-position: center 20%; }
+          .img-gateway-shadebound { object-position: 51% center; }
+          
+          .gateway-shade {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.1) 40%, transparent 100%);
+            z-index: 1;
+          }
+          .gateway-copy {
+            position: absolute;
+            bottom: 10%;
+            left: 5%;
+            color: white;
+            z-index: 2;
+          }
+          .gateway-eyebrow {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+          }
+          .gateway-title {
+            font-size: clamp(2.5rem, 5vw, 4rem) !important;
+            margin: 0 0 24px !important;
+            font-weight: bold;
+          }
+          .gateway-actions {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+          }
+          .gateway-btn {
+            padding: 12px 24px;
+            background-color: white;
+            color: black;
+            text-decoration: none;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 14px;
+            display: inline-block;
+          }
+
+          /* Mobile Responsive Fixes */
+          @media (max-width: 768px) {
+            .brand-gateway-wrapper {
+              height: 85svh; /* Prevents drastic horizontal cropping on tall phones */
+              min-height: 500px;
+            }
+            .img-gateway-clothing { 
+              object-position: 45% 15%; /* Keeps both models visible on narrow screens */
+            }
+            .img-gateway-shadebound { 
+              object-position: center center; 
+            }
+            .gateway-copy {
+              bottom: 8%;
+              left: 20px;
+              right: 20px;
+              text-align: center;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+            }
+            .gateway-actions {
+              justify-content: center;
+              gap: 12px;
+            }
+          }
+        `}</style>
+
         <div
           className="gateway-slider-track"
           style={{
-            display: 'flex',
             width: `${heroSlides.length * 100}%`,
-            height: '100%',
             transform: `translate3d(-${(activeSlide * 100) / heroSlides.length}%, 0, 0)`,
-            transition: 'transform 850ms cubic-bezier(0.22, 1, 0.36, 1)',
-            willChange: 'transform',
           }}
         >
           {heroSlides.map((slide, index) => {
@@ -177,64 +258,42 @@ export default function Home({ products = [], launches = [], deals = [], product
             return (
               <section
                 key={slide.id}
-                className={`gateway-panel ${slide.className}`}
+                className="gateway-panel"
                 aria-labelledby={slide.titleId}
                 aria-hidden={!isActive}
                 style={{
-                  position: 'relative',
                   width: `${100 / heroSlides.length}%`,
                   flex: `0 0 ${100 / heroSlides.length}%`,
-                  height: '100svh',
-                  minHeight: '620px',
-                  overflow: 'hidden',
-                  isolation: 'isolate',
                 }}
               >
                 <img
-                  className="gateway-image"
+                  className={`gateway-image img-${slide.id}`}
                   src={slide.image}
                   alt={slide.alt}
-                  fetchPriority="high"
+                  fetchPriority={index === 0 ? "high" : "auto"}
                   style={{
-                    objectPosition: slide.objectPosition,
-                    transform: isActive ? 'scale(1.03)' : 'scale(1)',
-                    transition: 'transform 5500ms ease-out',
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover'
+                    transform: isActive ? 'scale(1.04)' : 'scale(1)',
+                    transition: 'transform 8500ms ease-out', // Slowed down zoom effect
                   }}
                 />
-                <div className="gateway-shade" style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.5), transparent)' }} />
+                <div className="gateway-shade" />
                 <div
                   className="gateway-copy"
                   style={{
-                    position: 'absolute',
-                    bottom: '10%',
-                    left: '5%',
-                    color: 'white',
                     opacity: isActive ? 1 : 0,
-                    transform: isActive ? 'translateY(0)' : 'translateY(20px)',
-                    transition: 'opacity 650ms ease 180ms, transform 650ms ease 180ms',
-                    zIndex: 2,
+                    transform: isActive ? 'translateY(0)' : 'translateY(15px)',
+                    transition: 'opacity 800ms ease 180ms, transform 800ms ease 180ms',
                   }}
                 >
-                  <p style={{ fontSize: '14px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>{slide.eyebrow}</p>
-                  <HeadingTag id={slide.titleId} style={{ fontSize: '3rem', margin: '0 0 24px', fontWeight: 'bold' }}>{slide.title}</HeadingTag>
-                  <div className="gateway-actions" style={{ display: 'flex', gap: '16px' }}>
+                  <p className="gateway-eyebrow">{slide.eyebrow}</p>
+                  <HeadingTag id={slide.titleId} className="gateway-title">{slide.title}</HeadingTag>
+                  <div className="gateway-actions">
                     {slide.actions.map(action => (
                       <Link 
                         key={action.to} 
                         to={action.to} 
+                        className="gateway-btn"
                         tabIndex={isActive ? 0 : -1}
-                        style={{
-                          padding: '12px 24px',
-                          backgroundColor: 'white',
-                          color: 'black',
-                          textDecoration: 'none',
-                          fontWeight: '600',
-                          textTransform: 'uppercase',
-                          fontSize: '14px'
-                        }}
                       >
                         {action.label}
                       </Link>
@@ -246,70 +305,19 @@ export default function Home({ products = [], launches = [], deals = [], product
           })}
         </div>
 
-        <button
-          type="button"
-          aria-label="Previous banner"
-          onClick={() => setActiveSlide(prev => (prev - 1 + heroSlides.length) % heroSlides.length)}
-          style={{
-            position: 'absolute',
-            top: '50%',
-            left: '24px',
-            transform: 'translateY(-50%)',
-            zIndex: 10,
-            width: '44px',
-            height: '44px',
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: 'rgba(25, 25, 25, 0.42)',
-            border: '1px solid rgba(255, 255, 255, 0.24)',
-            color: '#fff',
-            cursor: 'pointer',
-            backdropFilter: 'blur(10px)',
-            transition: 'background 0.2s ease',
-          }}
-        >
-          <ChevronLeft size={20} />
-        </button>
-
-        <button
-          type="button"
-          aria-label="Next banner"
-          onClick={() => setActiveSlide(prev => (prev + 1) % heroSlides.length)}
-          style={{
-            position: 'absolute',
-            top: '50%',
-            right: '24px',
-            transform: 'translateY(-50%)',
-            zIndex: 10,
-            width: '44px',
-            height: '44px',
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: 'rgba(25, 25, 25, 0.42)',
-            border: '1px solid rgba(255, 255, 255, 0.24)',
-            color: '#fff',
-            cursor: 'pointer',
-            backdropFilter: 'blur(10px)',
-            transition: 'background 0.2s ease',
-          }}
-        >
-          <ChevronRight size={20} />
-        </button>
-
+        {/* Bottom slide indicator bars */}
         <div
           role="tablist"
           aria-label="Choose campaign slide"
           style={{
             position: 'absolute',
-            bottom: '28px',
+            bottom: '24px',
             left: '50%',
             transform: 'translateX(-50%)',
             zIndex: 10,
             display: 'flex',
             alignItems: 'center',
-            gap: '10px',
+            gap: '8px',
           }}
         >
           {heroSlides.map((slide, index) => {
@@ -323,13 +331,13 @@ export default function Home({ products = [], launches = [], deals = [], product
                 aria-label={`Show ${slide.title} banner`}
                 onClick={() => setActiveSlide(index)}
                 style={{
-                  width: isActive ? '44px' : '18px',
+                  width: isActive ? '36px' : '12px',
                   height: '3px',
                   padding: 0,
                   border: 0,
-                  background: isActive ? '#ffffff' : 'rgba(255, 255, 255, 0.42)',
+                  background: isActive ? '#ffffff' : 'rgba(255, 255, 255, 0.35)',
                   cursor: 'pointer',
-                  transition: 'width 350ms ease, background-color 350ms ease',
+                  transition: 'width 400ms ease, background-color 400ms ease',
                 }}
               />
             );
